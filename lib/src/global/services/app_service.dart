@@ -14,7 +14,7 @@ class AppService extends GetxService {
   final apiService = Get.find<DioApiService>();
   final prefService = Get.find<MyPrefService>();
 
-  initUserConfig() async {
+  Future<void> initUserConfig() async {
     await _hasOpened();
     await _setLoginStatus();
     if (isLoggedIn.value) {
@@ -22,25 +22,25 @@ class AppService extends GetxService {
     }
   }
 
-  loginUser(String jwt, String refreshJwt) async {
+  Future<void> loginUser(String jwt, String refreshJwt) async {
     await _saveJWT(jwt, refreshJwt);
-    await _saveUser();
+    await _setCurrentUser();
   }
 
-  logout() async {
+  Future<void> logout() async {
     // await apiService.post(AppUrls.logout);
     await _logout();
   }
 
-  _hasOpened() async {
+  Future<void> _hasOpened() async {
     bool a = prefService.get(MyPrefs.hasOpenedOnboarding) ?? false;
     if (a == false) {
       await prefService.save(MyPrefs.hasOpenedOnboarding, true);
     }
-    hasOpenedOnboarding.value = false;
+    hasOpenedOnboarding.value = a;
   }
 
-  _saveUser() async {
+  Future<void> _saveUser() async {
     await prefService.saveAll({
       MyPrefs.mpLoggedInEmail: currentUser.value.email,
       MyPrefs.mpFirstName: currentUser.value.name,
@@ -52,7 +52,7 @@ class AppService extends GetxService {
     });
   }
 
-  _logout() async {
+  Future<void> _logout() async {
     final b = prefService.get(MyPrefs.mpLogin3rdParty) ?? false;
     if (b) {
       // final c = await GoogleSignIn().isSignedIn();
@@ -63,7 +63,7 @@ class AppService extends GetxService {
     await prefService.eraseAllExcept(MyPrefs.hasOpenedOnboarding);
   }
 
-  _saveJWT(String jwt, String refreshJwt) async {
+  Future<void> _saveJWT(String jwt, String refreshJwt) async {
     final msg = Jwt.parseJwt(jwt);
     await prefService.saveAll({
       MyPrefs.mpLoginExpiry: msg["exp"],
@@ -82,13 +82,11 @@ class AppService extends GetxService {
   //   await _saveJWT(res.data["access_token"], res.data["refresh_token"]);
   // }
 
-  _setCurrentUser() async {
-    currentUser.value.email = prefService.get(MyPrefs.mpLoggedInEmail);
-    currentUser.value.id = prefService.get(MyPrefs.mpUserID);
-    final res = await apiService.get(
-      "${AppUrls.profileURL}/user/p",
-    );
-    final user = User.fromJson(res.data);
+  Future<void> _setCurrentUser() async {
+    final res = await apiService.get("${AppUrls.profileURL}/user/p");
+    final user = User.fromJson(res.data["data"]);
+    currentUser.value.email = user.email;
+    currentUser.value.id = user.id;
     currentUser.value.name = user.name;
     currentUser.value.phone = user.phone;
     currentUser.value.location = user.location;
@@ -98,11 +96,9 @@ class AppService extends GetxService {
     //_listenToRefreshTokenExpiry();
   }
 
-  refreshUser() async {
-    final res = await apiService.get(
-      "${AppUrls.profileURL}/user/p",
-    );
-    final user = User.fromJson(res.data);
+  Future<void> refreshUser() async {
+    final res = await apiService.get("${AppUrls.profileURL}/user/p");
+    final user = User.fromJson(res.data["data"]);
     currentUser.value.name = user.name;
     currentUser.value.phone = user.phone;
     currentUser.value.location = user.location;
@@ -112,7 +108,7 @@ class AppService extends GetxService {
     _saveUser();
   }
 
-  _setLoginStatus() async {
+  Future<void> _setLoginStatus() async {
     final e = prefService.get(MyPrefs.mpLoginExpiry) ?? 0;
     if (e != 0 && DateTime.now().millisecondsSinceEpoch > e * 1000) {
       //await _refreshToken();
@@ -121,7 +117,7 @@ class AppService extends GetxService {
     isLoggedIn.value = prefService.get(MyPrefs.mpIsLoggedIn) ?? false;
   }
 
-  _listenToRefreshTokenExpiry() {
+  void _listenToRefreshTokenExpiry() {
     Timer.periodic(const Duration(minutes: 1), (timer) async {
       final e = prefService.get(MyPrefs.mpLoginExpiry) ?? 0;
       if (e == 0) {
@@ -131,5 +127,4 @@ class AppService extends GetxService {
       }
     });
   }
-
 }

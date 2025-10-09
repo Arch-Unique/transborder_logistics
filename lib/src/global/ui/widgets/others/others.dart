@@ -934,22 +934,22 @@ class UserProfilePic extends StatelessWidget {
         // Get.to(ViewProfPicPage());
       },
       child: CircleAvatar(
-        backgroundColor: Colors.white,
-        radius: url.isEmpty ? 22 : 23,
+        backgroundColor: AppColors.borderColor,
+        radius: url.isEmpty ? 47 : 48,
         child: url.isEmpty
             ? Icon(
                 Iconsax.profile_circle_outline,
-                size: 45,
+                size: 90,
                 color: AppColors.disabledColor,
               )
             : CachedNetworkImage(
                 imageUrl: url,
-                width: 46,
-                height: 46,
+                width: 90,
+                height: 90,
                 imageBuilder: (context, imageProvider) {
                   return CircleAvatar(
                     backgroundImage: imageProvider,
-                    radius: 23,
+                    radius: 47,
                   );
                 },
                 placeholder: (context, url) {
@@ -963,7 +963,7 @@ class UserProfilePic extends StatelessWidget {
                       return Center(
                         child: Icon(
                           Iconsax.profile_circle_outline,
-                          size: 44,
+                          size: 94,
                           color: value,
                         ),
                       );
@@ -974,7 +974,7 @@ class UserProfilePic extends StatelessWidget {
                   return const Center(
                     child: Icon(
                       Iconsax.profile_circle_outline,
-                      size: 44,
+                      size: 94,
                       color: AppColors.red,
                     ),
                   );

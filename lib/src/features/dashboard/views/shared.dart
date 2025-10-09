@@ -302,3 +302,158 @@ class InfoValue extends StatelessWidget {
     );
   }
 }
+
+class AppContainer extends StatelessWidget {
+  const AppContainer(this.title, this.actions, {super.key});
+  final String title;
+  final List<Widget> actions;
+
+  @override
+  Widget build(BuildContext context) {
+    final div = Ui.align(
+      align: Alignment.centerRight,
+      child: SizedBox(width: Ui.width(context) - 56, child: AppDivider()),
+    );
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Ui.align(
+          child: Padding(
+            padding: const EdgeInsets.only(left: 24.0, bottom: 12),
+            child: AppText.medium(
+              title,
+              fontSize: 10,
+              color: AppColors.lightTextColor,
+            ),
+          ),
+        ),
+        CurvedContainer(
+          border: Border.all(color: AppColors.borderColor),
+          margin: EdgeInsets.symmetric(horizontal: 16),
+          radius: 12,
+          child: ListView.separated(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            itemBuilder: (c, i) {
+              return actions[i];
+            },
+            separatorBuilder: (c, i) {
+              return div;
+            },
+            itemCount: actions.length,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class AppContainerItem extends StatelessWidget {
+  const AppContainerItem(
+    this.icon, {
+    required this.title,
+    required this.desc,
+    super.key,
+  });
+  final dynamic icon;
+  final Widget title;
+  final Widget desc;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        AppIcon(icon),
+        Ui.boxWidth(12),
+        title,
+        Ui.boxWidth(12),
+        Expanded(child: desc),
+      ],
+    );
+  }
+
+  static AppContainerItem text(dynamic icon, String title, String desc) {
+    return AppContainerItem(
+      icon,
+      title: AppText.medium(title, fontSize: 14),
+      desc: AppText.thin(desc, fontSize: 12, color: AppColors.lightTextColor),
+    );
+  }
+}
+
+class ProfilePage extends StatelessWidget {
+  const ProfilePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final appService = Get.find<AppService>();
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(16),
+      child: Column(
+        children: [
+          UserProfilePic(),
+          Ui.boxHeight(24),
+          AppContainer("ACCOUNT", [
+            AppContainerItem.text(
+              HugeIcons.strokeRoundedUser,
+              "Full Name",
+              appService.currentUser.value.name ?? "N/A",
+            ),
+            AppContainerItem.text(
+              HugeIcons.strokeRoundedMail01,
+              "Email",
+              appService.currentUser.value.email ?? "N/A",
+            ),
+            AppContainerItem.text(
+              HugeIcons.strokeRoundedUserEdit01,
+              "Account Type",
+              appService.currentUser.value.role.capitalize ?? "",
+            ),
+            AppContainerItem.text(
+              HugeIcons.strokeRoundedSmartPhone01,
+              "Contact",
+              appService.currentUser.value.phone ?? "N/A",
+            ),
+            if (appService.currentUser.value.role == "driver")
+              AppContainerItem.text(
+                HugeIcons.strokeRoundedRegister,
+                "Truck Reg No",
+                appService.currentUser.value.truckno ?? "N/A",
+              ),
+            // AppContainerItem.text(HugeIcons.strokeRoundedMail01, "Email", appService.currentUser.value.email ?? "N/A"),
+          ]),
+          Ui.boxHeight(24),
+          AppContainer("ABOUT", [
+            AppContainerItem.icon(
+              HugeIcons.strokeRoundedHelpCircle,
+              "Full Name",
+              appService.currentUser.value.name ?? "N/A",
+            ),
+            AppContainerItem.icon(
+              HugeIcons.left,
+              "Email",
+              appService.currentUser.value.email ?? "N/A",
+            ),
+            AppContainerItem.icon(
+              HugeIcons.strokeRoundedMail01,
+              "Account Type",
+              appService.currentUser.value.role.capitalize ?? "",
+            ),
+            AppContainerItem.text(
+              HugeIcons.strokeRoundedMail01,
+              "Contact",
+              appService.currentUser.value.phone ?? "N/A",
+            ),
+            if (appService.currentUser.value.role == "driver")
+              AppContainerItem.text(
+                HugeIcons.strokeRoundedMail01,
+                "Truck Reg No",
+                appService.currentUser.value.truckno ?? "N/A",
+              ),
+            // AppContainerItem.text(HugeIcons.strokeRoundedMail01, "Email", appService.currentUser.value.email ?? "N/A"),
+          ]),
+        ],
+      ),
+    );
+  }
+}

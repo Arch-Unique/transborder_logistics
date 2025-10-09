@@ -12,6 +12,6 @@ class AppPages {
       middlewares: [AuthMiddleWare()],
     ),
     GetPage(name: AppRoutes.auth, page: () => AuthScreen()),
-    GetPage(name: AppRoutes.dashboard, page: () => DriverHomePage()),
+    GetPage(name: AppRoutes.dashboard, page: () => DriverExplorer()),
   ];
 }

@@ -19,9 +19,10 @@ class AppRepo extends GetxController {
       hasToken: false,
     );
     if (res.statusCode!.isSuccess()) {
-      print(res.data);
-      appService.currentUser.value = User.fromJson(res.data["data"]);
-      await appService.loginUser(res.data["jwt"], res.data["refresh"]);
+      await appService.loginUser(
+        res.data["data"]["jwt"],
+        res.data["data"]["refresh"],
+      );
     } else {
       throw res.data["error"];
     }
@@ -31,7 +32,6 @@ class AppRepo extends GetxController {
     const uri = "${AppUrls.profileURL}/user/p";
 
     final res = await apiService.get(uri);
-
     if (res.statusCode!.isSuccess()) {
       final c = res.data["data"];
       User user = User.fromJson(c);
