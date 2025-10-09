@@ -24,7 +24,7 @@ class CustomTextField extends StatelessWidget {
     this.controller, {
     this.varl = FPL.text,
     this.label = "",
-    this.fs = 16,
+    this.fs = 12,
     this.hasBottomPadding = true,
     this.fw = FontWeight.w300,
     this.col = AppColors.textColor,
@@ -139,7 +139,7 @@ class CustomTextField extends StatelessWidget {
                     suffixIconConstraints: suffix != null
                         ? BoxConstraints(minWidth: 24, minHeight: 24)
                         : null,
-                    isDense: suffix != null,
+                    isDense: true,
                     // prefixIcon: prefix != null ? Padding(
                     //             padding: const EdgeInsets.only(left: 8.0),
                     //             child: AppIcon(
@@ -152,8 +152,8 @@ class CustomTextField extends StatelessWidget {
                     //             ),
                     //           ): null,
                     contentPadding: EdgeInsets.symmetric(
-                      vertical: 16.0,
-                      horizontal: 16,
+                      vertical: 0.0,
+                      horizontal: 12,
                     ),
                     suffixIcon: suffix != null
                         ? Padding(

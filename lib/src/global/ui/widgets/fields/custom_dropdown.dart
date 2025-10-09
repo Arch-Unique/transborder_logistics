@@ -33,58 +33,59 @@ class CustomDropdown<T> extends StatelessWidget {
     final borderColor = AppColors.borderColor;
     return SizedBox(
       width: Ui.width(context) - 32,
-      child: Column(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (label.isNotEmpty)
-            Ui.align(
-              child: AppText.medium(label, fontSize: 14),
-            ),
-          if (label.isNotEmpty) Ui.boxHeight(4),
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(48),
-              border: Border.all(color: borderColor),
-            ),
+            Ui.align(child: AppText.medium(label, fontSize: 14)),
+          if (label.isNotEmpty) Ui.boxWidth(4),
+          Flexible(
+            fit: FlexFit.tight,
             child: DropdownButtonFormField<T>(
               value: value,
-              isExpanded: true,
-              icon: Padding(
-                padding: const EdgeInsets.only(right: 8.0),
-                child: AppIcon(Icons.keyboard_arrow_down_rounded,
-                    color: iconColor),
+              isExpanded: false,
+
+              isDense: true,
+              icon: AppIcon(
+                Icons.keyboard_arrow_down_rounded,
+                color: iconColor,
+                size: 16,
               ),
-              
+              alignment: AlignmentDirectional.centerEnd,
+              iconSize: 16,
               decoration: InputDecoration(
                 fillColor: AppColors.transparent,
                 filled: false,
+
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
                 border: InputBorder.none,
-                contentPadding:
-                    EdgeInsets.symmetric(vertical: 12.0, horizontal: 16),
+                contentPadding: EdgeInsets.symmetric(
+                  vertical: 0.0,
+                  horizontal: 100,
+                ),
                 hintText: hint,
                 hintMaxLines: 1,
-                
+                isDense: true,
+                isCollapsed: true,
+
                 hintStyle: TextStyle(
                   fontSize: fontSize,
                   fontWeight: FontWeight.w400,
                   color: borderColor,
                 ),
               ),
+
               style: TextStyle(
                 fontSize: fontSize,
                 fontWeight: fontWeight,
+
                 color: AppColors.textColor,
               ),
               dropdownColor: AppColors.white,
               items: isEnabled ? items : [],
               onChanged: isEnabled ? onChanged : null,
             ),
-          ),
-          SizedBox(
-            height: hasBottomPadding ? 24 : 0,
           ),
         ],
       ),
@@ -108,10 +109,7 @@ class CustomDropdown<T> extends StatelessWidget {
       label: label,
       hasBottomPadding: hasBottomPadding,
       items: days.map((day) {
-        return DropdownMenuItem<int>(
-          value: day,
-          child: Text(day.toString()),
-        );
+        return DropdownMenuItem<int>(value: day, child: Text(day.toString()));
       }).toList(),
       onChanged: onChanged,
     );
@@ -124,24 +122,20 @@ class CustomDropdown<T> extends StatelessWidget {
     required Function(int?) onChanged,
   }) {
     // Generate days from 1 to 30 (can be adjusted as needed)
-    final List<int> days = [10,20,50,100];
+    final List<int> days = [10, 20, 50, 100];
 
     return CustomDropdown<int>(
       hint: hint,
       value: selectedValue,
       hasBottomPadding: false,
       items: days.map((day) {
-        return DropdownMenuItem<int>(
-          value: day,
-          child: Text(day.toString()),
-        );
+        return DropdownMenuItem<int>(value: day, child: Text(day.toString()));
       }).toList(),
       onChanged: onChanged,
     );
   }
-    
-    
-    static CustomDropdown<int> months({
+
+  static CustomDropdown<int> months({
     required String hint,
     required int? selectedValue,
     required Function(int?) onChanged,
@@ -157,14 +151,14 @@ class CustomDropdown<T> extends StatelessWidget {
       items: days.map((day) {
         return DropdownMenuItem<int>(
           value: day,
-          child: Text(DateFormat("MMMM").format(DateTime(2025,day))),
+          child: Text(DateFormat("MMMM").format(DateTime(2025, day))),
         );
       }).toList(),
       onChanged: onChanged,
     );
   }
 
-      static CustomDropdown<int> years({
+  static CustomDropdown<int> years({
     required String hint,
     required int? selectedValue,
     required Function(int?) onChanged,
@@ -178,10 +172,7 @@ class CustomDropdown<T> extends StatelessWidget {
       value: selectedValue,
       hasBottomPadding: hasBottomPadding,
       items: days.map((day) {
-        return DropdownMenuItem<int>(
-          value: day,
-          child: Text(day.toString()),
-        );
+        return DropdownMenuItem<int>(value: day, child: Text(day.toString()));
       }).toList(),
       onChanged: onChanged,
     );
@@ -196,7 +187,6 @@ class CustomDropdown<T> extends StatelessWidget {
     String label = "Number of Days",
     bool hasBottomPadding = true,
   }) {
-
     return CustomDropdown<String>(
       hint: hint,
       value: selectedValue,
@@ -205,6 +195,7 @@ class CustomDropdown<T> extends StatelessWidget {
       items: cities.map((day) {
         return DropdownMenuItem<String>(
           value: day,
+          alignment: AlignmentDirectional.centerEnd,
           child: Text(day.toString()),
         );
       }).toList(),

@@ -1,4 +1,5 @@
 import 'package:transborder_logistics/src/features/auth/auth_page.dart';
+import 'package:transborder_logistics/src/features/dashboard/views/admin/explorer.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/driver/driver_home.dart';
 import 'package:transborder_logistics/src/src_barrel.dart';
 import 'package:transborder_logistics/src/utils/constants/routes/middleware/auth_middleware.dart';
@@ -12,6 +13,6 @@ class AppPages {
       middlewares: [AuthMiddleWare()],
     ),
     GetPage(name: AppRoutes.auth, page: () => AuthScreen()),
-    GetPage(name: AppRoutes.dashboard, page: () => DriverExplorer()),
+    GetPage(name: AppRoutes.dashboard, page: () => AdminExplorer()),
   ];
 }

@@ -2,54 +2,123 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:transborder_logistics/src/features/dashboard/controllers/dashboard_controller.dart';
+import 'package:transborder_logistics/src/features/dashboard/views/admin/resource_history.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/shared.dart';
 import 'package:transborder_logistics/src/global/ui/widgets/others/containers.dart';
 import 'package:transborder_logistics/src/src_barrel.dart';
 
+import '../../../../global/model/barrel.dart';
 import '../../../../global/ui/ui_barrel.dart';
 
-class DriverHomePage extends StatelessWidget {
+class DriverHomePage extends StatefulWidget {
   const DriverHomePage({super.key});
 
   @override
+  State<DriverHomePage> createState() => _DriverHomePageState();
+}
+
+class _DriverHomePageState extends State<DriverHomePage> {
+  final controller = Get.find<DashboardController>();
+
+  @override
+  void initState() {
+    getCustomerDeliveries();
+    super.initState();
+  }
+
+  Future getCustomerDeliveries() async {
+    await controller.getCustomerDelivery();
+  }
+
+  Future refreshDeliveries() async {
+    await Get.showOverlay(
+      asyncFunction: () async {
+        await getCustomerDeliveries();
+      },
+      opacity: 0.8,
+      loadingWidget: const Center(child: CircularProgressIndicator()),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final controller = Get.find<DashboardController>();
     return Obx(() {
       if (controller.undeliveredDeliveries.isEmpty) {
         return Center(
           child: AppText.thin("No deliveries assigned yet", fontSize: 13),
         );
       }
-      return ListView.builder(
-        itemCount: controller.undeliveredDeliveries.length,
-        itemBuilder: (c, i) {
-          return DeliveryInfo(controller.undeliveredDeliveries[i]);
+      return RefreshScrollView(
+        onExtend: () async {},
+        onRefreshed: () async {
+          await refreshDeliveries();
         },
+        child: ListView.builder(
+          itemCount: controller.undeliveredDeliveries.length,
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          itemBuilder: (c, i) {
+            return DeliveryInfo(controller.undeliveredDeliveries[i]);
+          },
+        ),
       );
     });
   }
 }
 
-class DriverHistoryPage extends StatelessWidget {
+class DriverHistoryPage extends StatefulWidget {
   const DriverHistoryPage({super.key});
 
   @override
+  State<DriverHistoryPage> createState() => _DriverHistoryPageState();
+}
+
+class _DriverHistoryPageState extends State<DriverHistoryPage> {
+  final controller = Get.find<DashboardController>();
+
+  @override
+  void initState() {
+    getCustomerDeliveries();
+    super.initState();
+  }
+
+  Future getCustomerDeliveries() async {
+    await controller.getCustomerDelivery();
+  }
+
+  Future refreshDeliveries() async {
+    await Get.showOverlay(
+      asyncFunction: () async {
+        await getCustomerDeliveries();
+      },
+      opacity: 0.8,
+      loadingWidget: const Center(child: CircularProgressIndicator()),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final controller = Get.find<DashboardController>();
     return SinglePageScaffold(
       title: "History",
-      hasBack: false,
       child: Obx(() {
         if (controller.allDeliveries.isEmpty) {
           return Center(
             child: AppText.thin("No deliveries assigned yet", fontSize: 13),
           );
         }
-        return ListView.builder(
-          itemCount: controller.allDeliveries.length,
-          itemBuilder: (c, i) {
-            return DeliveryInfo(controller.allDeliveries[i]);
+        return RefreshScrollView(
+          onExtend: () async {},
+          onRefreshed: () async {
+            await refreshDeliveries();
           },
+          child: ListView.builder(
+            itemCount: controller.allDeliveries.length,
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            itemBuilder: (c, i) {
+              return DeliveryInfo(controller.allDeliveries[i]);
+            },
+          ),
         );
       }),
     );
@@ -76,33 +145,31 @@ class BottomNavBar extends StatelessWidget {
     );
   }
 
-  navItem(dynamic icon, int i) {
+  InkWell navItem(dynamic icon, int i) {
     return InkWell(
       onTap: () => controller.curMode.value = i,
-      child: Obx(
-         () {
-          return CircleAvatar(
-            radius: 20,
+      child: Obx(() {
+        return CircleAvatar(
+          radius: 20,
+          backgroundColor: i == controller.curMode.value
+              ? AppColors.primaryColor[100]!
+              : AppColors.borderColor,
+          child: CircleAvatar(
+            radius: 19.5,
             backgroundColor: i == controller.curMode.value
-                ? AppColors.primaryColor[100]!
-                : AppColors.borderColor,
-            child: CircleAvatar(
-              radius: 19.5,
-              backgroundColor:i == controller.curMode.value
                 ? AppColors.primaryColor
-                : Color(0xFFF7F7F7) ,
-              child: Center(
-                child: AppIcon(
-                  icon,
-                  color: i == controller.curMode.value
-                      ? AppColors.primaryColor[100]!
-                      : AppColors.lightTextColor,
-                ),
+                : Color(0xFFF7F7F7),
+            child: Center(
+              child: AppIcon(
+                icon,
+                color: i == controller.curMode.value
+                    ? AppColors.primaryColor[100]!
+                    : AppColors.lightTextColor,
               ),
             ),
-          );
-        }
-      ),
+          ),
+        );
+      }),
     );
   }
 }
@@ -113,21 +180,64 @@ class DriverExplorer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(
-       () {
-        return SinglePageScaffold(
-          title: controller.curMode.value == 0 ? "Pick Up" : "Profile",
-          hasBack: false,
-          child: Stack(
-            children: [
-              controller.curMode.value == 0
+    return Obx(() {
+      return SinglePageScaffold(
+        title: controller.curMode.value == 0 ? "Pick Up" : "Profile",
+        trailing: [
+          InkWell(
+            child: Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: AppIcon(HugeIcons.strokeRoundedNotification01),
+            ),
+            onTap: () {
+              // Get.to(DriverHistoryPage());
+              Get.to(
+                ResourceHistoryPage<Delivery>(
+                  "All Deliveries",
+                  controller.allDeliveries,
+                  filters: ["All", "New", "Ongoing", "Completed"],
+                  onFilter: (v, s) {
+                    if (s == "New") {
+                      v.value = List.from(controller.undeliveredDeliveries);
+                    } else if (s == "Ongoing") {
+                      v.value = List.from(
+                        controller.allDeliveries.where(
+                          (test) => test.hasStarted,
+                        ).toList()
+                      );
+                    } else if (s == "Completed") {
+                      v.value = List.from(
+                        controller.allDeliveries.where(
+                          (test) => test.isDelivered,
+                        ).toList()
+                      );
+                    }
+                  },
+                ),
+              );
+            },
+          ),
+        ],
+        hasBack: false,
+        child: Stack(
+          children: [
+            SizedBox(
+              height: Ui.height(context) - 72,
+              child: controller.curMode.value == 0
                   ? DriverHomePage()
                   : ProfilePage(),
-                  Positioned(child: BottomNavBar(),bottom: 24,)
-            ],
-          ),
-        );
-      }
-    );
+            ),
+            Positioned(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [BottomNavBar()],
+              ),
+              bottom: 24,
+              width: Ui.width(context),
+            ),
+          ],
+        ),
+      );
+    });
   }
 }

@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:transborder_logistics/src/global/services/barrel.dart';
 import 'package:transborder_logistics/src/global/ui/ui_barrel.dart';
+import 'package:transborder_logistics/src/global/ui/widgets/fields/custom_dropdown.dart';
+import 'package:transborder_logistics/src/global/ui/widgets/fields/custom_textfield.dart';
 import 'package:transborder_logistics/src/global/ui/widgets/others/containers.dart';
 import 'package:transborder_logistics/src/global/ui/widgets/others/others.dart';
 import 'package:transborder_logistics/src/src_barrel.dart';
@@ -18,6 +20,10 @@ class DeliveryInfo extends StatelessWidget {
     return CurvedContainer(
       border: Border.all(color: AppColors.borderColor),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      onPressed: () {
+        Get.to(WaybillDetailPage(delivery));
+      },
+      radius: 12,
       child: Column(
         children: [
           Ui.padding(
@@ -25,7 +31,7 @@ class DeliveryInfo extends StatelessWidget {
             child: Row(
               children: [
                 AppText.medium("#${delivery.waybill}", fontSize: 14),
-                const Spacer(),
+                Spacer(),
                 if (!delivery.hasStarted) WaybillStatusChip("New"),
                 if (delivery.isDelivered) WaybillStatusChip("Finished"),
                 if (delivery.hasStarted && !delivery.isDelivered)
@@ -36,20 +42,23 @@ class DeliveryInfo extends StatelessWidget {
                     child: WaybillStatusChip("Track"),
                   ),
                 if (delivery.hasStarted && !delivery.isDelivered)
+                  Ui.boxWidth(8),
+                if (delivery.hasStarted && !delivery.isDelivered)
                   WaybillStatusChip("Ongoing"),
               ],
             ),
           ),
           AppDivider(),
 
-          Ui.padding(
-            padding: 12,
+          Padding(
+            padding: EdgeInsetsGeometry.symmetric(vertical: 0, horizontal: 12),
             child: Row(
               children: [
                 Expanded(
                   child: InfoValue(
                     "Pick up location",
                     delivery.pickup ?? "N/A",
+                    isStart: true,
                   ),
                 ),
                 Ui.boxWidth(24),
@@ -60,11 +69,17 @@ class DeliveryInfo extends StatelessWidget {
             ),
           ),
 
-          Ui.padding(
-            padding: 12,
+          Padding(
+            padding: EdgeInsetsGeometry.symmetric(vertical: 12, horizontal: 12),
             child: Row(
               children: [
-                Expanded(child: InfoValue("Vehicle Reg No", delivery.truckno)),
+                Expanded(
+                  child: InfoValue(
+                    "Vehicle Reg No",
+                    delivery.truckno,
+                    isStart: true,
+                  ),
+                ),
                 Ui.boxWidth(24),
                 Expanded(child: InfoValue("Driver", delivery.driver)),
               ],
@@ -76,52 +91,127 @@ class DeliveryInfo extends StatelessWidget {
   }
 }
 
+class DriverInfo extends StatelessWidget {
+  const DriverInfo(this.user, {super.key});
+  final User user;
+
+  @override
+  Widget build(BuildContext context) {
+    return CurvedContainer(
+      border: Border.all(color: AppColors.borderColor),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: EdgeInsets.all(12),
+      onPressed: () {
+        // Get.to(WaybillDetailPage(delivery));
+      },
+      radius: 12,
+      child: Row(
+        children: [
+          CurvedImage("", w: 48, h: 48),
+          Ui.boxWidth(12),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppText.medium(user.name ?? "N/A", fontSize: 12),
+                AppText.thin(
+                  "Driver",
+                  fontSize: 10,
+                  color: AppColors.lightTextColor,
+                ),
+                AppText.medium(
+                  user.truckno ?? "N/A",
+                  fontSize: 10,
+                  color: AppColors.lightTextColor,
+                ),
+              ],
+            ),
+          ),
+          Ui.boxWidth(24),
+          DriverStatusChip("Available"),
+        ],
+      ),
+    );
+  }
+}
+
+class DriverStatusChip extends StatelessWidget {
+  const DriverStatusChip(this.title, {super.key});
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppChip(
+      title,
+      bgColors: [Color(0xFFE6FBEC), Color(0xFFFFEBEA), Color(0xFFE9F5FF)],
+      titles: ["Available", "Inactive", "Busy"],
+      titleColors: [Color(0xFF00D743), Color(0xFFFF3B30), Color(0xFF229EFF)],
+      icons: [
+        HugeIcons.strokeRoundedCheckmarkCircle02,
+        HugeIcons.strokeRoundedCancelCircle,
+        HugeIcons.strokeRoundedArrowLeftRight,
+      ],
+    );
+  }
+}
+
 class WaybillStatusChip extends StatelessWidget {
   const WaybillStatusChip(this.title, {super.key});
   final String title;
 
-  static List<String> status = [
-    "New",
-    "Track",
-    "Ongoing",
-    "Finished",
-    "Canceled",
-  ];
-  static List<dynamic> statusIcon = [
-    HugeIcons.strokeRoundedAlertCircle,
-    HugeIcons.strokeRoundedRoute03,
-    HugeIcons.strokeRoundedArrowLeftRight,
-    HugeIcons.strokeRoundedCheckmarkCircle02,
-    HugeIcons.strokeRoundedCancelCircle,
-  ];
-  static List<Color> statusTitleColor = [
-    Color(0xFFFFB400),
-    Color(0xFF229EFF),
-    Color(0xFF229EFF),
-    Color(0xFF00D743),
-    Color(0xFFFF3B30),
-  ];
-  static List<Color> statusTitleBg = [
-    Color(0xFFFFF8E6),
-    Color(0xFFE9F5FF),
-    Color(0xFFE9F5FF),
-    Color(0xFFE6FBEC),
-    Color(0xFFFFEBEA),
-  ];
+  @override
+  Widget build(BuildContext context) {
+    return AppChip(title);
+  }
+}
+
+class AppChip extends StatelessWidget {
+  const AppChip(
+    this.title, {
+    this.titles = const ["New", "Track", "Ongoing", "Finished", "Canceled"],
+    this.icons = const [
+      HugeIcons.strokeRoundedAlertCircle,
+      HugeIcons.strokeRoundedRoute03,
+      HugeIcons.strokeRoundedArrowLeftRight,
+      HugeIcons.strokeRoundedCheckmarkCircle02,
+      HugeIcons.strokeRoundedCancelCircle,
+    ],
+    this.titleColors = const [
+      Color(0xFFFFB400),
+      Color(0xFF229EFF),
+      Color(0xFF229EFF),
+      Color(0xFF00D743),
+      Color(0xFFFF3B30),
+    ],
+    this.bgColors = const [
+      Color(0xFFFFF8E6),
+      Color(0xFFE9F5FF),
+      Color(0xFFE9F5FF),
+      Color(0xFFE6FBEC),
+      Color(0xFFFFEBEA),
+    ],
+    super.key,
+  });
+  final String title;
+  final List<String> titles;
+  final List<dynamic> icons;
+  final List<Color> titleColors;
+  final List<Color> bgColors;
 
   @override
   Widget build(BuildContext context) {
-    final i = status.indexOf(title);
+    final i = titles.indexOf(title);
     return CurvedContainer(
-      color: statusTitleBg[i],
+      color: bgColors[i],
       radius: 24,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(statusIcon[i], size: 16, color: statusTitleColor[i]),
+          AppIcon(icons[i], size: 16, color: titleColors[i]),
           Ui.boxWidth(4),
-          AppText.medium(title, fontSize: 12, color: statusTitleColor[i]),
+          AppText.medium(title, fontSize: 12, color: titleColors[i]),
         ],
       ),
     );
@@ -143,6 +233,8 @@ class WaybillDetailPage extends StatelessWidget {
           children: [
             CurvedContainer(
               border: Border.all(color: AppColors.borderColor),
+              radius: 12,
+              margin: EdgeInsets.all(16),
               child: Column(
                 children: [
                   Ui.padding(
@@ -166,6 +258,8 @@ class WaybillDetailPage extends StatelessWidget {
                             child: WaybillStatusChip("Track"),
                           ),
                         if (delivery.hasStarted && !delivery.isDelivered)
+                          Ui.boxWidth(8),
+                        if (delivery.hasStarted && !delivery.isDelivered)
                           WaybillStatusChip("Ongoing"),
                       ],
                     ),
@@ -173,17 +267,46 @@ class WaybillDetailPage extends StatelessWidget {
                   Ui.align(
                     align: Alignment.centerRight,
                     child: SizedBox(
-                      width: Ui.width(context) - 56,
+                      width: Ui.width(context) - 88,
                       child: AppDivider(),
                     ),
                   ),
 
-                  Ui.padding(
-                    padding: 12,
+                  Padding(
+                    padding: EdgeInsetsGeometry.symmetric(
+                      vertical: 0,
+                      horizontal: 12,
+                    ),
                     child: Row(
                       children: [
                         Expanded(
-                          child: InfoValue("Trip", delivery.id.toString()),
+                          child: InfoValue(
+                            "Request Date",
+                            delivery.start,
+                            isStart: true,
+                          ),
+                        ),
+                        Ui.boxWidth(24),
+                        Expanded(
+                          child: InfoValue("Request By", delivery.owner),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  Padding(
+                    padding: EdgeInsetsGeometry.symmetric(
+                      vertical: 12,
+                      horizontal: 12,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: InfoValue(
+                            "Trip",
+                            delivery.id.toString(),
+                            isStart: true,
+                          ),
                         ),
                         Ui.boxWidth(24),
                         Expanded(
@@ -193,38 +316,66 @@ class WaybillDetailPage extends StatelessWidget {
                     ),
                   ),
 
-                  Ui.padding(
-                    padding: 12,
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: InfoValue("Trip", delivery.id.toString()),
-                        ),
-                        Ui.boxWidth(24),
-                        Expanded(
-                          child: InfoValue("Vehicle Reg No", delivery.truckno),
-                        ),
-                      ],
+                  Padding(
+                    padding: EdgeInsetsGeometry.symmetric(
+                      vertical: 0,
+                      horizontal: 12,
                     ),
-                  ),
-
-                  Ui.padding(
-                    padding: 12,
                     child: Row(
                       children: [
-                        Expanded(child: InfoValue("Driver", delivery.driver)),
+                        Expanded(
+                          child: InfoValue(
+                            "Driver",
+                            delivery.driver,
+                            isStart: true,
+                          ),
+                        ),
                         Ui.boxWidth(24),
                         CurvedImage("", w: 24, h: 24),
                       ],
                     ),
                   ),
 
-                  Ui.padding(
-                    padding: 12,
+                  Padding(
+                    padding: EdgeInsetsGeometry.symmetric(
+                      vertical: 12,
+                      horizontal: 12,
+                    ),
                     child: Row(
                       children: [
                         Expanded(
-                          child: InfoValue("Pick up Location", delivery.pickup),
+                          child: InfoValue(
+                            "Pick up Location",
+                            delivery.pickup,
+                            isStart: true,
+                          ),
+                        ),
+                        Ui.boxWidth(24),
+                        AppIcon(
+                          HugeIcons.strokeRoundedLocation05,
+                          color: delivery.hasStarted
+                              ? Color(0xFF229EFF)
+                              : AppColors.lightTextColor,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  Padding(
+                    padding: EdgeInsetsGeometry.only(
+                      top: 0,
+                      bottom: 12,
+                      left: 12,
+                      right: 12,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: InfoValue(
+                            "Delivery Location",
+                            delivery.stops[0],
+                            isStart: true,
+                          ),
                         ),
                         Ui.boxWidth(24),
                         AppIcon(
@@ -239,8 +390,52 @@ class WaybillDetailPage extends StatelessWidget {
                 ],
               ),
             ),
-            Ui.boxHeight(16),
             //items
+            if (delivery.items.isNotEmpty)
+              Padding(
+                padding: EdgeInsetsGeometry.only(
+                  top: 0,
+                  bottom: 12,
+                  left: 16,
+                  right: 16,
+                ),
+                child: AppContainer("ITEMS", [
+                  ...delivery.items.map(
+                    (e) => Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        AppText.medium(e[0], fontSize: 12),
+                        AppText.thin(
+                          e[1],
+                          fontSize: 10,
+                          color: AppColors.lightTextColor,
+                        ),
+                      ],
+                    ),
+                  ),
+                ]),
+              ),
+
+            if (delivery.items.isNotEmpty)
+              Padding(
+                padding: EdgeInsetsGeometry.only(
+                  top: 0,
+                  bottom: 12,
+                  left: 16,
+                  right: 16,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    AppText.thin(
+                      "TOTAL AMOUNT",
+                      fontSize: 10,
+                      color: AppColors.lightTextColor,
+                    ),
+                    AppText.medium(delivery.amt.toCurrency(), fontSize: 10),
+                  ],
+                ),
+              ),
             Ui.boxHeight(16),
             if (appService.currentUser.value.role == "admin")
               Row(
@@ -252,6 +447,59 @@ class WaybillDetailPage extends StatelessWidget {
                   Ui.boxWidth(16),
                   CircleIcon(HugeIcons.strokeRoundedPrinter),
                 ],
+              ),
+
+            if (appService.currentUser.value.role == "driver" &&
+                !delivery.isDelivered)
+              SizedBox(
+                width: Ui.width(context) / 3,
+                child: AppButton(
+                  onPressed: () {
+                    if (!delivery.hasStarted) {
+                      Get.bottomSheet(
+                        AppBottomSheet(
+                          "Confirm Start",
+                          "Confirm",
+                          msg: "Are you sure you want to start the trip",
+                        ),
+                      );
+                    } else {
+                      Get.bottomSheet(
+                        AppBottomSheet(
+                          "Confirm Delivery",
+                          "Confirm",
+                          onTap: () {
+                            Ui.showError("Hello World");
+                          },
+                          actions: [
+                            CustomTextField(
+                              "Add Name",
+                              TextEditingController(),
+                              label: "Name of receiver",
+                            ),
+                            CustomTextField(
+                              "Add Contact",
+                              TextEditingController(),
+                              label: "Contact",
+                            ),
+
+                            FieldValue(
+                              "Proof Image",
+                              child: InkWell(
+                                child: AppText.thin(
+                                  "Select image >",
+                                  color: AppColors.lightTextColor,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                  },
+                  text: !delivery.hasStarted ? "Start Trip" : "End Trip",
+                ),
               ),
           ],
         ),
@@ -279,15 +527,18 @@ class CircleIcon extends StatelessWidget {
 }
 
 class InfoValue extends StatelessWidget {
-  const InfoValue(this.label, this.value, {super.key});
+  const InfoValue(this.label, this.value, {this.isStart = false, super.key});
 
   final String label;
   final String? value;
+  final bool isStart;
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
+      crossAxisAlignment: isStart
+          ? CrossAxisAlignment.start
+          : CrossAxisAlignment.end,
 
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -304,19 +555,31 @@ class InfoValue extends StatelessWidget {
 }
 
 class AppContainer extends StatelessWidget {
-  const AppContainer(this.title, this.actions, {super.key});
+  const AppContainer(
+    this.title,
+    this.actions, {
+    this.isFull = false,
+    this.hasBorder=true,
+    super.key,
+  });
   final String title;
+  final bool isFull;
+  final bool hasBorder;
   final List<Widget> actions;
 
   @override
   Widget build(BuildContext context) {
     final div = Ui.align(
       align: Alignment.centerRight,
-      child: SizedBox(width: Ui.width(context) - 56, child: AppDivider()),
+      child: SizedBox(
+        width: Ui.width(context) - (isFull ? 0 : 72),
+        child: AppDivider(),
+      ),
     );
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        if(title.isNotEmpty)
         Ui.align(
           child: Padding(
             padding: const EdgeInsets.only(left: 24.0, bottom: 12),
@@ -328,14 +591,21 @@ class AppContainer extends StatelessWidget {
           ),
         ),
         CurvedContainer(
-          border: Border.all(color: AppColors.borderColor),
-          margin: EdgeInsets.symmetric(horizontal: 16),
+          border: hasBorder ? Border.all(color: AppColors.borderColor): null,
           radius: 12,
           child: ListView.separated(
             shrinkWrap: true,
             physics: NeverScrollableScrollPhysics(),
             itemBuilder: (c, i) {
-              return actions[i];
+              return Padding(
+                padding: EdgeInsets.only(
+                  top: i == 0 ? 12 : 8.0,
+                  bottom: i == actions.length - 1 ? 12 : 4,
+                  left: 8,
+                  right: 16,
+                ),
+                child: actions[i],
+              );
             },
             separatorBuilder: (c, i) {
               return div;
@@ -353,22 +623,34 @@ class AppContainerItem extends StatelessWidget {
     this.icon, {
     required this.title,
     required this.desc,
+    this.onTap,
+    this.color,
     super.key,
   });
   final dynamic icon;
+  final Color? color;
   final Widget title;
+  final VoidCallback? onTap;
   final Widget desc;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        AppIcon(icon),
-        Ui.boxWidth(12),
-        title,
-        Ui.boxWidth(12),
-        Expanded(child: desc),
-      ],
+    return InkWell(
+      onTap: onTap,
+      child: Row(
+        children: [
+          AppIcon(icon, color: color ?? AppColors.lightTextColor, size: 16),
+          Ui.boxWidth(12),
+          title,
+          Ui.boxWidth(12),
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [desc],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -377,6 +659,14 @@ class AppContainerItem extends StatelessWidget {
       icon,
       title: AppText.medium(title, fontSize: 14),
       desc: AppText.thin(desc, fontSize: 12, color: AppColors.lightTextColor),
+    );
+  }
+
+  static AppContainerItem icony(dynamic icon, String title) {
+    return AppContainerItem(
+      icon,
+      title: AppText.medium(title, fontSize: 14),
+      desc: AppIcon(HugeIcons.strokeRoundedArrowUpRight03),
     );
   }
 }
@@ -424,36 +714,186 @@ class ProfilePage extends StatelessWidget {
           ]),
           Ui.boxHeight(24),
           AppContainer("ABOUT", [
-            AppContainerItem.icon(
+            AppContainerItem.icony(
               HugeIcons.strokeRoundedHelpCircle,
-              "Full Name",
-              appService.currentUser.value.name ?? "N/A",
+              "Help Center",
             ),
-            AppContainerItem.icon(
-              HugeIcons.left,
-              "Email",
-              appService.currentUser.value.email ?? "N/A",
+            AppContainerItem.icony(
+              HugeIcons.strokeRoundedLeftToRightListBullet,
+              "Terms Of Use",
             ),
-            AppContainerItem.icon(
+            AppContainerItem.icony(
               HugeIcons.strokeRoundedMail01,
-              "Account Type",
-              appService.currentUser.value.role.capitalize ?? "",
+              "Privacy Policy",
             ),
-            AppContainerItem.text(
-              HugeIcons.strokeRoundedMail01,
-              "Contact",
-              appService.currentUser.value.phone ?? "N/A",
-            ),
-            if (appService.currentUser.value.role == "driver")
-              AppContainerItem.text(
-                HugeIcons.strokeRoundedMail01,
-                "Truck Reg No",
-                appService.currentUser.value.truckno ?? "N/A",
-              ),
-            // AppContainerItem.text(HugeIcons.strokeRoundedMail01, "Email", appService.currentUser.value.email ?? "N/A"),
           ]),
+          Ui.boxHeight(24),
+          AppContainer("EXIT", [
+            AppContainerItem(
+              HugeIcons.strokeRoundedDoor01,
+              title: AppText.medium(
+                "Log Out",
+                color: AppColors.primaryColor,
+                fontSize: 14,
+              ),
+              desc: SizedBox(),
+              color: AppColors.primaryColor,
+              onTap: () async {
+                await appService.logout();
+                Get.offAllNamed(AppRoutes.auth);
+              },
+            ),
+          ]),
+          Ui.boxHeight(72),
         ],
       ),
+    );
+  }
+}
+
+class AppBottomSheet extends StatelessWidget {
+  const AppBottomSheet(
+    this.title,
+    this.btnText, {
+    this.onTap,
+    this.actions = const [],
+    this.msg,
+    super.key,
+  });
+  final String title, btnText;
+  final String? msg;
+  final VoidCallback? onTap;
+  final List<Widget> actions;
+
+  @override
+  Widget build(BuildContext context) {
+    return CurvedContainer(
+      borderRadius: BorderRadius.only(
+        topLeft: Radius.circular(12),
+        topRight: Radius.circular(12),
+      ),
+      padding: EdgeInsets.all(16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AppText.medium(title),
+          Ui.boxHeight(24),
+          if (msg != null)
+            AppText.thin(msg!, fontSize: 12, color: AppColors.lightTextColor),
+          if (actions.isNotEmpty) AppContainer("", actions, isFull: true),
+          Row(),
+          Ui.boxHeight(24),
+          SizedBox(
+            width: Ui.width(context) / 3,
+            child: AppButton(onPressed: onTap, text: btnText),
+          ),
+          Ui.boxHeight(24),
+        ],
+      ),
+    );
+  }
+}
+
+class FieldValue extends StatelessWidget {
+  const FieldValue(this.title, {required this.child, super.key});
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(0.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [AppText.medium(title, fontSize: 14), child],
+      ),
+    );
+  }
+}
+
+class AddResource<T> extends StatelessWidget {
+  const AddResource(this.title, {super.key});
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final List<TextEditingController> tecs = List.generate(
+      10,
+      (i) => TextEditingController(),
+    );
+    return AppBottomSheet(
+      "Add $title",
+      "Add",
+      onTap: () {},
+      actions: [
+        //USER
+        if (T == User && title.toLowerCase() == "user")
+          CustomTextField("Add user", tecs[0], label: "Name"),
+        if (T == User && title.toLowerCase() == "user")
+          CustomTextField("Add email", tecs[1], label: "Email"),
+        if (T == User && title.toLowerCase() == "user")
+          CustomTextField("Add phone", tecs[2], label: "Phone"),
+        if (T == User && title.toLowerCase() == "user")
+          CustomDropdown.city(
+            cities: ["driver", "admin", "operator"],
+            hint: "Add account type",
+            label: "Account type",
+            selectedValue: "driver",
+            onChanged: (v) {},
+          ),
+        if (T == User && title.toLowerCase() == "user")
+          CustomDropdown.city(
+            cities: ["Kano", "Kaduna"],
+            hint: "Add location",
+            label: "Location",
+            selectedValue: "Kano",
+            onChanged: (v) {},
+          ),
+
+        //DRIVER
+        if (T == User && title.toLowerCase() == "driver")
+          CustomTextField("Add name", tecs[0], label: "Name"),
+        if (T == User && title.toLowerCase() == "driver")
+          CustomTextField("Add email", tecs[1], label: "Email"),
+        if (T == User && title.toLowerCase() == "driver")
+          CustomTextField("Add phone", tecs[2], label: "Phone"),
+        if (T == User && title.toLowerCase() == "driver")
+          CustomDropdown.city(
+            cities: ["Kano", "Kaduna"],
+            hint: "Add location",
+            label: "Location",
+            selectedValue: "Kano",
+            onChanged: (v) {},
+          ),
+
+        //Location
+        if (T == Location && title.toLowerCase() == "facility")
+          CustomTextField("Add name", tecs[0], label: "Name"),
+        if (T == Location && title.toLowerCase() == "facility")
+          CustomTextField("Add address", tecs[1], label: "Address"),
+        if (T == Location && title.toLowerCase() == "facility")
+          CustomDropdown.city(
+            cities: ["Kano", "Kaduna"],
+            hint: "Add State",
+            label: "State",
+            selectedValue: "Kano",
+            onChanged: (v) {},
+          ),
+
+        //Location
+        if (T == Location && title.toLowerCase() == "pickup")
+          CustomTextField("Add name", tecs[0], label: "Name"),
+        if (T == Location && title.toLowerCase() == "pickup")
+          CustomTextField("Add address", tecs[1], label: "Address"),
+        if (T == Location && title.toLowerCase() == "pickup")
+          CustomDropdown.city(
+            cities: ["Kano", "Kaduna"],
+            hint: "Add State",
+            label: "State",
+            selectedValue: "Kano",
+            onChanged: (v) {},
+          ),
+      ],
     );
   }
 }

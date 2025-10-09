@@ -29,6 +29,8 @@ class User {
   List<String> get tableValue =>
       [name ?? "", phone ?? "", location ?? "", role, truckno ?? ""];
 
+      String get slug => "$name,$phone,$email,$location,$truckno,$role";
+
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json["id"],
@@ -81,6 +83,8 @@ class Delivery {
   DateTime createdAt;
   List<String> stops,picture;
   List<DateTime?> stopsDate;
+  List<List<String>> items;
+  double amt;
   String? pickup;
 
   bool get isDelivered => stopsDate.isNotEmpty && stopsDate.length == stops.length && !stopsDate.contains(null);
@@ -92,6 +96,8 @@ class Delivery {
   static List<String> get tableTitle => ["Waybill", "Creator","Driver","Pickup","Stops", "Created At", "Start Date","End Date"];
   List<String> get tableValue => [waybill,owner ?? "",driver ?? "",pickup ?? "",stops[0],created,start, isDelivered ? formattedStopsDate[0] ?? "" : ""];
 
+String get slug => "$waybill,$driver,$owner,$pickup,${stops.toString()},$truckno,${items.toString()}";
+
   Delivery({
     this.id = 0,
     this.waybill = "",
@@ -100,10 +106,12 @@ class Delivery {
     this.driver,this.pickup,
     this.startDate,
     this.owner,
+    this.amt=0,
     this.truckno,
     this.ownerId=0,
     this.stops=const [],
     this.stopsDate=const [],
+    this.items=const [],
     required this.createdAt,
   });
 
@@ -116,6 +124,7 @@ class Delivery {
       pickup: json["pickup"],
       driver: json["drivername"],
       owner: json["ownername"],
+      amt: json["amount"] ?? 0,
       truckno: json["truckno"] ?? "",
       picture: json["picture"] == null ? [] : (jsonDecode(json["picture"]) as List<dynamic>?)
           ?.map((e) => (e.toString()))
@@ -124,6 +133,9 @@ class Delivery {
       startDate: DateTime.tryParse(json["startdate"] ?? ""),
       stops: json["stops"] == null ? [] : (jsonDecode(json["stops"]) as List<dynamic>?)
           ?.map((e) => (e.toString()))
+          .toList() ?? [],
+          items: json["items"] == null ? [] : (jsonDecode(json["items"]) as List<dynamic>?)
+          ?.map((e) => (e as List<dynamic>).map((e) => e.toString()).toList())
           .toList() ?? [],
       stopsDate: json["stopsdate"] ==  null ? []: (jsonDecode(json["stopsdate"]) as List<dynamic>?)
           ?.map((e) => (e == null || e == "" || e == "null") ? null:DateTime.parse(e))

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:hugeicons/hugeicons.dart';
 import '/src/app/app_barrel.dart';
 import '/src/global/ui/ui_barrel.dart';
 
 AppBar backAppBar(
     {String? title,
     Widget? titleWidget,
+    Widget? leading,
     Color color = AppColors.textColor,
     Color bgColor = AppColors.transparent,
     bool hasBack = true,
@@ -19,6 +21,7 @@ AppBar backAppBar(
       elevation: 0,
       // shadowColor: Color(0xFFE80976).withOpacity(0.05),
       centerTitle: true,
+      forceMaterialTransparency: true,
       actions: trailing ?? [],
       leadingWidth: hasBack ? 56 : 28,
       leading: hasBack
@@ -27,10 +30,10 @@ AppBar backAppBar(
                   onPressed: () {
                     Get.back();
                   },
-                  icon: Icon(
-                    Icons.arrow_back_ios_rounded,
+                  icon: AppIcon(
+                    HugeIcons.strokeRoundedArrowLeft02,
                     color: color,
                   ));
             })
-          : SizedBox());
+          : leading ??SizedBox());
 }

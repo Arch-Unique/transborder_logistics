@@ -128,7 +128,7 @@ class _AppButtonState extends State<AppButton> {
             )
           : Container(
               padding: const EdgeInsets.symmetric(
-                vertical: 12,
+                vertical: 14,
               ),
               width: widget.isWide
                   ? double.maxFinite
@@ -138,6 +138,7 @@ class _AppButtonState extends State<AppButton> {
                     ? widget.child ??
                         AppText.button(
                           widget.text!,
+                          fontSize: 14,
                           alignment: TextAlign.center,
                           color: widget.borderColor != null
                               ? widget.borderColor!

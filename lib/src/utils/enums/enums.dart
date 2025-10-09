@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:icons_plus/icons_plus.dart';
 
 import '../utils_barrel.dart';
@@ -41,76 +42,6 @@ enum AuthMode {
       this.title, this.desc, this.after, this.afterAction, this.thirdparty);
 }
 
-enum SuccessPagesMode {
-  password("Password reset link sent",
-      "Check your emails for the link sent to reset your Biko account password"),
-  register("Confirm your account",
-      "Check your emails for the link sent to confirm your Biko account");
-
-  final String title, desc;
-  const SuccessPagesMode(this.title, this.desc);
-}
-
-enum ThirdPartyTypes {
-  facebook(Brands.facebook_f),
-  google(Brands.google),
-  apple(Brands.apple_logo);
-
-  final String logo;
-  const ThirdPartyTypes(this.logo);
-}
-
-// enum DashboardMode {
-//   home("Home", Assets.home2),
-//   facility("Facilities", Assets.chartOxy7),
-//   profile("Profile", Assets.profilehome);
-
-//   final String title, icon;
-//   const DashboardMode(this.title, this.icon);
-// }
-
-// enum ProfileActions {
-//   myprofile("My Profile", Assets.profile11),
-//   favourites("Favourites", Assets.star77),
-//   donation("Donations History", Assets.calendar63),
-//   settings("Settings", Assets.setting44),
-//   logout("Log Out", Assets.logout03),
-//   delete("Delete Account", Assets.close85);
-
-//   final String title, icon;
-//   const ProfileActions(this.title, this.icon);
-// }
-
-// enum SettingsAction {
-//   dynamicCard("Dynamic Card", Assets.dynamiccard),
-//   changePassword("Change Password", Assets.changepassword);
-
-//   final String title, icon;
-//   const SettingsAction(this.title, this.icon);
-// }
-
-enum FixedAccts {
-  usd("USD", Flags.united_states_of_america, "Biko for Mums", "Wema Bank",
-      "0123456789"),
-  ngn("NGN", Flags.nigeria, "Biko for Mums", "Wema Bank", "0123456789");
-
-  final String name, bankName, bank, bankAcct, flag;
-  const FixedAccts(
-      this.name, this.flag, this.bankName, this.bank, this.bankAcct);
-}
-
-enum CurrencyIcon {
-  usd(FontAwesome.dollar_sign_solid),
-  ngn(FontAwesome.naira_sign_solid),
-  gbp(FontAwesome.sterling_sign_solid),
-  eur(FontAwesome.euro_sign_solid),
-  jpy(FontAwesome.yen_sign_solid),
-  inr(FontAwesome.indian_rupee_sign_solid);
-
-  final FontAwesomeIconData icon;
-  const CurrencyIcon(this.icon);
-}
-
 enum ErrorTypes {
   noInternet(Icons.wifi_tethering_off_rounded, "No Internet Connection",
       "Please check your internet connection and try again"),
@@ -126,13 +57,18 @@ enum ErrorTypes {
   const ErrorTypes(this.icon, this.title, this.desc);
 }
 
-enum PatientCategory {
-  all("All"),
-  prenatal("Prenatal"),
-  antenatal("Antenatal"),
-  postpartum("PostPartum"),
-  delivery("Delivery");
+enum DashboardMode {
+  dashboard("Dashboard",HugeIcons.strokeRoundedDashboardSquare02),
+  trips("Trips",HugeIcons.strokeRoundedBus03),
+  users("Users",HugeIcons.strokeRoundedUser),
+  drivers("Drivers",HugeIcons.strokeRoundedUserMultiple02),
+  vehicles("Vehicles",HugeIcons.strokeRoundedCar01),
+  facilities("Facilities",HugeIcons.strokeRoundedBuilding05),
+  pickups("Loading Points",HugeIcons.strokeRoundedShippingLoading),
+  location("Location",HugeIcons.strokeRoundedLocation05);
+  
 
   final String name;
-  const PatientCategory(this.name);
+  final dynamic icon;
+  const DashboardMode(this.name,this.icon);
 }
