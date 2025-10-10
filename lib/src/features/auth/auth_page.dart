@@ -60,11 +60,14 @@ class _AuthScreenState extends State<AuthScreen> {
               radius: 12,
               child: Column(
                 children: [
-                  CustomTextField(
-                    "johndoe@gmail.com",
-                    controller.textControllers[0],
-                    prefix: HugeIcons.strokeRoundedMail01,
-                    label: "Email",
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0,bottom: 4),
+                    child: CustomTextField(
+                      "johndoe@gmail.com",
+                      controller.textControllers[0],
+                      prefix: HugeIcons.strokeRoundedMail01,
+                      label: "Email",
+                    ),
                   ),
                   Ui.align(
                     align: Alignment.centerRight,
@@ -73,12 +76,15 @@ class _AuthScreenState extends State<AuthScreen> {
                       child: AppDivider(),
                     ),
                   ),
-                  CustomTextField(
-                    "Password",
-                    controller.textControllers[1],
-                    prefix: HugeIcons.strokeRoundedLockPassword,
-                    label: "Password",
-                    varl: FPL.password,
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: CustomTextField(
+                      "Password",
+                      controller.textControllers[1],
+                      prefix: HugeIcons.strokeRoundedLockPassword,
+                      label: "Password",
+                      varl: FPL.password,
+                    ),
                   ),
                 ],
               ),

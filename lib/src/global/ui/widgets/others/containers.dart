@@ -1,3 +1,4 @@
+import 'package:hugeicons/hugeicons.dart';
 import 'package:transborder_logistics/src/global/model/loading.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
@@ -104,7 +105,8 @@ class _CurvedContainerState extends State<CurvedContainer>
           clipBehavior: widget.shouldClip ? Clip.hardEdge : Clip.none,
           padding: widget.padding,
           decoration: BoxDecoration(
-            borderRadius: widget.borderRadius ?? Ui.circularRadius(widget.radius),
+            borderRadius:
+                widget.borderRadius ?? Ui.circularRadius(widget.radius),
             color: widget.color,
             border: widget.border,
             image: widget.image == null
@@ -124,22 +126,45 @@ class _CurvedContainerState extends State<CurvedContainer>
 
 class SinglePageScaffold extends StatelessWidget {
   final String? title;
-  final Widget? child;
-  final bool safeArea,hasBack;
+  final Widget? child, drawer;
+  final bool safeArea, hasBack;
   final List<Widget>? trailing;
   const SinglePageScaffold({
     this.title,
     this.child,
-    this.hasBack=true,
+    this.hasBack = true,
     this.safeArea = false,
     this.trailing,
+    this.drawer,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
+    final gkey = GlobalKey<ScaffoldState>();
     return Scaffold(
-      appBar: backAppBar(title: title,hasBack: hasBack,trailing: trailing),
+      key: gkey,
+      appBar: backAppBar(
+        title: title,
+        hasBack: hasBack,
+        trailing: trailing,
+        leading: drawer == null
+            ? null
+            : InkWell(
+                onTap: () {
+                  //open drawer
+                  gkey.currentState?.openDrawer();
+                },
+                child: Padding(
+                  padding: EdgeInsets.only(left: 8.0, right: 8),
+                  child: AppIcon(
+                    HugeIcons.strokeRoundedMenu02,
+                    color: AppColors.darkTextColor,
+                  ),
+                ),
+              ),
+      ),
+      drawer: drawer,
       body: safeArea ? SafeArea(child: child!) : child,
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:icons_plus/icons_plus.dart';
 
+import '../../global/model/barrel.dart';
 import '../utils_barrel.dart';
 
 enum PasswordStrength {
@@ -58,17 +59,18 @@ enum ErrorTypes {
 }
 
 enum DashboardMode {
-  dashboard("Dashboard",HugeIcons.strokeRoundedDashboardSquare02),
-  trips("Trips",HugeIcons.strokeRoundedBus03),
-  users("Users",HugeIcons.strokeRoundedUser),
-  drivers("Drivers",HugeIcons.strokeRoundedUserMultiple02),
-  vehicles("Vehicles",HugeIcons.strokeRoundedCar01),
-  facilities("Facilities",HugeIcons.strokeRoundedBuilding05),
-  pickups("Loading Points",HugeIcons.strokeRoundedShippingLoading),
-  location("Location",HugeIcons.strokeRoundedLocation05);
+  dashboard("Dashboard",HugeIcons.strokeRoundedDashboardSquare02,["All"]),
+  trips("Trips",HugeIcons.strokeRoundedBus03,["All","Ongoing","Finished"]),
+  users("Users",HugeIcons.strokeRoundedUser,["All","Driver","Admin","Operator"]),
+  drivers("Drivers",HugeIcons.strokeRoundedUserMultiple02,["All","Available","Busy","Inactive"]),
+  vehicles("Vehicles",HugeIcons.strokeRoundedCar01,["All"]),
+  facilities("Facilities",HugeIcons.strokeRoundedBuilding05,["All"]),
+  pickups("Loading Points",HugeIcons.strokeRoundedShippingLoading,["All"]),
+  location("Location",HugeIcons.strokeRoundedLocation05,["All"]);
   
 
   final String name;
   final dynamic icon;
-  const DashboardMode(this.name,this.icon);
+  final List<String> filters;
+  const DashboardMode(this.name,this.icon,this.filters);
 }

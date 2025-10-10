@@ -1024,7 +1024,7 @@ class AppIcon extends StatelessWidget {
     return asset is String
         ? asset.endsWith(".svg")
               ? SvgIcon(asset, size: size, color: color)
-              : UniversalImage(asset, width: 24, height: 24)
+              : UniversalImage(asset, width: size, height: size)
         : asset is List<List<dynamic>> ? HugeIcon(icon: asset,size: size,color: color,) : Icon(asset, size: size, color: color);
   }
 }

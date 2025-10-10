@@ -104,7 +104,7 @@ class CustomTextField extends StatelessWidget {
                     if (varl == FPL.money) ThousandsFormatter(),
                     // if (varl == FPL.dateExpiry) DateInputFormatter()
                   ],
-                  
+
                   validator: shdValidate
                       ? (value) {
                           // setState(() {
@@ -123,7 +123,7 @@ class CustomTextField extends StatelessWidget {
                         }
                       : null,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
-                  errorBuilder: (_,__) => SizedBox(),
+                  errorBuilder: (_, __) => SizedBox(),
                   style: TextStyle(fontSize: fs, fontWeight: fw, color: col),
                   obscureText: varl == FPL.password && isShow,
                   textAlignVertical: varl == FPL.multi
@@ -136,9 +136,6 @@ class CustomTextField extends StatelessWidget {
                     border: InputBorder.none,
                     counter: SizedBox.shrink(),
 
-                    suffixIconConstraints: suffix != null
-                        ? BoxConstraints(minWidth: 24, minHeight: 24)
-                        : null,
                     isDense: true,
                     // prefixIcon: prefix != null ? Padding(
                     //             padding: const EdgeInsets.only(left: 8.0),
@@ -155,37 +152,6 @@ class CustomTextField extends StatelessWidget {
                       vertical: 0.0,
                       horizontal: 12,
                     ),
-                    suffixIcon: suffix != null
-                        ? Padding(
-                            padding: const EdgeInsets.only(right: 16.0),
-                            child: AppIcon(
-                              suffix,
-                              color:
-                                  // hasTouched
-                                  //     ? AppColors.textColor
-                                  //     :
-                                  iconColor,
-                            ),
-                          )
-                        : varl == FPL.password
-                        ? IconButton(
-                            onPressed: () {
-                              setState(() {
-                                isShow = !isShow;
-                              });
-                            },
-                            icon: AppIcon(
-                              isShow
-                                  ? Iconsax.eye_outline
-                                  : Iconsax.eye_slash_outline,
-                              color:
-                                  // hasTouched
-                                  //     ? AppColors.textColor
-                                  //     :
-                                  AppColors.disabledColor,
-                            ),
-                          )
-                        : null,
                     hintText: hint,
                     hintStyle: TextStyle(
                       fontSize: fs,
@@ -207,6 +173,41 @@ class CustomTextField extends StatelessWidget {
               //           child: AppText.thin("$vald",
               //               fontSize: 12, color: AppColors.red),
               //         ))
+              suffix != null
+                  ? Padding(
+                      padding: const EdgeInsets.only(left: 8),
+                      child: AppIcon(
+                        suffix,
+                        color:
+                            // hasTouched
+                            //     ? AppColors.textColor
+                            //     :
+                            iconColor,
+                      ),
+                    )
+                  : varl == FPL.password
+                  ? Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: InkWell(
+                        onTap: () {
+                          setState(() {
+                            isShow = !isShow;
+                          });
+                        },
+                        child: AppIcon(
+                          size: 24,
+                          isShow
+                              ? Iconsax.eye_outline
+                              : Iconsax.eye_slash_outline,
+                          color:
+                              // hasTouched
+                              //     ? AppColors.textColor
+                              //     :
+                              AppColors.disabledColor,
+                        ),
+                      ),
+                  )
+                  : SizedBox(),
             ],
           ),
         );

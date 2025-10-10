@@ -8,7 +8,9 @@ import '../repository/app_repo.dart';
 class DashboardController extends GetxController {
   RxList<User> allCustomers = <User>[].obs;
   RxList<User> allDrivers = <User>[].obs;
-  RxList<User> alLAdmins = <User>[].obs;
+  RxList<User> allAdmins = <User>[].obs;
+  RxList<User> allOperators = <User>[].obs;
+
   RxList<Delivery> allDeliveries = <Delivery>[].obs;
   RxList<Location> allLocation = <Location>[].obs;
   RxList<Delivery> allCustomerDeliveries = <Delivery>[].obs;
@@ -23,11 +25,14 @@ class DashboardController extends GetxController {
 
   RxInt curMode = 0.obs;
   final appRepo = Get.find<AppRepo>();
+  final isLoading = false.obs;
 
   Future<void> initApp() async {
+    isLoading.value = true;
     await getAllCustomerDelivery();
     await getAllCustomers();
     await getLocations();
+    isLoading.value = false;
   }
 
   void gotoNextPage() {
@@ -132,7 +137,10 @@ class DashboardController extends GetxController {
     allDrivers.value = allCustomers
         .where((test) => test.role == "driver")
         .toList();
-    alLAdmins.value = allCustomers.where((test) => test.isAdmin).toList();
+    allOperators.value = allCustomers
+        .where((test) => test.role == "operator")
+        .toList();
+    allAdmins.value = allCustomers.where((test) => test.isAdmin).toList();
     return true;
   }
 
@@ -208,5 +216,51 @@ class DashboardController extends GetxController {
   Future changeLocation(String v) async {
     curLoc.value = v;
     await initApp();
+  }
+
+  //filters
+  void getFilters<T>(RxList<T> v, String s, String title) {
+    if (T == Delivery) {
+      if (s == "New") {
+        v.value = List.from(undeliveredDeliveries);
+      } else if (s == "Ongoing") {
+        v.value = List.from(
+          allDeliveries.where((test) => test.hasStarted).toList(),
+        );
+      } else if (s == "Completed") {
+        v.value = List.from(
+          allDeliveries.where((test) => test.isDelivered).toList(),
+        );
+      }
+    } else if (T == User && title.toLowerCase() == "users") {
+      if (s == "Driver") {
+        v.value = List.from(allDrivers);
+      } else if (s == "Admin") {
+        v.value = List.from(allAdmins);
+      } else if (s == "Operator") {
+        v.value = List.from(allOperators);
+      }
+    }else if (T == User && title.toLowerCase() == "drivers") {
+      if (s == "Available") {
+        v.value = List.from(allDrivers);
+      } else if (s == "Busy") {
+        v.value = List.from(allDrivers);
+      } else if (s == "Inactive") {
+        v.value = List.from(allDrivers);
+      }
+    }else if (T == Location && title.toLowerCase() == "facilities") {
+      if (s == "Active") {
+        v.value = List.from(allLocation);
+      } else if (s == "Inactive") {
+        v.value = List.from(allLocation);
+      }
+    }else if (T == Location && title.toLowerCase() == "loading points") {
+      if (s == "Active") {
+        v.value = List.from(allLocation);
+      } else if (s == "Inactive") {
+        v.value = List.from(allLocation);
+      }
+    }
+
   }
 }

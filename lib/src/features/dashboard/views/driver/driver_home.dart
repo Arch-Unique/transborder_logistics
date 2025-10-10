@@ -197,21 +197,7 @@ class DriverExplorer extends StatelessWidget {
                   controller.allDeliveries,
                   filters: ["All", "New", "Ongoing", "Completed"],
                   onFilter: (v, s) {
-                    if (s == "New") {
-                      v.value = List.from(controller.undeliveredDeliveries);
-                    } else if (s == "Ongoing") {
-                      v.value = List.from(
-                        controller.allDeliveries.where(
-                          (test) => test.hasStarted,
-                        ).toList()
-                      );
-                    } else if (s == "Completed") {
-                      v.value = List.from(
-                        controller.allDeliveries.where(
-                          (test) => test.isDelivered,
-                        ).toList()
-                      );
-                    }
+                    controller.getFilters(v, s, "");
                   },
                 ),
               );

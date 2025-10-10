@@ -558,12 +558,12 @@ class AppContainer extends StatelessWidget {
   const AppContainer(
     this.title,
     this.actions, {
-    this.isFull = false,
-    this.hasBorder=true,
+    this.margin = 36,
+    this.hasBorder = true,
     super.key,
   });
   final String title;
-  final bool isFull;
+  final double margin;
   final bool hasBorder;
   final List<Widget> actions;
 
@@ -571,27 +571,27 @@ class AppContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     final div = Ui.align(
       align: Alignment.centerRight,
-      child: SizedBox(
-        width: Ui.width(context) - (isFull ? 0 : 72),
+      child: Padding(
+        padding: EdgeInsetsGeometry.only(left: margin),
         child: AppDivider(),
       ),
     );
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if(title.isNotEmpty)
-        Ui.align(
-          child: Padding(
-            padding: const EdgeInsets.only(left: 24.0, bottom: 12),
-            child: AppText.medium(
-              title,
-              fontSize: 10,
-              color: AppColors.lightTextColor,
+        if (title.isNotEmpty)
+          Ui.align(
+            child: Padding(
+              padding: const EdgeInsets.only(left: 24.0, bottom: 12),
+              child: AppText.medium(
+                title,
+                fontSize: 10,
+                color: AppColors.lightTextColor,
+              ),
             ),
           ),
-        ),
         CurvedContainer(
-          border: hasBorder ? Border.all(color: AppColors.borderColor): null,
+          border: hasBorder ? Border.all(color: AppColors.borderColor) : null,
           radius: 12,
           child: ListView.separated(
             shrinkWrap: true,
@@ -713,6 +713,37 @@ class ProfilePage extends StatelessWidget {
             // AppContainerItem.text(HugeIcons.strokeRoundedMail01, "Email", appService.currentUser.value.email ?? "N/A"),
           ]),
           Ui.boxHeight(24),
+          AppContainer("CHANGE PIN", [
+            AppContainerItem(
+              HugeIcons.strokeRoundedLockPassword,
+              title: AppText.medium("Reset PIN", fontSize: 14),
+              desc: SizedBox(),
+              onTap: () async {
+                Get.bottomSheet(
+                  AppBottomSheet(
+                    "Reset PIN",
+                    "Reset",
+                    onTap: () async {},
+                    actions: [
+                      CustomTextField(
+                        "****",
+                        TextEditingController(),
+                        varl: FPL.password,
+                        label: "New PIN",
+                      ),
+                      CustomTextField(
+                        "****",
+                        TextEditingController(),
+                        varl: FPL.password,
+                        label: "Confirm PIN",
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ]),
+          Ui.boxHeight(24),
           AppContainer("ABOUT", [
             AppContainerItem.icony(
               HugeIcons.strokeRoundedHelpCircle,
@@ -739,8 +770,17 @@ class ProfilePage extends StatelessWidget {
               desc: SizedBox(),
               color: AppColors.primaryColor,
               onTap: () async {
-                await appService.logout();
-                Get.offAllNamed(AppRoutes.auth);
+                Get.bottomSheet(
+                  AppBottomSheet(
+                    "Log Out",
+                    "Confirm",
+                    msg: "Are you sure you want to log out ?",
+                    onTap: () async {
+                      await appService.logout();
+                      Get.offAllNamed(AppRoutes.auth);
+                    },
+                  ),
+                );
               },
             ),
           ]),
@@ -780,7 +820,7 @@ class AppBottomSheet extends StatelessWidget {
           Ui.boxHeight(24),
           if (msg != null)
             AppText.thin(msg!, fontSize: 12, color: AppColors.lightTextColor),
-          if (actions.isNotEmpty) AppContainer("", actions, isFull: true),
+          if (actions.isNotEmpty) AppContainer("", actions, margin: 0),
           Row(),
           Ui.boxHeight(24),
           SizedBox(
