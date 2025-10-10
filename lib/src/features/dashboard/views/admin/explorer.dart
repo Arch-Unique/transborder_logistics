@@ -21,9 +21,12 @@ class AdminExplorer extends StatelessWidget {
             //open drawer
             gkey.currentState?.openDrawer();
           },
-          child: AppIcon(
-            HugeIcons.strokeRoundedMenu02,
-            color: AppColors.darkTextColor,
+          child: Padding(
+            padding: EdgeInsets.only(left: 8.0,right:8),
+            child: AppIcon(
+              HugeIcons.strokeRoundedMenu02,
+              color: AppColors.darkTextColor,
+            ),
           ),
         ),
       ),

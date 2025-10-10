@@ -49,7 +49,7 @@ class NetOrAssetImage extends StatelessWidget {
             fit: fit,
             alignment: Alignment.topCenter,
             errorWidget: (context, url, error) {
-              return errorImage(width == 24 ? width! : Ui.width(context));
+              return errorImage(width ?? height ?? Ui.width(context));
             },
           )
         : Image.asset(
@@ -59,14 +59,16 @@ class NetOrAssetImage extends StatelessWidget {
             width: width,
             alignment: Alignment.topCenter,
             errorBuilder: (context, error, stackTrace) {
-              return errorImage(width == 24 ? width! : Ui.width(context));
+              return errorImage(width ?? height ?? Ui.width(context));
             },
           );
   }
 
   Widget errorImage(double w) {
-    return w == 24
-        ? const AppIcon(Assets.logo, color: AppColors.primaryColor)
+    return w <=120
+        ? Opacity(
+          opacity: 0.1,
+          child: AppIcon(Assets.logo,size: w, color: AppColors.primaryColor))
         : Container(
             width: w - 48,
             height: 288,
@@ -78,7 +80,7 @@ class NetOrAssetImage extends StatelessWidget {
             child: Center(
               child: Opacity(
                 opacity: 0.1,
-                child: Image.asset(Assets.fulllogo, width: w - 120),
+                child: Image.asset(Assets.logo, width: w - 120),
               ),
             ),
           );

@@ -23,7 +23,7 @@ AppBar backAppBar(
       centerTitle: true,
       forceMaterialTransparency: true,
       actions: trailing ?? [],
-      leadingWidth: hasBack ? 56 : 28,
+      leadingWidth: 40,
       leading: hasBack
           ? Builder(builder: (context) {
               return IconButton(

@@ -16,33 +16,48 @@ class AppDrawer extends StatelessWidget {
     final appService = Get.find<AppService>();
     return CurvedContainer(
       radius: 0,
-      width: Ui.width(context)*0.75,
+      width: Ui.width(context) * 0.75,
       child: Ui.padding(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Ui.boxHeight(24),
-            AppIcon(Assets.fulllogo,size: 48,),
+            AppIcon(Assets.logo, size: 48),
             Ui.boxHeight(48),
-            AppContainer("", DashboardMode.values.map((e) => Row(
-              children: [
-                AppIcon(e.icon,size: 20,),
-                Ui.boxWidth(8),
-                AppText.medium(e.name,fontSize: 14)
-              ],
-            )).toList(),hasBorder: false,),
+            AppContainer(
+              "",
+              DashboardMode.values
+                  .map(
+                    (e) => Row(
+                      children: [
+                        AppIcon(e.icon, size: 20),
+                        Ui.boxWidth(8),
+                        AppText.medium(e.name, fontSize: 14),
+                      ],
+                    ),
+                  )
+                  .toList(),
+              hasBorder: false,
+            ),
             Spacer(),
             Row(
               children: [
-                CurvedImage("",w: 48,h: 48,fit: BoxFit.fitWidth,),
+                SizedBox(
+                  width: 48,
+                  height: 48,
+                  child: CurvedImage("", w: 48, h: 48, fit: BoxFit.cover),
+                ),
                 Ui.boxWidth(8),
-                AppText.medium(appService.currentUser.value.name ?? "N/A"),
-                Spacer(),
-                AppIcon(HugeIcons.strokeRoundedMoreVerticalCircle02)
+                Expanded(
+                  child: AppText.medium(
+                    appService.currentUser.value.name ?? "N/A",
+                    fontSize: 14,
+                  ),
+                ),
+                Ui.boxWidth(8),
+                AppIcon(HugeIcons.strokeRoundedMoreHorizontal),
               ],
-            )
-
-
+            ),
           ],
         ),
       ),
