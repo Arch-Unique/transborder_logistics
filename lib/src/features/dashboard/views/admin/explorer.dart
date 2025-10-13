@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:transborder_logistics/src/features/dashboard/controllers/dashboard_controller.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/admin/drawer.dart';
+import 'package:transborder_logistics/src/features/dashboard/views/admin/resource_history.dart';
 import 'package:transborder_logistics/src/global/ui/ui_barrel.dart';
 import 'package:transborder_logistics/src/src_barrel.dart';
 
@@ -15,7 +16,6 @@ class AdminExplorer extends StatefulWidget {
 
 class _AdminExplorerState extends State<AdminExplorer> {
   final controller = Get.find<DashboardController>();
-
 
   @override
   void initState() {
@@ -30,7 +30,11 @@ class _AdminExplorerState extends State<AdminExplorer> {
       key: gkey,
       drawer: AppDrawer(),
       appBar: backAppBar(
-        title: "Dashboard",
+        titleWidget: Obx(
+           () {
+            return AppText.medium(controller.curResourceHistory.value.title, fontSize: 16, color: AppColors.textColor);
+          }
+        ),
         hasBack: false,
         leading: InkWell(
           onTap: () {
@@ -38,7 +42,7 @@ class _AdminExplorerState extends State<AdminExplorer> {
             gkey.currentState?.openDrawer();
           },
           child: Padding(
-            padding: EdgeInsets.only(left: 8.0,right:8),
+            padding: EdgeInsets.only(left: 8.0, right: 8),
             child: AppIcon(
               HugeIcons.strokeRoundedMenu02,
               color: AppColors.darkTextColor,
@@ -46,6 +50,20 @@ class _AdminExplorerState extends State<AdminExplorer> {
           ),
         ),
       ),
+      body: Obx(() {
+        if (controller.isLoading.value) {
+          return Center(child: CircularProgressIndicator());
+        }
+        return controller.curResourceHistory.value.title == "Dashboard"
+            ? SizedBox()
+            : ResourceHistoryPage(
+                controller.curResourceHistory.value.title,
+                controller.curResourceHistory.value.items,
+                filters: controller.curResourceHistory.value.filters,
+                onFilter: controller.curResourceHistory.value.onFilter,
+                hasDrawer: true,
+              );
+      }),
     );
   }
 }

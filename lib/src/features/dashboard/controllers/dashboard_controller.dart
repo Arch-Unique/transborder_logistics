@@ -1,5 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:transborder_logistics/src/features/dashboard/views/admin/resource_history.dart';
 import 'package:transborder_logistics/src/global/model/user.dart';
 import 'package:transborder_logistics/src/global/ui/functions/ui_functions.dart';
 
@@ -22,17 +24,24 @@ class DashboardController extends GetxController {
   RxInt curPaginatorTotalPages = 1.obs;
   RxInt curPaginatorRows = 10.obs;
   RxString curQuery = "".obs;
+  RxInt curDashboardIndex = 0.obs;
+  Rx<ResourceHistory> curResourceHistory = ResourceHistory(title: "Dashboard", filters: [], items: []).obs;
 
   RxInt curMode = 0.obs;
   final appRepo = Get.find<AppRepo>();
   final isLoading = false.obs;
 
   Future<void> initApp() async {
-    isLoading.value = true;
-    await getAllCustomerDelivery();
-    await getAllCustomers();
-    await getLocations();
-    isLoading.value = false;
+    try {
+      isLoading.value = true;
+      await getAllCustomerDelivery();
+      await getAllCustomers();
+      await getLocations();
+      isLoading.value = false;
+    } catch (e) {
+      // TODO
+      print(e);
+    }
   }
 
   void gotoNextPage() {
@@ -240,7 +249,7 @@ class DashboardController extends GetxController {
       } else if (s == "Operator") {
         v.value = List.from(allOperators);
       }
-    }else if (T == User && title.toLowerCase() == "drivers") {
+    } else if (T == User && title.toLowerCase() == "drivers") {
       if (s == "Available") {
         v.value = List.from(allDrivers);
       } else if (s == "Busy") {
@@ -248,19 +257,18 @@ class DashboardController extends GetxController {
       } else if (s == "Inactive") {
         v.value = List.from(allDrivers);
       }
-    }else if (T == Location && title.toLowerCase() == "facilities") {
+    } else if (T == Location && title.toLowerCase() == "facilities") {
       if (s == "Active") {
         v.value = List.from(allLocation);
       } else if (s == "Inactive") {
         v.value = List.from(allLocation);
       }
-    }else if (T == Location && title.toLowerCase() == "loading points") {
+    } else if (T == Location && title.toLowerCase() == "loading points") {
       if (s == "Active") {
         v.value = List.from(allLocation);
       } else if (s == "Inactive") {
         v.value = List.from(allLocation);
       }
     }
-
   }
 }

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:transborder_logistics/src/features/dashboard/controllers/dashboard_controller.dart';
+import 'package:transborder_logistics/src/features/dashboard/views/admin/explorer.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/admin/resource_history.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/shared.dart';
+import 'package:transborder_logistics/src/global/model/user.dart';
 import 'package:transborder_logistics/src/global/ui/widgets/others/containers.dart';
 import 'package:transborder_logistics/src/src_barrel.dart';
 
@@ -33,44 +35,73 @@ class AppDrawer extends StatelessWidget {
                   .map(
                     (e) => InkWell(
                       onTap: () {
+                        controller.curDashboardIndex.value = e.index;
                         if (e != DashboardMode.dashboard) {
                           List items = [];
+                          ResourceHistory rh;
                           if (e == DashboardMode.trips) {
-                            items = controller.allCustomerDeliveries;
+                            rh = ResourceHistory<Delivery>(
+                              items: controller.allDeliveries,
+                            );
                           } else if (e == DashboardMode.users) {
-                            items = controller.allCustomers;
+                            rh = ResourceHistory<User>(
+                              items: controller.allAdmins,
+                            );
                           } else if (e == DashboardMode.drivers) {
-                            items = controller.allDrivers;
+                            rh = ResourceHistory<User>(
+                              items: controller.allDrivers,
+                            );
                           } else if (e == DashboardMode.location) {
-                            items = controller.allLocation;
+                            rh = ResourceHistory<Location>(
+                              items: controller.allLocation,
+                            );
                           } else if (e == DashboardMode.facilities) {
-                            items = controller.allLocation;
+                            rh = ResourceHistory<Location>(
+                              items: controller.allLocation,
+                            );
                           } else if (e == DashboardMode.pickups) {
-                            items = controller.allLocation;
+                            rh = ResourceHistory<Location>(
+                              items: controller.allLocation,
+                            );
                           } else if (e == DashboardMode.vehicles) {
-                            items = [];
+                            rh = ResourceHistory(items: []);
+                          } else {
+                            rh = ResourceHistory(items: []);
                           }
+                          rh.title = e.name;
+                          rh.filters = e.filters;
+                          rh.onFilter = (v, s) {
+                            controller.getFilters(v, s, e.name);
+                          };
 
-                          Get.to(
-                            ResourceHistoryPage(
-                              e.name,
-                              items,
-                              hasDrawer: true,
-                              filters: e.filters,
-                              onFilter: (v, s) {
-                                controller.getFilters(v, s, e.name);
-                              },
-                            ),
-                          );
+                          controller.curResourceHistory.value = rh;
+                        } else {
+                          controller.curResourceHistory.value = ResourceHistory();
                         }
+                        Get.back();
                       },
-                      child: Row(
-                        children: [
-                          AppIcon(e.icon, size: 20),
-                          Ui.boxWidth(8),
-                          AppText.medium(e.name, fontSize: 14),
-                        ],
-                      ),
+                      child: Obx(() {
+                        final txtColor =
+                            controller.curDashboardIndex.value == e.index
+                            ? AppColors.primaryColor
+                            : AppColors.textColor;
+                        final iconColor =
+                            controller.curDashboardIndex.value == e.index
+                            ? AppColors.primaryColor
+                            : AppColors.lightTextColor;
+                        return Row(
+                          children: [
+                            AppIcon(e.icon, size: 20, color: iconColor),
+
+                            Ui.boxWidth(8),
+                            AppText.medium(
+                              e.name,
+                              fontSize: 14,
+                              color: txtColor,
+                            ),
+                          ],
+                        );
+                      }),
                     ),
                   )
                   .toList(),
