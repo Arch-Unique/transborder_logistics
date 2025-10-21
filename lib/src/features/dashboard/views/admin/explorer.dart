@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:transborder_logistics/src/features/dashboard/controllers/dashboard_controller.dart';
+import 'package:transborder_logistics/src/features/dashboard/views/admin/dashboard.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/admin/drawer.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/admin/resource_history.dart';
+import 'package:transborder_logistics/src/features/dashboard/views/shared.dart';
 import 'package:transborder_logistics/src/global/ui/ui_barrel.dart';
 import 'package:transborder_logistics/src/src_barrel.dart';
 
@@ -30,11 +32,13 @@ class _AdminExplorerState extends State<AdminExplorer> {
       key: gkey,
       drawer: AppDrawer(),
       appBar: backAppBar(
-        titleWidget: Obx(
-           () {
-            return AppText.medium(controller.curResourceHistory.value.title, fontSize: 16, color: AppColors.textColor);
-          }
-        ),
+        titleWidget: Obx(() {
+          return AppText.medium(
+            controller.curResourceHistory.value.title,
+            fontSize: 16,
+            color: AppColors.textColor,
+          );
+        }),
         hasBack: false,
         leading: InkWell(
           onTap: () {
@@ -49,13 +53,34 @@ class _AdminExplorerState extends State<AdminExplorer> {
             ),
           ),
         ),
+        trailing: [
+          Obx(() {
+            return controller.curResourceHistory.value.title == "Dashboard"
+                ? SizedBox()
+                : InkWell(
+                    onTap: () {
+                      Get.bottomSheet(
+                        AddResource(controller.curResourceHistory.value.title),
+                      );
+                    },
+                    child: Padding(
+                      padding: EdgeInsets.only(left: 8.0, right: 8),
+                      child: AppIcon(
+                        HugeIcons.strokeRoundedAddCircle,
+                        color: AppColors.primaryColor,
+                      ),
+                    ),
+                  );
+          }),
+        ],
       ),
       body: Obx(() {
+        // print(controller.curResourceHistory.value.items);
         if (controller.isLoading.value) {
           return Center(child: CircularProgressIndicator());
         }
         return controller.curResourceHistory.value.title == "Dashboard"
-            ? SizedBox()
+            ? DashboardScreen()
             : ResourceHistoryPage(
                 controller.curResourceHistory.value.title,
                 controller.curResourceHistory.value.items,

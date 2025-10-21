@@ -25,7 +25,11 @@ class DashboardController extends GetxController {
   RxInt curPaginatorRows = 10.obs;
   RxString curQuery = "".obs;
   RxInt curDashboardIndex = 0.obs;
-  Rx<ResourceHistory> curResourceHistory = ResourceHistory(title: "Dashboard", filters: [], items: []).obs;
+  Rx<ResourceHistory> curResourceHistory = ResourceHistory(
+    title: "Dashboard",
+    filters: [],
+    items: [],
+  ).obs;
 
   RxInt curMode = 0.obs;
   final appRepo = Get.find<AppRepo>();
@@ -62,6 +66,14 @@ class DashboardController extends GetxController {
 
   List<Delivery> get undeliveredDeliveries {
     return allDeliveries.where((delivery) => !delivery.isDelivered).toList();
+  }
+
+    List<Location> get allFacilities {
+    return allLocation.where((loc) => loc.facilityType == "Hospital").toList();
+  }
+
+  List<Location> get allLoadingPoints {
+    return allLocation.where((loc) => loc.facilityType == "Loading Point").toList();
   }
 
   Future<bool> getLocations() async {
@@ -118,7 +130,7 @@ class DashboardController extends GetxController {
     await appRepo.stopDelivery(id, dm.waybill, dm.driverId, ssd, pics);
   }
 
-  Future<bool> resetPassword(password) async {
+  Future<bool> resetPassword(String password) async {
     final c = await appRepo.resetPassword(password);
 
     return c;
@@ -229,19 +241,19 @@ class DashboardController extends GetxController {
 
   //filters
   void getFilters<T>(RxList<T> v, String s, String title) {
-    if (T == Delivery) {
+    if (title.toLowerCase() == "trips") {
       if (s == "New") {
-        v.value = List.from(undeliveredDeliveries);
+        v.value = List.from(allCustomerDeliveries.where((test) => !test.hasStarted && !test.isDelivered).toList(),);
       } else if (s == "Ongoing") {
         v.value = List.from(
-          allDeliveries.where((test) => test.hasStarted).toList(),
+          allCustomerDeliveries.where((test) => test.hasStarted && !test.isDelivered).toList(),
         );
-      } else if (s == "Completed") {
+      } else if (s == "Finished") {
         v.value = List.from(
-          allDeliveries.where((test) => test.isDelivered).toList(),
+          allCustomerDeliveries.where((test) => test.isDelivered).toList(),
         );
       }
-    } else if (T == User && title.toLowerCase() == "users") {
+    } else if (title.toLowerCase() == "users") {
       if (s == "Driver") {
         v.value = List.from(allDrivers);
       } else if (s == "Admin") {
@@ -249,7 +261,7 @@ class DashboardController extends GetxController {
       } else if (s == "Operator") {
         v.value = List.from(allOperators);
       }
-    } else if (T == User && title.toLowerCase() == "drivers") {
+    } else if (title.toLowerCase() == "drivers") {
       if (s == "Available") {
         v.value = List.from(allDrivers);
       } else if (s == "Busy") {
@@ -257,18 +269,19 @@ class DashboardController extends GetxController {
       } else if (s == "Inactive") {
         v.value = List.from(allDrivers);
       }
-    } else if (T == Location && title.toLowerCase() == "facilities") {
+    } else if (title.toLowerCase() == "facilities") {
       if (s == "Active") {
         v.value = List.from(allLocation);
       } else if (s == "Inactive") {
         v.value = List.from(allLocation);
       }
-    } else if (T == Location && title.toLowerCase() == "loading points") {
+    } else if (title.toLowerCase() == "loading points") {
       if (s == "Active") {
         v.value = List.from(allLocation);
       } else if (s == "Inactive") {
         v.value = List.from(allLocation);
       }
     }
+    v.refresh();
   }
 }

@@ -1,6 +1,6 @@
 abstract class States {
   static List<String> states = [
-    "All states (Nigeria)",
+    // "All states (Nigeria)",
     "Abia",
     "Adamawa",
     "Akwa Ibom",

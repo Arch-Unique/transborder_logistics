@@ -18,3 +18,14 @@ class AuthMiddleWare extends GetMiddleware {
     return super.redirect(route);
   }
 }
+
+class AppMiddleWare extends GetMiddleware {
+  @override
+  RouteSettings? redirect(String? route) {
+    final controller = Get.find<AppService>();
+    if (!controller.currentUser.value.isAdmin) {
+      return const RouteSettings(name: AppRoutes.driverDashboard);
+    }
+    return super.redirect(route);
+  }
+}

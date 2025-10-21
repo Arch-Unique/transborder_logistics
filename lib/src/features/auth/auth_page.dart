@@ -66,7 +66,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       "johndoe@gmail.com",
                       controller.textControllers[0],
                       prefix: HugeIcons.strokeRoundedMail01,
-                      label: "Email",
+                      label: "Email/Phone",
                     ),
                   ),
                   Ui.align(
@@ -79,10 +79,10 @@ class _AuthScreenState extends State<AuthScreen> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8.0),
                     child: CustomTextField(
-                      "Password",
+                      "PIN",
                       controller.textControllers[1],
                       prefix: HugeIcons.strokeRoundedLockPassword,
-                      label: "Password",
+                      label: "PIN",
                       varl: FPL.password,
                     ),
                   ),

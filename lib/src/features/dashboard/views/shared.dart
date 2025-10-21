@@ -116,7 +116,7 @@ class DriverInfo extends StatelessWidget {
               children: [
                 AppText.medium(user.name ?? "N/A", fontSize: 12),
                 AppText.thin(
-                  "Driver",
+                  user.role.capitalize ?? "",
                   fontSize: 10,
                   color: AppColors.lightTextColor,
                 ),
@@ -130,6 +130,80 @@ class DriverInfo extends StatelessWidget {
           ),
           Ui.boxWidth(24),
           DriverStatusChip("Available"),
+        ],
+      ),
+    );
+  }
+}
+
+class LocationInfo extends StatelessWidget {
+  const LocationInfo(this.user, {super.key});
+  final Location user;
+
+  @override
+  Widget build(BuildContext context) {
+    return CurvedContainer(
+      border: Border.all(color: AppColors.borderColor),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: EdgeInsets.all(12),
+      onPressed: () {
+        // Get.to(WaybillDetailPage(delivery));
+      },
+      radius: 12,
+      child: Row(
+        children: [
+          CurvedImage("", w: 48, h: 48),
+          Ui.boxWidth(12),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppText.medium(user.name ?? "N/A", fontSize: 12),
+                AppText.thin(
+                  user.facilityType ?? "",
+                  fontSize: 10,
+                  color: AppColors.lightTextColor,
+                ),
+                AppText.medium(
+                  "${user.lga}, ${user.state}",
+                  fontSize: 10,
+                  color: AppColors.lightTextColor,
+                ),
+              ],
+            ),
+          ),
+          Ui.boxWidth(24),
+          DriverStatusChip("Available"),
+        ],
+      ),
+    );
+  }
+}
+
+class StateInfo extends StatelessWidget {
+  const StateInfo(this.sloc, {super.key});
+  final StateLocation sloc;
+
+  @override
+  Widget build(BuildContext context) {
+    return CurvedContainer(
+      border: Border.all(color: AppColors.borderColor),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: EdgeInsets.all(12),
+      onPressed: () {
+        // Get.to(WaybillDetailPage(delivery));
+      },
+      radius: 12,
+      child: Row(
+        children: [
+          AppIcon(HugeIcons.strokeRoundedLocation05),
+          Ui.boxWidth(12),
+          Expanded(
+            child: AppText.medium(sloc.name ?? "N/A", fontSize: 12),
+          ),
+          Ui.boxWidth(24),
+          DriverStatusChip(sloc.isActive! ? "Available" : "Inactive"),
         ],
       ),
     );
@@ -509,18 +583,21 @@ class WaybillDetailPage extends StatelessWidget {
 }
 
 class CircleIcon extends StatelessWidget {
-  const CircleIcon(this.icon, {this.onTap, super.key});
+  const CircleIcon(this.icon, {this.onTap,this.radius=20,this.size=24,this.bg=AppColors.primaryColor,this.ic=AppColors.white, super.key});
   final dynamic icon;
   final VoidCallback? onTap;
+  final double? radius;
+  final double? size;
+  final Color?  bg,ic;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
       child: CircleAvatar(
-        radius: 20,
-        backgroundColor: AppColors.primaryColor,
-        child: Center(child: AppIcon(icon, color: AppColors.white)),
+        radius: radius,
+        backgroundColor: bg,
+        child: Center(child: AppIcon(icon, color: ic!,size: size!,)),
       ),
     );
   }
@@ -851,7 +928,7 @@ class FieldValue extends StatelessWidget {
   }
 }
 
-class AddResource<T> extends StatelessWidget {
+class AddResource extends StatelessWidget {
   const AddResource(this.title, {super.key});
   final String title;
 
@@ -867,13 +944,13 @@ class AddResource<T> extends StatelessWidget {
       onTap: () {},
       actions: [
         //USER
-        if (T == User && title.toLowerCase() == "user")
+        if (title.toLowerCase() == "users")
           CustomTextField("Add user", tecs[0], label: "Name"),
-        if (T == User && title.toLowerCase() == "user")
+        if (title.toLowerCase() == "users")
           CustomTextField("Add email", tecs[1], label: "Email"),
-        if (T == User && title.toLowerCase() == "user")
+        if (title.toLowerCase() == "users")
           CustomTextField("Add phone", tecs[2], label: "Phone"),
-        if (T == User && title.toLowerCase() == "user")
+        if (title.toLowerCase() == "users")
           CustomDropdown.city(
             cities: ["driver", "admin", "operator"],
             hint: "Add account type",
@@ -881,7 +958,7 @@ class AddResource<T> extends StatelessWidget {
             selectedValue: "driver",
             onChanged: (v) {},
           ),
-        if (T == User && title.toLowerCase() == "user")
+        if (title.toLowerCase() == "users")
           CustomDropdown.city(
             cities: ["Kano", "Kaduna"],
             hint: "Add location",
@@ -891,13 +968,13 @@ class AddResource<T> extends StatelessWidget {
           ),
 
         //DRIVER
-        if (T == User && title.toLowerCase() == "driver")
+        if (title.toLowerCase() == "drivers")
           CustomTextField("Add name", tecs[0], label: "Name"),
-        if (T == User && title.toLowerCase() == "driver")
+        if (title.toLowerCase() == "drivers")
           CustomTextField("Add email", tecs[1], label: "Email"),
-        if (T == User && title.toLowerCase() == "driver")
+        if (title.toLowerCase() == "drivers")
           CustomTextField("Add phone", tecs[2], label: "Phone"),
-        if (T == User && title.toLowerCase() == "driver")
+        if (title.toLowerCase() == "drivers")
           CustomDropdown.city(
             cities: ["Kano", "Kaduna"],
             hint: "Add location",
@@ -907,11 +984,11 @@ class AddResource<T> extends StatelessWidget {
           ),
 
         //Location
-        if (T == Location && title.toLowerCase() == "facility")
+        if (title.toLowerCase() == "facilities")
           CustomTextField("Add name", tecs[0], label: "Name"),
-        if (T == Location && title.toLowerCase() == "facility")
+        if (title.toLowerCase() == "facilities")
           CustomTextField("Add address", tecs[1], label: "Address"),
-        if (T == Location && title.toLowerCase() == "facility")
+        if (title.toLowerCase() == "facilities")
           CustomDropdown.city(
             cities: ["Kano", "Kaduna"],
             hint: "Add State",
@@ -921,11 +998,11 @@ class AddResource<T> extends StatelessWidget {
           ),
 
         //Location
-        if (T == Location && title.toLowerCase() == "pickup")
+        if (title.toLowerCase() == "loading points")
           CustomTextField("Add name", tecs[0], label: "Name"),
-        if (T == Location && title.toLowerCase() == "pickup")
+        if (title.toLowerCase() == "loading points")
           CustomTextField("Add address", tecs[1], label: "Address"),
-        if (T == Location && title.toLowerCase() == "pickup")
+        if (title.toLowerCase() == "loading points")
           CustomDropdown.city(
             cities: ["Kano", "Kaduna"],
             hint: "Add State",

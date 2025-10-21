@@ -60,7 +60,7 @@ enum ErrorTypes {
 
 enum DashboardMode {
   dashboard("Dashboard",HugeIcons.strokeRoundedDashboardSquare02,["All"]),
-  trips("Trips",HugeIcons.strokeRoundedBus03,["All","Ongoing","Finished"]),
+  trips("Trips",HugeIcons.strokeRoundedBus03,["All","New","Ongoing","Finished"]),
   users("Users",HugeIcons.strokeRoundedUser,["All","Driver","Admin","Operator"]),
   drivers("Drivers",HugeIcons.strokeRoundedUserMultiple02,["All","Available","Busy","Inactive"]),
   vehicles("Vehicles",HugeIcons.strokeRoundedCar01,["All"]),
@@ -73,4 +73,16 @@ enum DashboardMode {
   final dynamic icon;
   final List<String> filters;
   const DashboardMode(this.name,this.icon,this.filters);
+}
+
+enum DashboardItem{
+  trips("Trips",HugeIcons.strokeRoundedBus03),
+  users("Users",HugeIcons.strokeRoundedUserMultiple02),
+  drivers("Drivers",HugeIcons.strokeRoundedUser),
+  location("Location",HugeIcons.strokeRoundedLocation05);
+
+  final String name;
+  final dynamic icon;
+
+  const DashboardItem(this.name,this.icon);
 }

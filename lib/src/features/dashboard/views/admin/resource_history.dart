@@ -58,6 +58,16 @@ class _ResourceHistoryPageState<T> extends State<ResourceHistoryPage<T>> {
   }
 
   @override
+  void didUpdateWidget(covariant ResourceHistoryPage<T> oldWidget) {
+    if (oldWidget.title != widget.title) {
+      allItems.value = List.from(widget.items);
+      curFilter.value = "All";
+      tec.clear();
+    }
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final body = Column(
       children: [
@@ -77,17 +87,13 @@ class _ResourceHistoryPageState<T> extends State<ResourceHistoryPage<T>> {
                 allItems.value = List.from(widget.items);
                 return;
               }
-              if (T == Delivery) {
-                allItems.value = widget.items.where((test) {
-                  final tg = test as Delivery;
-                  return tg.slug.toLowerCase().contains(tec.text.toLowerCase());
-                }).toList();
-              } else if (T == User) {
-                allItems.value = widget.items.where((test) {
-                  final tg = test as User;
-                  return tg.slug.toLowerCase().contains(tec.text.toLowerCase());
-                }).toList();
+              if (allItems.isEmpty) {
+                return;
               }
+              allItems.value = widget.items.where((test) {
+                final tg = test as Slugger;
+                return tg.slug.toLowerCase().contains(tec.text.toLowerCase());
+              }).toList();
             },
             prefix: HugeIcons.strokeRoundedSearch02,
           ),
@@ -126,6 +132,17 @@ class _ResourceHistoryPageState<T> extends State<ResourceHistoryPage<T>> {
             }).toList(),
           ),
         ),
+        Padding(
+          padding: const EdgeInsets.only(left: 16.0),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Obx(
+               () {
+                return AppText.thin("Showing ${allItems.length} results",fontSize: 10,color: AppColors.lightTextColor);
+              }
+            ),
+          ),
+        ),
         Expanded(
           child: Obx(() {
             return ListView.separated(
@@ -135,6 +152,12 @@ class _ResourceHistoryPageState<T> extends State<ResourceHistoryPage<T>> {
                 }
                 if (allItems[i].runtimeType == User) {
                   return DriverInfo(allItems[i] as User);
+                }
+                if (allItems[i].runtimeType == Location) {
+                  return LocationInfo(allItems[i] as Location);
+                }
+                if (allItems[i].runtimeType == StateLocation) {
+                  return StateInfo(allItems[i] as StateLocation);
                 }
                 return SizedBox();
               },

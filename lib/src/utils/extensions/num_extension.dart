@@ -12,6 +12,11 @@ extension NumExtension on num {
     // ₦
   }
 
+    String toCurrencyWS() {
+    NumberFormat myFormat = NumberFormat.decimalPattern('en_us');
+    return myFormat.format(this);
+  }
+
   int nearest10() {
     return (this / 100).ceil() * 100;
   }

@@ -8,6 +8,7 @@ import 'package:transborder_logistics/src/features/dashboard/views/shared.dart';
 import 'package:transborder_logistics/src/global/model/user.dart';
 import 'package:transborder_logistics/src/global/ui/widgets/others/containers.dart';
 import 'package:transborder_logistics/src/src_barrel.dart';
+import 'package:transborder_logistics/src/utils/constants/string/facilities.dart';
 
 import '../../../../global/services/barrel.dart';
 import '../../../../global/ui/ui_barrel.dart';
@@ -37,31 +38,38 @@ class AppDrawer extends StatelessWidget {
                       onTap: () {
                         controller.curDashboardIndex.value = e.index;
                         if (e != DashboardMode.dashboard) {
-                          List items = [];
+                          // List items = [];
                           ResourceHistory rh;
                           if (e == DashboardMode.trips) {
                             rh = ResourceHistory<Delivery>(
-                              items: controller.allDeliveries,
+                              items: controller.allCustomerDeliveries,
                             );
                           } else if (e == DashboardMode.users) {
                             rh = ResourceHistory<User>(
-                              items: controller.allAdmins,
+                              items: controller.allCustomers,
                             );
                           } else if (e == DashboardMode.drivers) {
                             rh = ResourceHistory<User>(
                               items: controller.allDrivers,
                             );
                           } else if (e == DashboardMode.location) {
-                            rh = ResourceHistory<Location>(
-                              items: controller.allLocation,
+                            rh = ResourceHistory<StateLocation>(
+                              items: List.from(
+                                States.states.map((e) {
+                                  return StateLocation(
+                                    name: e,
+                                    isActive: e == "Kano" || e == "Kaduna",
+                                  );
+                                }),
+                              ),
                             );
                           } else if (e == DashboardMode.facilities) {
                             rh = ResourceHistory<Location>(
-                              items: controller.allLocation,
+                              items: controller.allFacilities,
                             );
                           } else if (e == DashboardMode.pickups) {
                             rh = ResourceHistory<Location>(
-                              items: controller.allLocation,
+                              items: controller.allLoadingPoints,
                             );
                           } else if (e == DashboardMode.vehicles) {
                             rh = ResourceHistory(items: []);
@@ -76,8 +84,10 @@ class AppDrawer extends StatelessWidget {
 
                           controller.curResourceHistory.value = rh;
                         } else {
-                          controller.curResourceHistory.value = ResourceHistory();
+                          controller.curResourceHistory.value =
+                              ResourceHistory();
                         }
+                        controller.curResourceHistory.refresh();
                         Get.back();
                       },
                       child: Obx(() {

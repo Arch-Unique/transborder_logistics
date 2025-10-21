@@ -19,7 +19,8 @@ abstract class AppColors {
 
   //Other Colors
   static const Color red = Color(0xFFFF1F1F);
-  static const Color green = Color(0xFF1FFF1F);
+  static const Color green = Color(0xFF00D743);
+  static const Color yellow= Color(0xFFFFB400);
   static const Color white = Color.fromRGBO(255, 255, 255, 1);
   static const Color black = Colors.black;
   static const Color grey = Colors.grey;
