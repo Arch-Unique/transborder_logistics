@@ -936,11 +936,11 @@ class UserProfilePic extends StatelessWidget {
         // Get.to(ViewProfPicPage());
       },
       child: CircleAvatar(
-        backgroundColor: AppColors.borderColor,
+        backgroundColor: AppColors.white,
         radius: url.isEmpty ? 47 : 48,
         child: url.isEmpty
-            ? Icon(
-                Iconsax.profile_circle_outline,
+            ? AppIcon(
+                HugeIcons.strokeRoundedUser,
                 size: 90,
                 color: AppColors.disabledColor,
               )

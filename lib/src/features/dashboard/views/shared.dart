@@ -102,6 +102,7 @@ class DriverInfo extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: EdgeInsets.all(12),
       onPressed: () {
+        Get.bottomSheet(AddResource<User>("Users", obj: user));
         // Get.to(WaybillDetailPage(delivery));
       },
       radius: 12,
@@ -199,9 +200,7 @@ class StateInfo extends StatelessWidget {
         children: [
           AppIcon(HugeIcons.strokeRoundedLocation05),
           Ui.boxWidth(12),
-          Expanded(
-            child: AppText.medium(sloc.name ?? "N/A", fontSize: 12),
-          ),
+          Expanded(child: AppText.medium(sloc.name ?? "N/A", fontSize: 12)),
           Ui.boxWidth(24),
           DriverStatusChip(sloc.isActive! ? "Available" : "Inactive"),
         ],
@@ -583,12 +582,20 @@ class WaybillDetailPage extends StatelessWidget {
 }
 
 class CircleIcon extends StatelessWidget {
-  const CircleIcon(this.icon, {this.onTap,this.radius=20,this.size=24,this.bg=AppColors.primaryColor,this.ic=AppColors.white, super.key});
+  const CircleIcon(
+    this.icon, {
+    this.onTap,
+    this.radius = 20,
+    this.size = 24,
+    this.bg = AppColors.primaryColor,
+    this.ic = AppColors.white,
+    super.key,
+  });
   final dynamic icon;
   final VoidCallback? onTap;
   final double? radius;
   final double? size;
-  final Color?  bg,ic;
+  final Color? bg, ic;
 
   @override
   Widget build(BuildContext context) {
@@ -597,7 +604,9 @@ class CircleIcon extends StatelessWidget {
       child: CircleAvatar(
         radius: radius,
         backgroundColor: bg,
-        child: Center(child: AppIcon(icon, color: ic!,size: size!,)),
+        child: Center(
+          child: AppIcon(icon, color: ic!, size: size!),
+        ),
       ),
     );
   }
@@ -677,7 +686,7 @@ class AppContainer extends StatelessWidget {
               return Padding(
                 padding: EdgeInsets.only(
                   top: i == 0 ? 12 : 8.0,
-                  bottom: i == actions.length - 1 ? 12 : 4,
+                  bottom: i == actions.length - 1 ? 8 : 4,
                   left: 8,
                   right: 16,
                 ),
@@ -928,9 +937,10 @@ class FieldValue extends StatelessWidget {
   }
 }
 
-class AddResource extends StatelessWidget {
-  const AddResource(this.title, {super.key});
+class AddResource<T> extends StatelessWidget {
+  const AddResource(this.title, {this.obj, super.key});
   final String title;
+  final T? obj;
 
   @override
   Widget build(BuildContext context) {
@@ -938,6 +948,17 @@ class AddResource extends StatelessWidget {
       10,
       (i) => TextEditingController(),
     );
+    if (obj != null) {
+      if (title.toLowerCase() == "users") {
+        final user = obj as User;
+        tecs[0].text = user.name ?? "";
+        tecs[1].text = user.email ?? "";
+        tecs[2].text = user.phone ?? "";
+        tecs[3].text = user.role;
+        tecs[4].text = user.location ?? "Kano";
+      }
+    }
+
     return AppBottomSheet(
       "Add $title",
       "Add",
@@ -955,16 +976,20 @@ class AddResource extends StatelessWidget {
             cities: ["driver", "admin", "operator"],
             hint: "Add account type",
             label: "Account type",
-            selectedValue: "driver",
-            onChanged: (v) {},
+            selectedValue: tecs[3].text,
+            onChanged: (v) {
+              tecs[3].text = v ?? "";
+            },
           ),
         if (title.toLowerCase() == "users")
           CustomDropdown.city(
             cities: ["Kano", "Kaduna"],
             hint: "Add location",
             label: "Location",
-            selectedValue: "Kano",
-            onChanged: (v) {},
+            selectedValue: tecs[4].text,
+            onChanged: (v) {
+              tecs[4].text = v ?? "";
+            },
           ),
 
         //DRIVER
@@ -979,8 +1004,10 @@ class AddResource extends StatelessWidget {
             cities: ["Kano", "Kaduna"],
             hint: "Add location",
             label: "Location",
-            selectedValue: "Kano",
-            onChanged: (v) {},
+            selectedValue: tecs[3].text,
+            onChanged: (v) {
+              tecs[3].text = v ?? "";
+            },
           ),
 
         //Location
@@ -990,11 +1017,23 @@ class AddResource extends StatelessWidget {
           CustomTextField("Add address", tecs[1], label: "Address"),
         if (title.toLowerCase() == "facilities")
           CustomDropdown.city(
+            cities: ["Hospital", "Clinic"],
+            hint: "",
+            label: "Facilty Type",
+            selectedValue: tecs[2].text,
+            onChanged: (v) {
+              tecs[2].text = v ?? "";
+            },
+          ),
+        if (title.toLowerCase() == "facilities")
+          CustomDropdown.city(
             cities: ["Kano", "Kaduna"],
             hint: "Add State",
             label: "State",
-            selectedValue: "Kano",
-            onChanged: (v) {},
+            selectedValue: tecs[3].text,
+            onChanged: (v) {
+              tecs[3].text = v ?? "";
+            },
           ),
 
         //Location
@@ -1007,8 +1046,10 @@ class AddResource extends StatelessWidget {
             cities: ["Kano", "Kaduna"],
             hint: "Add State",
             label: "State",
-            selectedValue: "Kano",
-            onChanged: (v) {},
+            selectedValue: tecs[2].text,
+            onChanged: (v) {
+              tecs[2].text = v ?? "";
+            },
           ),
       ],
     );

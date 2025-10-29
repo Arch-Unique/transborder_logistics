@@ -40,11 +40,10 @@ class CustomDropdown<T> extends StatelessWidget {
             Ui.align(child: AppText.medium(label, fontSize: 14)),
           if (label.isNotEmpty) Ui.boxWidth(4),
           Flexible(
-            fit: FlexFit.tight,
             child: DropdownButtonFormField<T>(
               value: value,
-              isExpanded: false,
-
+              isExpanded: true,
+            
               isDense: true,
               icon: AppIcon(
                 Icons.keyboard_arrow_down_rounded,
@@ -56,7 +55,7 @@ class CustomDropdown<T> extends StatelessWidget {
               decoration: InputDecoration(
                 fillColor: AppColors.transparent,
                 filled: false,
-
+            
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
                 border: InputBorder.none,
@@ -64,22 +63,22 @@ class CustomDropdown<T> extends StatelessWidget {
                   vertical: 0.0,
                   horizontal: 100,
                 ),
-                hintText: hint,
-                hintMaxLines: 1,
+                // hintText: hint,
+                // hintMaxLines: 1,
                 isDense: true,
                 isCollapsed: true,
-
-                hintStyle: TextStyle(
-                  fontSize: fontSize,
-                  fontWeight: FontWeight.w400,
-                  color: borderColor,
-                ),
+            
+                // hintStyle: TextStyle(
+                //   fontSize: fontSize,
+                //   fontWeight: FontWeight.w400,
+                //   color: borderColor,
+                // ),
               ),
-
+            
               style: TextStyle(
                 fontSize: fontSize,
                 fontWeight: fontWeight,
-
+            
                 color: AppColors.textColor,
               ),
               dropdownColor: AppColors.white,
