@@ -188,14 +188,14 @@ class CustomDropdown<T> extends StatelessWidget {
   }) {
     return CustomDropdown<String>(
       hint: hint,
-      value: selectedValue,
+      value: selectedValue?.isEmpty ?? true ? null : selectedValue,
       label: label,
       hasBottomPadding: hasBottomPadding,
       items: cities.map((day) {
         return DropdownMenuItem<String>(
           value: day,
           alignment: AlignmentDirectional.centerEnd,
-          child: Text(day.toString()),
+          child: Text(day.toString(),textAlign: TextAlign.right,),
         );
       }).toList(),
       onChanged: onChanged,

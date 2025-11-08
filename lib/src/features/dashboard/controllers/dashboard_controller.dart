@@ -69,7 +69,7 @@ class DashboardController extends GetxController {
   }
 
     List<Location> get allFacilities {
-    return allLocation.where((loc) => loc.facilityType == "Hospital").toList();
+    return allLocation.where((loc) =>  loc.facilityType == "Hospital" || loc.facilityType == "Clinic").toList();
   }
 
   List<Location> get allLoadingPoints {
@@ -271,15 +271,15 @@ class DashboardController extends GetxController {
       }
     } else if (title.toLowerCase() == "facilities") {
       if (s == "Active") {
-        v.value = List.from(allLocation);
+        v.value = List.from(allFacilities);
       } else if (s == "Inactive") {
-        v.value = List.from(allLocation);
+        v.value = List.from(allFacilities);
       }
     } else if (title.toLowerCase() == "loading points") {
       if (s == "Active") {
-        v.value = List.from(allLocation);
+        v.value = List.from(allLoadingPoints);
       } else if (s == "Inactive") {
-        v.value = List.from(allLocation);
+        v.value = List.from(allLoadingPoints);
       }
     }
     v.refresh();
