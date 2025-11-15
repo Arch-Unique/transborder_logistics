@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/admin/resource_history.dart';
 import 'package:transborder_logistics/src/global/model/user.dart';
 import 'package:transborder_logistics/src/global/ui/functions/ui_functions.dart';
+import 'package:transborder_logistics/src/src_barrel.dart';
+import 'package:transborder_logistics/src/utils/constants/string/facilities.dart';
 
 import '../repository/app_repo.dart';
 
@@ -12,6 +14,7 @@ class DashboardController extends GetxController {
   RxList<User> allDrivers = <User>[].obs;
   RxList<User> allAdmins = <User>[].obs;
   RxList<User> allOperators = <User>[].obs;
+  RxList<Vehicle> allVehicles = <Vehicle>[].obs;
 
   RxList<Delivery> allDeliveries = <Delivery>[].obs;
   RxList<Location> allLocation = <Location>[].obs;
@@ -35,12 +38,38 @@ class DashboardController extends GetxController {
   final appRepo = Get.find<AppRepo>();
   final isLoading = false.obs;
 
+  void resetApp() {
+    allCustomers.clear();
+    allDrivers.clear();
+    allAdmins.clear();
+    allOperators.clear();
+    allVehicles.clear();
+    allDeliveries.clear();
+    allLocation.clear();
+    allCustomerDeliveries.clear();
+    currentDelivery.value = Delivery(createdAt: DateTime.now());
+    curLoc.value = "All";
+    curPaginatorPage.value = 1;
+    curPaginatorTotal.value = 1;
+    curPaginatorTotalPages.value = 1;
+    curPaginatorRows.value = 10;
+    curQuery.value = "";
+    curDashboardIndex.value = 0;
+    curResourceHistory.value = ResourceHistory(
+      title: "Dashboard",
+      filters: [],
+      items: [],
+    );
+    curMode.value = 0;
+  }
+
   Future<void> initApp() async {
     try {
       isLoading.value = true;
       await getAllCustomerDelivery();
       await getAllCustomers();
       await getLocations();
+      await getVehicles();
       isLoading.value = false;
     } catch (e) {
       // TODO
@@ -68,12 +97,19 @@ class DashboardController extends GetxController {
     return allDeliveries.where((delivery) => !delivery.isDelivered).toList();
   }
 
-    List<Location> get allFacilities {
-    return allLocation.where((loc) =>  loc.facilityType == "Hospital" || loc.facilityType == "Clinic").toList();
+  List<Location> get allFacilities {
+    return allLocation
+        .where(
+          (loc) =>
+              loc.facilityType == "Hospital" || loc.facilityType == "Clinic",
+        )
+        .toList();
   }
 
   List<Location> get allLoadingPoints {
-    return allLocation.where((loc) => loc.facilityType == "Loading Point").toList();
+    return allLocation
+        .where((loc) => loc.facilityType == "Loading Point")
+        .toList();
   }
 
   Future<bool> getLocations() async {
@@ -82,6 +118,13 @@ class DashboardController extends GetxController {
       c.removeWhere((test) => !(test.state?.contains(curLoc.value) ?? false));
     }
     allLocation.value = c;
+    if (c.isEmpty) return true;
+    return true;
+  }
+
+  Future<bool> getVehicles() async {
+    final c = await appRepo.getVehicles();
+    allVehicles.value = c;
     if (c.isEmpty) return true;
     return true;
   }
@@ -95,15 +138,22 @@ class DashboardController extends GetxController {
     return true;
   }
 
-  Future startDelivery(int id) async {
+  Future<bool> startDelivery(int id) async {
     final dm = undeliveredDeliveries.where((test) => test.id == id).firstOrNull;
     if (dm == null) {
       return Ui.showError("An Error occurred, please try again");
     }
-    await appRepo.startDelivery(id, dm.waybill, dm.driverId);
+      return await appRepo.startDelivery(id, dm.waybill, dm.driverId);
+      
   }
 
-  Future stopDelivery(int id, int i, String pic) async {
+  Future<bool> stopDelivery(
+    int id,
+    int i,
+    String pic,
+    String picName,
+    String picContact,
+  ) async {
     final dm = undeliveredDeliveries.where((test) => test.id == id).firstOrNull;
     if (dm == null) {
       return Ui.showError("An Error occurred, please try again");
@@ -126,8 +176,17 @@ class DashboardController extends GetxController {
     List<String?> pics = List.from(dm.stops);
 
     ssd[i] = DateFormat("yyyy-MM-dd HH:mm:ss").format(DateTime.now());
-    pics[i] = pic;
-    await appRepo.stopDelivery(id, dm.waybill, dm.driverId, ssd, pics);
+    final upic = await uploadImage(pic);
+    pics[i] = upic;
+    return await appRepo.stopDelivery(
+      id,
+      dm.waybill,
+      dm.driverId,
+      ssd,
+      pics,
+      picName,
+      picContact,
+    );
   }
 
   Future<bool> resetPassword(String password) async {
@@ -172,6 +231,7 @@ class DashboardController extends GetxController {
   //users
   Future<bool> addUser(
     String fullname,
+    String email,
     String phone,
     String role,
     String address, {
@@ -182,6 +242,7 @@ class DashboardController extends GetxController {
       address,
       phone,
       role,
+      email,
       truckno: truckno,
     );
   }
@@ -196,6 +257,7 @@ class DashboardController extends GetxController {
 
   Future<bool> editUser(
     String fullname,
+    String email,
     String phone,
     String role,
     String address,
@@ -208,13 +270,29 @@ class DashboardController extends GetxController {
       phone,
       role,
       id,
+      email,
       truckno: truckno,
     );
   }
 
   //location
-  Future<bool> addLocation(String name, String state, String lga) async {
-    return await appRepo.addLocation(name, state, lga);
+  Future<bool> addLocation(
+    String name,
+    String state,
+    String lga,
+    String type,
+  ) async {
+    return await appRepo.addLocation(name, state, lga, type);
+  }
+
+  Future<bool> editLocation(
+    String name,
+    String state,
+    String lga,
+    String type,
+    int id,
+  ) async {
+    return await appRepo.updateLocation(name, state, lga, type, id);
   }
 
   Future<bool> deleteLocation(int id) async {
@@ -225,13 +303,28 @@ class DashboardController extends GetxController {
     String waybill,
     String loc,
     int driver,
+    int vehicle,
     String pickup,
+    String truckno,
   ) async {
-    return await appRepo.addDelivery(waybill, driver, loc, pickup);
+    return await appRepo.addDelivery(
+      waybill,
+      driver,
+      vehicle,
+      loc,
+      pickup,
+      truckno,
+    );
   }
 
   Future<bool> deleteDelivery(int id) async {
     return await appRepo.deleteDelivery(id);
+  }
+
+  Future<String> generateWayBill() async {
+    final lastId = await appRepo.getLastDeliveryID();
+    final sd = DateFormat("-yyyyMMdd-hhmm-").format(DateTime.now());
+    return "WB$sd${lastId + 1}";
   }
 
   Future changeLocation(String v) async {
@@ -243,14 +336,38 @@ class DashboardController extends GetxController {
   void getFilters<T>(RxList<T> v, String s, String title) {
     if (title.toLowerCase() == "trips") {
       if (s == "New") {
-        v.value = List.from(allCustomerDeliveries.where((test) => !test.hasStarted && !test.isDelivered).toList(),);
+        v.value = List.from(
+          allCustomerDeliveries
+              .where((test) => !test.hasStarted && !test.isDelivered)
+              .toList(),
+        );
       } else if (s == "Ongoing") {
         v.value = List.from(
-          allCustomerDeliveries.where((test) => test.hasStarted && !test.isDelivered).toList(),
+          allCustomerDeliveries
+              .where((test) => test.hasStarted && !test.isDelivered)
+              .toList(),
         );
       } else if (s == "Finished") {
         v.value = List.from(
           allCustomerDeliveries.where((test) => test.isDelivered).toList(),
+        );
+      }
+    } else if (title.toLowerCase() == "drivertrips") {
+      if (s == "New") {
+        v.value = List.from(
+          allDeliveries
+              .where((test) => !test.hasStarted && !test.isDelivered)
+              .toList(),
+        );
+      } else if (s == "Ongoing") {
+        v.value = List.from(
+          allDeliveries
+              .where((test) => test.hasStarted && !test.isDelivered)
+              .toList(),
+        );
+      } else if (s == "Completed") {
+        v.value = List.from(
+          allDeliveries.where((test) => test.isDelivered).toList(),
         );
       }
     } else if (title.toLowerCase() == "users") {
@@ -283,5 +400,31 @@ class DashboardController extends GetxController {
       }
     }
     v.refresh();
+  }
+
+  void refreshResource() {
+    if (curResourceHistory.value.title == DashboardMode.trips.name) {
+      curResourceHistory.value.items = allCustomerDeliveries;
+    } else if (curResourceHistory.value.title == DashboardMode.users.name) {
+      curResourceHistory.value.items = allCustomers;
+    } else if (curResourceHistory.value.title == DashboardMode.drivers.name) {
+      curResourceHistory.value.items = allDrivers;
+    } else if (curResourceHistory.value.title == DashboardMode.location.name) {
+      curResourceHistory.value.items = List.from(
+        States.states.map((e) {
+          return StateLocation(name: e, isActive: e == "Kano" || e == "Kaduna");
+        }),
+      );
+    } else if (curResourceHistory.value.title ==
+        DashboardMode.facilities.name) {
+      curResourceHistory.value.items = allFacilities;
+    } else if (curResourceHistory.value.title == DashboardMode.pickups.name) {
+      curResourceHistory.value.items = allLoadingPoints;
+    } else if (curResourceHistory.value.title == DashboardMode.vehicles.name) {
+      curResourceHistory.value.items = allVehicles;
+    } else {
+      curResourceHistory.value.items = [];
+    }
+    curResourceHistory.refresh();
   }
 }

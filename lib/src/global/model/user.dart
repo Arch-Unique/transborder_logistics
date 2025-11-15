@@ -114,6 +114,30 @@ class StateLocation implements Slugger {
   String get slug => desc;
 }
 
+class Vehicle implements Slugger {
+  int id;
+  String? name,regno,type;
+
+  Vehicle({this.id = 0, this.name = "", this.regno = "", this.type = ""});
+
+  String get desc => "$name $regno $type";
+
+  static List<String> get tableTitle => ["Name", "Regno","Type"];
+  List<String> get tableValue => [name ?? "", regno ?? "", type ?? ""];
+
+  factory Vehicle.fromJson(Map<String, dynamic> json) {
+    return Vehicle(
+      id: json["id"],
+      name: json["name"],
+      regno: json["regno"],
+      type: json["type"],
+    );
+  }
+  
+  @override
+  String get slug => desc;
+}
+
 class Delivery implements Slugger{
   int id;
   int driverId, ownerId;

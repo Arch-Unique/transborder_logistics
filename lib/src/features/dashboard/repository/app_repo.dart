@@ -66,7 +66,7 @@ class AppRepo extends GetxController {
   }
 
   Future<bool> startDelivery(int id, String a, int c) async {
-    final uri = "${AppUrls.deliveryURL}/deliveries/$id";
+    final uri = "${AppUrls.deliveryURL}/deliveries/driver/$id";
 
     final res = await apiService.patch(
       uri,
@@ -90,12 +90,21 @@ class AppRepo extends GetxController {
     int c,
     List<String?> sd,
     List<String?> pics,
+    String picName,
+    String picContact,
   ) async {
-    final uri = "${AppUrls.deliveryURL}/deliveries/$id";
+    final uri = "${AppUrls.deliveryURL}/deliveries/driver/$id";
 
     final res = await apiService.patch(
       uri,
-      data: {"stopsdate": sd, "waybill": a, "driverid": c, "picture": pics},
+      data: {
+        "stopsdate": sd,
+        "waybill": a,
+        "driverid": c,
+        "picture": pics,
+        "pickupname": picName,
+        "pickupphone": picContact,
+      },
     );
 
     if (res.statusCode!.isSuccess()) {
@@ -127,7 +136,8 @@ class AppRepo extends GetxController {
     String name,
     String location,
     String phone,
-    String role, {
+    String role,
+    String email, {
     String? truckno,
   }) async {
     const uri = "${AppUrls.profileURL}/user";
@@ -139,6 +149,7 @@ class AppRepo extends GetxController {
         "address": location,
         "phone": phone,
         "role": role,
+        "email": email,
         "truckno": truckno,
       },
     );
@@ -150,7 +161,8 @@ class AppRepo extends GetxController {
     String location,
     String phone,
     String role,
-    int id, {
+    int id,
+    String email, {
     String? truckno,
   }) async {
     final uri = "${AppUrls.profileURL}/user/$id";
@@ -163,6 +175,7 @@ class AppRepo extends GetxController {
         "phone": phone,
         "role": role,
         "truckno": truckno,
+        "email": email,
       },
     );
     return res.statusCode!.isSuccess();
@@ -224,12 +237,33 @@ class AppRepo extends GetxController {
     return 0;
   }
 
-  Future<bool> addLocation(String name, String state, String lga) async {
+  Future<bool> addLocation(
+    String name,
+    String state,
+    String lga,
+    String type,
+  ) async {
     const uri = "${AppUrls.utilsURL}/location";
 
     final res = await apiService.post(
       uri,
-      data: {"name": name, "state": state, "lga": lga},
+      data: {"name": name, "state": state, "lga": lga, "type": type},
+    );
+    return res.statusCode!.isSuccess();
+  }
+
+  Future<bool> updateLocation(
+    String name,
+    String state,
+    String lga,
+    String type,
+    int id,
+  ) async {
+    final uri = "${AppUrls.utilsURL}/location/$id";
+
+    final res = await apiService.patch(
+      uri,
+      data: {"name": name, "state": state, "lga": lga, "type": type},
     );
     return res.statusCode!.isSuccess();
   }
@@ -257,8 +291,10 @@ class AppRepo extends GetxController {
   Future<bool> addDelivery(
     String waybill,
     int driver,
+    int vehicle,
     String loc,
     String pickup,
+    String truckno,
   ) async {
     const uri = "${AppUrls.deliveryURL}/deliveries";
 
@@ -267,9 +303,37 @@ class AppRepo extends GetxController {
       data: {
         "waybill": waybill,
         "driverid": driver,
+        "vehicleid": vehicle,
         "ownerid": appService.currentUser.value.id,
         "stops": [loc],
         "pickup": pickup,
+        "truckno": truckno,
+      },
+    );
+    return res.statusCode!.isSuccess();
+  }
+
+  Future<bool> updateDelivery(
+    String waybill,
+    String loc,
+    int driver,
+    int vehicle,
+    String pickup,
+    String truckno,
+    int id,
+  ) async {
+    final uri = "${AppUrls.deliveryURL}/deliveries/admin/$id";
+
+    final res = await apiService.patch(
+      uri,
+      data: {
+        "waybill": waybill,
+        "driverid": driver,
+        "vehicleid": vehicle,
+        "ownerid": appService.currentUser.value.id,
+        "stops": [loc],
+        "pickup": pickup,
+        "truckno": truckno,
       },
     );
     return res.statusCode!.isSuccess();
@@ -293,5 +357,50 @@ class AppRepo extends GetxController {
       return delivery;
     }
     return delivery;
+  }
+
+  Future<List<Vehicle>> getVehicles() async {
+    const uri = "${AppUrls.utilsURL}/vehicle?page=1&pageSize=0";
+
+    final res = await apiService.get(uri);
+    List<Vehicle> vehicles = [];
+    if (res.statusCode!.isSuccess()) {
+      final c = res.data["data"]["data"] as List;
+      vehicles.addAll(c.map<Vehicle>((e) => Vehicle.fromJson(e)));
+      return vehicles;
+    }
+    return vehicles;
+  }
+
+  Future<bool> addVehicle(String name, String regno, String type) async {
+    const uri = "${AppUrls.utilsURL}/vehicle";
+
+    final res = await apiService.post(
+      uri,
+      data: {"name": name, "regno": regno, "type": type},
+    );
+    return res.statusCode!.isSuccess();
+  }
+
+  Future<bool> updateVehicle(
+    String name,
+    String regno,
+    String type,
+    int id,
+  ) async {
+    final uri = "${AppUrls.utilsURL}/vehicle/$id";
+
+    final res = await apiService.patch(
+      uri,
+      data: {"name": name, "regno": regno, "type": type},
+    );
+    return res.statusCode!.isSuccess();
+  }
+
+  Future<bool> deleteVehicle(int id) async {
+    final uri = "${AppUrls.utilsURL}/vehicle/$id";
+
+    final res = await apiService.delete(uri);
+    return res.statusCode!.isSuccess();
   }
 }

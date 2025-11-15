@@ -1,4 +1,5 @@
 import 'package:hugeicons/hugeicons.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:transborder_logistics/src/global/services/barrel.dart';
 import 'package:transborder_logistics/src/global/ui/widgets/others/containers.dart';
 import 'package:flutter/material.dart';
@@ -496,7 +497,7 @@ class _PageIndicatorState extends State<PageIndicator> {
     );
   }
 
-  changeIndex(int a) {
+  void changeIndex(int a) {
     currentIndex = a;
     if (mounted) {
       setState(() {});
@@ -684,115 +685,84 @@ Widget badge({
   );
 }
 
-// class ChooseCam extends StatefulWidget {
-//   const ChooseCam({Key? key}) : super(key: key);
+class ChooseCam extends StatefulWidget {
+  const ChooseCam({Key? key}) : super(key: key);
 
-//   @override
-//   State<ChooseCam> createState() => _ChooseCamState();
-// }
+  @override
+  State<ChooseCam> createState() => _ChooseCamState();
+}
 
-// class _ChooseCamState extends State<ChooseCam> {
-//   final ImagePicker _picker = ImagePicker();
-//   final controller = Get.find<SettingsController>();
+class _ChooseCamState extends State<ChooseCam> {
+  final ImagePicker _picker = ImagePicker();
 
-//   XFile? finalImage;
-//   List<IconData> icons = [IconlyLight.camera, IconlyLight.image];
-//   List<String> iconText = ["Camera", "Gallery"];
+  XFile? finalImage;
+  List<IconData> icons = [Iconsax.camera_outline, Iconsax.image_outline];
+  List<String> iconText = ["Camera", "Gallery"];
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return Container(
-//       decoration: const BoxDecoration(
-//         color: AppColors.primaryColor,
-//         borderRadius: BorderRadius.only(
-//             topLeft: Radius.circular(16), topRight: Radius.circular(16)),
-//       ),
-//       child: Column(
-//         mainAxisSize: MainAxisSize.min,
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           Padding(
-//               padding: const EdgeInsets.only(top: 24.0, right: 24, left: 24),
-//               child: AppText.medium("Choose Photo")),
-//           Row(
-//               children: List.generate(
-//                   2,
-//                   (index) => GestureDetector(
-//                       onTap: () async {
-//                         await buildCamPicker(index);
-//                       },
-//                       child: buildVIT(index)))),
-//           Ui.boxHeight(56)
-//         ],
-//       ),
-//     );
-//   }
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(16), topRight: Radius.circular(16)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+              padding: const EdgeInsets.only(top: 24.0, right: 24, left: 24),
+              child: AppText.medium("Choose Photo")),
+          Row(
+              children: List.generate(
+                  2,
+                  (index) => GestureDetector(
+                      onTap: () async {
+                        await buildCamPicker(index);
+                      },
+                      child: buildVIT(index)))),
+          Ui.boxHeight(24)
+        ],
+      ),
+    );
+  }
 
-//   buildCamPicker(int index) async {
-//     if (index == 0) {
-//       finalImage = await _picker.pickImage(source: ImageSource.camera);
-//     } else {
-//       finalImage = await _picker.pickImage(source: ImageSource.gallery);
-//     }
+  Future<void> buildCamPicker(int index) async {
+    if (index == 0) {
+      finalImage = await _picker.pickImage(source: ImageSource.camera);
+    } else {
+      finalImage = await _picker.pickImage(source: ImageSource.gallery);
+    }
 
-//     CroppedFile? file = await ImageCropper().cropImage(
-//       sourcePath: finalImage!.path,
-//       aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
-//       // compressQuality: 100,
-//       maxHeight: 256,
-//       maxWidth: 256,
-//       compressFormat: ImageCompressFormat.jpg,
-//       cropStyle: CropStyle.circle,
-//       uiSettings: [
-//         IOSUiSettings(
-//           title: "Adjust Size",
-//         ),
-//         AndroidUiSettings(
-//           toolbarColor: Colors.white,
-//           toolbarTitle: "Adjust Size",
-//         ),
-//       ],
-//     );
+    
+    String filepath = finalImage!.path;
 
-//     // int a = File(file!.path).lengthSync();
+    Get.back<String>(result: filepath);
+  }
 
-//     // int kb = a ~/ 1024;
-//     String filepath = file!.path;
-
-//     // if (kb >= 5000) {
-//     //   ImageProperties properties =
-//     //       await FlutterNativeImage.getImageProperties(filepath);
-//     //   File compressedFile = await FlutterNativeImage.compressImage(filepath,
-//     //       quality: 80, targetWidth: 144, targetHeight: 144);
-//     //   filepath = compressedFile.path;
-//     // }
-
-//     controller.changeUserImage(filepath);
-//     Get.back();
-//   }
-
-//   Widget buildVIT(int i) {
-//     return Padding(
-//       padding: const EdgeInsets.all(24.0),
-//       child: Column(
-//         mainAxisSize: MainAxisSize.min,
-//         children: [
-//           Icon(
-//             icons[i],
-//             size: 48,
-//             color: AppColors.white,
-//           ),
-//           const SizedBox(
-//             height: 8,
-//           ),
-//           AppText.thin(
-//             iconText[i],
-//           )
-//         ],
-//       ),
-//     );
-//   }
-// }
+  Widget buildVIT(int i) {
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icons[i],
+            size: 48,
+            color: AppColors.black,
+          ),
+          const SizedBox(
+            height: 8,
+          ),
+          AppText.thin(
+            iconText[i],
+          )
+        ],
+      ),
+    );
+  }
+}
 
 class AppDivider extends StatelessWidget {
   const AppDivider({Key? key}) : super(key: key);

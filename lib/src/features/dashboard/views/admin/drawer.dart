@@ -72,7 +72,7 @@ class AppDrawer extends StatelessWidget {
                               items: controller.allLoadingPoints,
                             );
                           } else if (e == DashboardMode.vehicles) {
-                            rh = ResourceHistory(items: []);
+                            rh = ResourceHistory(items: controller.allVehicles);
                           } else {
                             rh = ResourceHistory(items: []);
                           }

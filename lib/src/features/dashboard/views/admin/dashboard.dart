@@ -4,6 +4,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:transborder_logistics/src/features/dashboard/controllers/dashboard_controller.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/shared.dart';
 import 'package:transborder_logistics/src/global/ui/ui_barrel.dart';
+import 'package:transborder_logistics/src/global/ui/widgets/fields/custom_dropdown.dart';
 import 'package:transborder_logistics/src/global/ui/widgets/others/containers.dart';
 import 'package:transborder_logistics/src/src_barrel.dart';
 
@@ -22,6 +23,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
       padding: EdgeInsets.all(16),
       child: Column(
         children: [
+          AppContainer("",
+            [ CustomDropdown.city(
+              hint: "Select Location",
+              label: "Location",
+              selectedValue: controller.curLoc.value,
+              onChanged: (v) async {
+                await controller.changeLocation(v ?? "All");
+              },
+              cities: ["All", "Kano", "Kaduna"],
+            ),]
+          ),
+          Ui.boxHeight(16),
           Wrap(
             spacing: 16,
             runSpacing: 16,
@@ -44,6 +57,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               dashboardItem(
                 DashboardItem.location,
                 controller.allLocation.length,
+                0,
+              ),
+              dashboardItem(
+                DashboardItem.vehicles,
+                controller.allVehicles.length,
                 0,
               ),
             ],
@@ -69,7 +87,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           Row(
             children: [
-              CircleIcon(dit.icon, radius: 10, size: 14,ic: AppColors.primaryColor,bg: AppColors.primaryColor[50],),
+              CircleIcon(
+                dit.icon,
+                radius: 10,
+                size: 14,
+                ic: AppColors.primaryColor,
+                bg: AppColors.primaryColor[50],
+              ),
               Ui.boxWidth(4),
               AppText.medium(dit.name, fontSize: 14),
               Spacer(),
@@ -89,11 +113,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               AppText.thin(value.toCurrencyWS(), fontSize: 18),
               Spacer(),
               AppText.thin(
-                "${rate > 0
-                    ? "+"
-                    : ""}${rate.toStringAsFixed(2)}%",
+                "${rate > 0 ? "+" : ""}${rate.toStringAsFixed(2)}%",
                 fontSize: 12,
-                color: color
+                color: color,
               ),
             ],
           ),

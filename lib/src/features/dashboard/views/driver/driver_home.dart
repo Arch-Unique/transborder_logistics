@@ -197,7 +197,7 @@ class DriverExplorer extends StatelessWidget {
                   controller.allDeliveries,
                   filters: ["All", "New", "Ongoing", "Completed"],
                   onFilter: (v, s) {
-                    controller.getFilters(v, s, "");
+                    controller.getFilters(v, s, "drivertrips");
                   },
                 ),
               );

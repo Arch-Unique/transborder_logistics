@@ -55,7 +55,8 @@ class _AdminExplorerState extends State<AdminExplorer> {
         ),
         trailing: [
           Obx(() {
-            return controller.curResourceHistory.value.title == "Dashboard"
+            return controller.curResourceHistory.value.title == "Dashboard" || 
+                    controller.curResourceHistory.value.title == "Location"
                 ? SizedBox()
                 : InkWell(
                     onTap: () {

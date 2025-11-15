@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -98,32 +100,91 @@ class DriverInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return RawInfo(
+      title: user.name,
+      desc: user.role,
+      subtitle: user.location,
+      image: "",
+      vb: () {
+        Get.bottomSheet(AddResource<User>("Drivers", obj: user));
+      },
+    );
+  }
+}
+
+class UserInfo extends StatelessWidget {
+  const UserInfo(this.user, {super.key});
+  final User user;
+
+  @override
+  Widget build(BuildContext context) {
+    return RawInfo(
+      title: user.name,
+      desc: user.role,
+      subtitle: user.location,
+      image: "",
+      vb: () {
+        Get.bottomSheet(AddResource<User>("Users", obj: user));
+      },
+    );
+  }
+}
+
+class VehicleInfo extends StatelessWidget {
+  const VehicleInfo(this.vehicle, {super.key});
+  final Vehicle vehicle;
+
+  @override
+  Widget build(BuildContext context) {
+    return RawInfo(
+      title: vehicle.name,
+      desc: vehicle.type,
+      subtitle: vehicle.regno,
+      image: "",
+      vb: () {
+        Get.bottomSheet(AddResource<Vehicle>("Vehicles", obj: vehicle));
+      },
+    );
+  }
+}
+
+class RawInfo extends StatelessWidget {
+  const RawInfo({
+    this.title,
+    this.desc,
+    this.subtitle,
+    this.image = "",
+    this.vb,
+    super.key,
+  });
+  final String? title, desc, subtitle, image;
+  final VoidCallback? vb;
+
+  @override
+  Widget build(BuildContext context) {
     return CurvedContainer(
       border: Border.all(color: AppColors.borderColor),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: EdgeInsets.all(12),
-      onPressed: () {
-        Get.bottomSheet(AddResource<User>("Users", obj: user));
-        // Get.to(WaybillDetailPage(delivery));
-      },
+      onPressed: vb,
       radius: 12,
       child: Row(
         children: [
-          CurvedImage("", w: 48, h: 48),
+          CurvedImage(image ?? "", w: 48, h: 48),
           Ui.boxWidth(12),
           Expanded(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AppText.medium(user.name ?? "N/A", fontSize: 12),
+                AppText.medium(title ?? "N/A", fontSize: 12),
                 AppText.thin(
-                  user.role.capitalize ?? "",
+                  desc?.capitalize ?? "",
                   fontSize: 10,
                   color: AppColors.lightTextColor,
                 ),
                 AppText.medium(
-                  user.truckno ?? "N/A",
+                  subtitle ?? "N/A",
                   fontSize: 10,
                   color: AppColors.lightTextColor,
                 ),
@@ -144,42 +205,14 @@ class LocationInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CurvedContainer(
-      border: Border.all(color: AppColors.borderColor),
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: EdgeInsets.all(12),
-      onPressed: () {
+    return RawInfo(
+      title: user.name,
+      desc: user.facilityType,
+      subtitle: "${user.lga}, ${user.state}",
+      vb: () {
         Get.bottomSheet(AddResource<Location>("Facilities", obj: user));
         // Get.to(WaybillDetailPage(delivery));
       },
-      radius: 12,
-      child: Row(
-        children: [
-          CurvedImage("", w: 48, h: 48),
-          Ui.boxWidth(12),
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AppText.medium(user.name ?? "N/A", fontSize: 12),
-                AppText.thin(
-                  user.facilityType ?? "",
-                  fontSize: 10,
-                  color: AppColors.lightTextColor,
-                ),
-                AppText.medium(
-                  "${user.lga}, ${user.state}",
-                  fontSize: 10,
-                  color: AppColors.lightTextColor,
-                ),
-              ],
-            ),
-          ),
-          Ui.boxWidth(24),
-          DriverStatusChip("Available"),
-        ],
-      ),
     );
   }
 }
@@ -357,7 +390,7 @@ class WaybillDetailPage extends StatelessWidget {
                         Expanded(
                           child: InfoValue(
                             "Request Date",
-                            delivery.start,
+                            delivery.created,
                             isStart: true,
                           ),
                         ),
@@ -516,11 +549,18 @@ class WaybillDetailPage extends StatelessWidget {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  CircleIcon(HugeIcons.strokeRoundedDownload01),
-                  Ui.boxWidth(16),
+                  if (!delivery.hasStarted && !delivery.isDelivered)
+                    CircleIcon(
+                      HugeIcons.strokeRoundedEdit01,
+                      onTap: () {
+                        Get.bottomSheet(
+                          AddResource<Delivery>("Trips", obj: delivery),
+                        );
+                      },
+                    ),
+                  if (!delivery.hasStarted && !delivery.isDelivered)
+                    Ui.boxWidth(16),
                   CircleIcon(HugeIcons.strokeRoundedShare08),
-                  Ui.boxWidth(16),
-                  CircleIcon(HugeIcons.strokeRoundedPrinter),
                 ],
               ),
 
@@ -536,36 +576,88 @@ class WaybillDetailPage extends StatelessWidget {
                           "Confirm Start",
                           "Confirm",
                           msg: "Are you sure you want to start the trip",
+                          onTap: () async {
+                            final a = await Get.find<DashboardController>()
+                                .startDelivery(delivery.id);
+                            if (a) {
+                              Get.back();
+                              Ui.showInfo("Delivery Started Successfully");
+                            } else {
+                              Ui.showError("Failed to start delivery");
+                            }
+                          },
                         ),
                       );
                     } else {
+                      List<TextEditingController> tecs = List.generate(
+                        3,
+                        (i) => TextEditingController(),
+                      );
+                      RxString img = "".obs;
                       Get.bottomSheet(
                         AppBottomSheet(
                           "Confirm Delivery",
                           "Confirm",
-                          onTap: () {
-                            Ui.showError("Hello World");
+                          onTap: () async {
+                            if (UtilFunctions.validateTecs(tecs)) {
+                              final a = await Get.find<DashboardController>()
+                                  .stopDelivery(
+                                    delivery.id,
+                                    0,
+                                    tecs[2].text,
+                                    tecs[0].text,
+                                    tecs[1].text,
+                                  );
+                              if (a) {
+                                Get.back();
+                                Ui.showInfo("Delivery Ended Successfully");
+                              } else {
+                                Ui.showInfo("Delivery failed to end");
+                              }
+                            } else {
+                              Ui.showError("All Fields are mandatory to fill");
+                            }
                           },
                           actions: [
                             CustomTextField(
                               "Add Name",
-                              TextEditingController(),
+                              tecs[0],
                               label: "Name of receiver",
                             ),
                             CustomTextField(
                               "Add Contact",
-                              TextEditingController(),
+                              tecs[1],
                               label: "Contact",
                             ),
 
                             FieldValue(
                               "Proof Image",
                               child: InkWell(
-                                child: AppText.thin(
-                                  "Select image >",
-                                  color: AppColors.lightTextColor,
-                                  fontSize: 12,
-                                ),
+                                onTap: () async {
+                                  // img.value="";
+                                  final path = await Get.bottomSheet(
+                                    ChooseCam(),
+                                  );
+                                  //upload image;
+                                  if (path != null) {
+                                    tecs[2].text = path;
+                                    img.value = path;
+                                  }
+                                },
+                                child: Obx(() {
+                                  if (img.value.isNotEmpty) {
+                                    return Image.file(
+                                      File(img.value),
+                                      height: 12,
+                                      width: 24,
+                                    );
+                                  }
+                                  return AppText.thin(
+                                    "Select image >",
+                                    color: AppColors.lightTextColor,
+                                    fontSize: 12,
+                                  );
+                                }),
                               ),
                             ),
                           ],
@@ -765,6 +857,7 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appService = Get.find<AppService>();
+    final tecs = List.generate(2, (i) => TextEditingController());
     return SingleChildScrollView(
       padding: EdgeInsets.all(16),
       child: Column(
@@ -811,18 +904,31 @@ class ProfilePage extends StatelessWidget {
                   AppBottomSheet(
                     "Reset PIN",
                     "Reset",
-                    onTap: () async {},
+                    onTap: () async {
+                      if (tecs[0].text == tecs[1].text &&
+                          tecs[0].text.length == 4) {
+                        //change password
+                        final b = await Get.find<DashboardController>().appRepo
+                            .resetPassword(tecs[0].text);
+                        if (b) {
+                          Get.back();
+                          Ui.showInfo("PIn Successfully changed");
+                        }
+                      } else {
+                        Ui.showError("PIN does not match");
+                      }
+                    },
                     actions: [
                       CustomTextField(
                         "****",
-                        TextEditingController(),
-                        varl: FPL.password,
+                        tecs[0],
+                        varl: FPL.number,
                         label: "New PIN",
                       ),
                       CustomTextField(
                         "****",
-                        TextEditingController(),
-                        varl: FPL.password,
+                        tecs[1],
+                        varl: FPL.number,
                         label: "Confirm PIN",
                       ),
                     ],
@@ -946,12 +1052,15 @@ class AddResource<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.find<DashboardController>();
     final List<TextEditingController> tecs = List.generate(
       10,
       (i) => TextEditingController(),
     );
+    RxString locState = "Kano".obs;
+
     if (obj != null) {
-      if (title.toLowerCase() == "users") {
+      if (title.toLowerCase() == "users" || title.toLowerCase() == "drivers") {
         final user = obj as User;
         tecs[0].text = user.name ?? "";
         tecs[1].text = user.email ?? "";
@@ -967,22 +1076,178 @@ class AddResource<T> extends StatelessWidget {
         tecs[1].text = user.lga ?? "";
         tecs[2].text = user.facilityType ?? "";
         tecs[3].text = user.state ?? "Kano";
+        locState.value = tecs[3].text;
+      }
+
+      if (title.toLowerCase() == "vehicles") {
+        final vehicle = obj as Vehicle;
+        tecs[0].text = vehicle.name ?? "";
+        tecs[1].text = vehicle.regno ?? "";
+        tecs[2].text = vehicle.type ?? "";
+      }
+
+      if (title.toLowerCase() == "trips") {
+        final delivery = obj as Delivery;
+        tecs[0].text = delivery.pickup ?? "";
+        tecs[1].text = delivery.stops[0];
+        tecs[2].text = delivery.driver ?? "";
+        tecs[3].text = delivery.truckno ?? "";
+        tecs[4].text = delivery.waybill;
+      }
+    } else {
+      if (title.toLowerCase() == "trips") {
+        controller.generateWayBill().then((v) {
+          tecs[4].text = v;
+        });
       }
     }
-    final controller = Get.find<DashboardController>();
 
     return AppBottomSheet(
       obj == null ? "Add $title" : "Edit $title",
       obj == null ? "Add" : "Edit",
-      onTap: () {},
+      onTap: () async {
+        try {
+          if (title.toLowerCase() == "trips") {
+            if (UtilFunctions.validateTecs(tecs.sublist(0, 4))) {
+              if (obj == null) {
+                //add trip
+                await controller.addDelivery(
+                  tecs[4].text,
+                  tecs[1].text,
+                  controller.allDrivers
+                      .firstWhere((d) => d.name == tecs[2].text)
+                      .id,
+                  controller.allVehicles
+                      .firstWhere((v) => v.slug == tecs[3].text)
+                      .id,
+                  tecs[0].text,
+                  tecs[3].text,
+                );
+              } else {
+                //edit trip
+                final trip = obj as Delivery;
+                await controller.appRepo.updateDelivery(
+                  tecs[4].text,
+                  tecs[1].text,
+                  controller.allDrivers
+                      .firstWhere((d) => d.name == tecs[2].text)
+                      .id,
+                  controller.allVehicles
+                      .firstWhere((v) => v.slug == tecs[3].text)
+                      .id,
+                  tecs[0].text,
+                  tecs[3].text,
+                  trip.id,
+                );
+              }
+              Ui.showInfo("Successfully saved");
+            } else {
+              throw "All Fields are mandatory to fill";
+            }
+          } else if (title.toLowerCase() == "users" ||
+              title.toLowerCase() == "drivers") {
+            if (title.toLowerCase() == "drivers") {
+              tecs[3].text = "driver";
+            }
+            if (UtilFunctions.validateTecs(tecs.sublist(0, 5))) {
+              if (obj == null) {
+                //add user
+                await controller.addUser(
+                  tecs[0].text,
+                  tecs[1].text,
+                  tecs[2].text,
+                  tecs[3].text,
+                  tecs[4].text,
+                );
+              } else {
+                //edit user
+                final user = obj as User;
+                await controller.editUser(
+                  tecs[0].text,
+                  tecs[1].text,
+                  tecs[2].text,
+                  tecs[3].text,
+                  tecs[4].text,
+                  user.id,
+                );
+              }
+              Ui.showInfo("Successfully saved");
+            } else {
+              throw "All Fields are mandatory to fill";
+            }
+          } else if (title.toLowerCase() == "facilities" ||
+              title.toLowerCase() == "loading points") {
+            if (title.toLowerCase() == "loading points") {
+              tecs[2].text = "Loading Point";
+            }
+            if (UtilFunctions.validateTecs(tecs.sublist(0, 4))) {
+              if (obj == null) {
+                //add user
+                await controller.addLocation(
+                  tecs[0].text,
+                  tecs[3].text,
+                  tecs[1].text,
+                  tecs[2].text,
+                );
+              } else {
+                //edit user
+                final user = obj as Location;
+                await controller.editLocation(
+                  tecs[0].text,
+                  tecs[3].text,
+                  tecs[1].text,
+                  tecs[2].text,
+                  user.id,
+                );
+              }
+
+              Ui.showInfo("Successfully saved");
+            } else {
+              throw "All Fields are mandatory to fill";
+            }
+          } else if (title.toLowerCase() == "vehicles") {
+            if (UtilFunctions.validateTecs(tecs.sublist(0, 2))) {
+              if (obj == null) {
+                //add vehicle
+                await controller.appRepo.addVehicle(
+                  tecs[0].text,
+                  tecs[1].text,
+                  tecs[2].text,
+                );
+              } else {
+                //edit vehicle
+                final vehicle = obj as Vehicle;
+                await controller.appRepo.updateVehicle(
+                  tecs[0].text,
+                  tecs[1].text,
+                  tecs[2].text,
+                  vehicle.id,
+                );
+              }
+
+              Ui.showInfo("Successfully saved");
+            } else {
+              throw "All Fields are mandatory to fill";
+            }
+          }
+          await controller.initApp();
+          controller.refreshResource();
+
+          Get.back();
+        } catch (e) {
+          Ui.showError(e.toString());
+        }
+      },
       actions: [
         //TRIP
+        if (title.toLowerCase() == "trips")
+          CustomTextField("Waybill", tecs[4], label: "Waybill", readOnly: true),
         if (title.toLowerCase() == "trips")
           CustomDropdown.city(
             cities: controller.allLoadingPoints.map((e) => e.slug).toList(),
             hint: "Add Loading Point",
             label: "Loading Point",
-            selectedValue: tecs[1].text,
+            selectedValue: tecs[0].text,
             onChanged: (v) {
               tecs[0].text = v ?? "";
             },
@@ -992,7 +1257,7 @@ class AddResource<T> extends StatelessWidget {
             cities: controller.allFacilities.map((e) => e.slug).toList(),
             hint: "Add Facility",
             label: "Facility",
-            selectedValue: tecs[2].text,
+            selectedValue: tecs[1].text,
             onChanged: (v) {
               tecs[1].text = v ?? "";
             },
@@ -1007,16 +1272,16 @@ class AddResource<T> extends StatelessWidget {
               tecs[2].text = v ?? "";
             },
           ),
-        // if (title.toLowerCase() == "trips")
-        // CustomDropdown.city(
-        //   cities: controller.allDrivers.map((e) => e.name ?? "").toList(),
-        //   hint: "Add Vehicle",
-        //   label: "Vehicle",
-        //   selectedValue: tecs[4].text,
-        //   onChanged: (v) {
-        //     tecs[3].text = v ?? "";
-        //   },
-        // ),
+        if (title.toLowerCase() == "trips")
+          CustomDropdown.city(
+            cities: controller.allVehicles.map((e) => e.slug).toList(),
+            hint: "Add Vehicle",
+            label: "Vehicle",
+            selectedValue: tecs[3].text,
+            onChanged: (v) {
+              tecs[3].text = v ?? "";
+            },
+          ),
 
         //USER
         if (title.toLowerCase() == "users")
@@ -1058,9 +1323,9 @@ class AddResource<T> extends StatelessWidget {
             cities: ["Kano", "Kaduna"],
             hint: "Add location",
             label: "Location",
-            selectedValue: tecs[3].text,
+            selectedValue: tecs[4].text,
             onChanged: (v) {
-              tecs[3].text = v ?? "";
+              tecs[4].text = v ?? "";
             },
           ),
 
@@ -1068,8 +1333,7 @@ class AddResource<T> extends StatelessWidget {
         if (title.toLowerCase() == "facilities" ||
             title.toLowerCase() == "loading points")
           CustomTextField("Add name", tecs[0], label: "Name"),
-        if (title.toLowerCase() == "facilities" ||
-            title.toLowerCase() == "loading points")
+        if (title.toLowerCase() == "facilities")
           CustomDropdown.city(
             cities: ["Hospital", "Clinic", "Loading Point"],
             hint: "",
@@ -1088,20 +1352,57 @@ class AddResource<T> extends StatelessWidget {
             selectedValue: tecs[3].text,
             onChanged: (v) {
               tecs[3].text = v ?? "";
+              locState.value = v ?? "Kano";
+              tecs[1].text =
+                  (lgas
+                          .where(
+                            (e) =>
+                                e["state"] ==
+                                (locState.value.isEmpty
+                                    ? "Kano"
+                                    : locState.value),
+                          )
+                          .first["lgas"]
+                      as List<String>)[0];
             },
           ),
         if (title.toLowerCase() == "facilities" ||
             title.toLowerCase() == "loading points")
+          Obx(() {
+            return CustomDropdown.city(
+              cities:
+                  lgas
+                          .where(
+                            (e) =>
+                                e["state"] ==
+                                (locState.value.isEmpty
+                                    ? "Kano"
+                                    : locState.value),
+                          )
+                          .first["lgas"]
+                      as List<String>,
+              hint: "",
+              label: "LGA",
+              selectedValue: tecs[1].text,
+              onChanged: (v) {
+                tecs[1].text = v ?? "";
+              },
+            );
+          }),
+
+        //VEHICLE
+        if (title.toLowerCase() == "vehicles")
+          CustomTextField("Vehicle Name", tecs[0], label: "Vehicle Name"),
+        if (title.toLowerCase() == "vehicles")
+          CustomTextField("Reg Number", tecs[1], label: "Reg Number"),
+        if (title.toLowerCase() == "vehicles")
           CustomDropdown.city(
-            cities: lgas
-                .where((e) => e["state"] == (tecs[3].text.isEmpty ? "Kano": tecs[3].text))
-                .map((e) => e["name"] as String)
-                .toList(),
-            hint: "",
-            label: "LGA",
-            selectedValue: tecs[1].text,
+            cities: ["Bus", "Truck", "Pickup"],
+            hint: "Vehicle Type",
+            label: "Vehicle Type",
+            selectedValue: tecs[2].text,
             onChanged: (v) {
-              tecs[1].text = v ?? "";
+              tecs[2].text = v ?? "";
             },
           ),
 
@@ -1135,967 +1436,965 @@ class AddResource<T> extends StatelessWidget {
   }
 }
 
-
 const lgas = [
-    // {
-    //     "state": "Abia",
-    //     "lgas": [
-    //         "Aba North",
-    //         "Aba South",
-    //         "Arochukwu",
-    //         "Bende",
-    //         "Ikawuno",
-    //         "Ikwuano",
-    //         "Isiala-Ngwa North",
-    //         "Isiala-Ngwa South",
-    //         "Isuikwuato",
-    //         "Umu Nneochi",
-    //         "Obi Ngwa",
-    //         "Obioma Ngwa",
-    //         "Ohafia",
-    //         "Ohaozara",
-    //         "Osisioma",
-    //         "Ugwunagbo",
-    //         "Ukwa West",
-    //         "Ukwa East",
-    //         "Umuahia North",
-    //         "Umuahia South"
-    //     ]
-    // },
-    // {
-    //     "state": "Adamawa",
-    //     "lgas": [
-    //         "Demsa",
-    //         "Fufore",
-    //         "Ganye",
-    //         "Girei",
-    //         "Gombi",
-    //         "Guyuk",
-    //         "Hong",
-    //         "Jada",
-    //         "Lamurde",
-    //         "Madagali",
-    //         "Maiha",
-    //         "Mayo-Belwa",
-    //         "Michika",
-    //         "Mubi-North",
-    //         "Mubi-South",
-    //         "Numan",
-    //         "Shelleng",
-    //         "Song",
-    //         "Toungo",
-    //         "Yola North",
-    //         "Yola South"
-    //     ]
-    // },
-    // {
-    //     "state": "Akwa Ibom",
-    //     "lgas": [
-    //         "Abak",
-    //         "Eastern-Obolo",
-    //         "Eket",
-    //         "Esit-Eket",
-    //         "Essien-Udim",
-    //         "Etim-Ekpo",
-    //         "Etinan",
-    //         "Ibeno",
-    //         "Ibesikpo-Asutan",
-    //         "Ibiono-Ibom",
-    //         "Ika",
-    //         "Ikono",
-    //         "Ikot-Abasi",
-    //         "Ikot-Ekpene",
-    //         "Ini",
-    //         "Itu",
-    //         "Mbo",
-    //         "Mkpat-Enin",
-    //         "Nsit-Atai",
-    //         "Nsit-Ibom",
-    //         "Nsit-Ubium",
-    //         "Obot-Akara",
-    //         "Okobo",
-    //         "Onna",
-    //         "Oron",
-    //         "Oruk Anam",
-    //         "Udung-Uko",
-    //         "Ukanafun",
-    //         "Urue-Offong/Oruko",
-    //         "Uruan",
-    //         "Uyo"
-    //     ]
-    // },
-    // {
-    //     "state": "Anambra",
-    //     "lgas": [
-    //         "Aguata",
-    //         "Anambra East",
-    //         "Anambra West",
-    //         "Anaocha",
-    //         "Awka North",
-    //         "Awka South",
-    //         "Ayamelum",
-    //         "Dunukofia",
-    //         "Ekwusigo",
-    //         "Idemili-North",
-    //         "Idemili-South",
-    //         "Ihiala",
-    //         "Njikoka",
-    //         "Nnewi-North",
-    //         "Nnewi-South",
-    //         "Ogbaru",
-    //         "Onitsha-North",
-    //         "Onitsha-South",
-    //         "Orumba-North",
-    //         "Orumba-South"
-    //     ]
-    // },
-    // {
-    //     "state": "Bauchi",
-    //     "lgas": [
-    //         "Alkaleri",
-    //         "Bauchi",
-    //         "Bogoro",
-    //         "Damban",
-    //         "Darazo",
-    //         "Dass",
-    //         "Gamawa",
-    //         "Ganjuwa",
-    //         "Giade",
-    //         "Itas\/Gadau",
-    //         "Jama'Are",
-    //         "Katagum",
-    //         "Kirfi",
-    //         "Misau",
-    //         "Ningi",
-    //         "Shira",
-    //         "Tafawa-Balewa",
-    //         "Toro",
-    //         "Warji",
-    //         "Zaki"
-    //     ]
-    // },
-    // {
-    //     "state": "Benue",
-    //     "lgas": [
-    //         "Ado",
-    //         "Agatu",
-    //         "Apa",
-    //         "Buruku",
-    //         "Gboko",
-    //         "Guma",
-    //         "Gwer-East",
-    //         "Gwer-West",
-    //         "Katsina-Ala",
-    //         "Konshisha",
-    //         "Kwande",
-    //         "Logo",
-    //         "Makurdi",
-    //         "Ogbadibo",
-    //         "Ohimini",
-    //         "Oju",
-    //         "Okpokwu",
-    //         "Otukpo",
-    //         "Tarka",
-    //         "Ukum",
-    //         "Ushongo",
-    //         "Vandeikya"
-    //     ]
-    // },
-    // {
-    //     "state": "Borno",
-    //     "lgas": [
-    //         "Abadam",
-    //         "Askira-Uba",
-    //         "Bama",
-    //         "Bayo",
-    //         "Biu",
-    //         "Chibok",
-    //         "Damboa",
-    //         "Dikwa",
-    //         "Gubio",
-    //         "Guzamala",
-    //         "Gwoza",
-    //         "Hawul",
-    //         "Jere",
-    //         "Kaga",
-    //         "Kala\/Balge",
-    //         "Konduga",
-    //         "Kukawa",
-    //         "Kwaya-Kusar",
-    //         "Mafa",
-    //         "Magumeri",
-    //         "Maiduguri",
-    //         "Marte",
-    //         "Mobbar",
-    //         "Monguno",
-    //         "Ngala",
-    //         "Nganzai",
-    //         "Shani"
-    //     ]
-    // },
-    // {
-    //     "state": "Bayelsa",
-    //     "lgas": [
-    //         "Brass",
-    //         "Ekeremor",
-    //         "Kolokuma\/Opokuma",
-    //         "Nembe",
-    //         "Ogbia",
-    //         "Sagbama",
-    //         "Southern-Ijaw",
-    //         "Yenagoa"
-    //     ]
-    // },
-    // {
-    //     "state": "Cross River",
-    //     "lgas": [
-    //         "Abi",
-    //         "Akamkpa",
-    //         "Akpabuyo",
-    //         "Bakassi",
-    //         "Bekwarra",
-    //         "Biase",
-    //         "Boki",
-    //         "Calabar-Municipal",
-    //         "Calabar-South",
-    //         "Etung",
-    //         "Ikom",
-    //         "Obanliku",
-    //         "Obubra",
-    //         "Obudu",
-    //         "Odukpani",
-    //         "Ogoja",
-    //         "Yakurr",
-    //         "Yala"
-    //     ]
-    // },
-    // {
-    //     "state": "Delta",
-    //     "lgas": [
-    //         "Aniocha North",
-    //         "Aniocha-North",
-    //         "Aniocha-South",
-    //         "Bomadi",
-    //         "Burutu",
-    //         "Ethiope-East",
-    //         "Ethiope-West",
-    //         "Ika-North-East",
-    //         "Ika-South",
-    //         "Isoko-North",
-    //         "Isoko-South",
-    //         "Ndokwa-East",
-    //         "Ndokwa-West",
-    //         "Okpe",
-    //         "Oshimili-North",
-    //         "Oshimili-South",
-    //         "Patani",
-    //         "Sapele",
-    //         "Udu",
-    //         "Ughelli-North",
-    //         "Ughelli-South",
-    //         "Ukwuani",
-    //         "Uvwie",
-    //         "Warri South-West",
-    //         "Warri North",
-    //         "Warri South"
-    //     ]
-    // },
-    // {
-    //     "state": "Ebonyi",
-    //     "lgas": [
-    //         "Abakaliki",
-    //         "Afikpo-North",
-    //         "Afikpo South (Edda)",
-    //         "Ebonyi",
-    //         "Ezza-North",
-    //         "Ezza-South",
-    //         "Ikwo",
-    //         "Ishielu",
-    //         "Ivo",
-    //         "Izzi",
-    //         "Ohaukwu",
-    //         "Onicha"
-    //     ]
-    // },
-    // {
-    //     "state": "Edo",
-    //     "lgas": [
-    //         "Akoko Edo",
-    //         "Egor",
-    //         "Esan-Central",
-    //         "Esan-North-East",
-    //         "Esan-South-East",
-    //         "Esan-West",
-    //         "Etsako-Central",
-    //         "Etsako-East",
-    //         "Etsako-West",
-    //         "Igueben",
-    //         "Ikpoba-Okha",
-    //         "Oredo",
-    //         "Orhionmwon",
-    //         "Ovia-North-East",
-    //         "Ovia-South-West",
-    //         "Owan East",
-    //         "Owan-West",
-    //         "Uhunmwonde"
-    //     ]
-    // },
-    // {
-    //     "state": "Ekiti",
-    //     "lgas": [
-    //         "Ado-Ekiti",
-    //         "Efon",
-    //         "Ekiti-East",
-    //         "Ekiti-South-West",
-    //         "Ekiti-West",
-    //         "Emure",
-    //         "Gbonyin",
-    //         "Ido-Osi",
-    //         "Ijero",
-    //         "Ikere",
-    //         "Ikole",
-    //         "Ilejemeje",
-    //         "Irepodun\/Ifelodun",
-    //         "Ise-Orun",
-    //         "Moba",
-    //         "Oye"
-    //     ]
-    // },
-    // {
-    //     "state": "Enugu",
-    //     "lgas": [
-    //         "Aninri",
-    //         "Awgu",
-    //         "Enugu-East",
-    //         "Enugu-North",
-    //         "Enugu-South",
-    //         "Ezeagu",
-    //         "Igbo-Etiti",
-    //         "Igbo-Eze-North",
-    //         "Igbo-Eze-South",
-    //         "Isi-Uzo",
-    //         "Nkanu-East",
-    //         "Nkanu-West",
-    //         "Nsukka",
-    //         "Oji-River",
-    //         "Udenu",
-    //         "Udi",
-    //         "Uzo-Uwani"
-    //     ]
-    // },
-    // {
-    //     "state": "Federal Capital Territory",
-    //     "lgas": [
-    //         "Abuja",
-    //         "Kwali",
-    //         "Kuje",
-    //         "Gwagwalada",
-    //         "Bwari",
-    //         "Abaji"
-    //     ]
-    // },
-    // {
-    //     "state": "Gombe",
-    //     "lgas": [
-    //         "Akko",
-    //         "Balanga",
-    //         "Billiri",
-    //         "Dukku",
-    //         "Funakaye",
-    //         "Gombe",
-    //         "Kaltungo",
-    //         "Kwami",
-    //         "Nafada",
-    //         "Shongom",
-    //         "Yamaltu\/Deba"
-    //     ]
-    // },
-    // {
-    //     "state": "Imo",
-    //     "lgas": [
-    //         "Aboh-Mbaise",
-    //         "Ahiazu-Mbaise",
-    //         "Ehime-Mbano",
-    //         "Ezinihitte",
-    //         "Ideato-North",
-    //         "Ideato-South",
-    //         "Ihitte\/Uboma",
-    //         "Ikeduru",
-    //         "Isiala-Mbano",
-    //         "Isu",
-    //         "Mbaitoli",
-    //         "Ngor-Okpala",
-    //         "Njaba",
-    //         "Nkwerre",
-    //         "Nwangele",
-    //         "Obowo",
-    //         "Oguta",
-    //         "Ohaji-Egbema",
-    //         "Okigwe",
-    //         "Onuimo",
-    //         "Orlu",
-    //         "Orsu",
-    //         "Oru-East",
-    //         "Oru-West",
-    //         "Owerri-Municipal",
-    //         "Owerri-North",
-    //         "Owerri-West"
-    //     ]
-    // },
-    // {
-    //     "state": "Jigawa",
-    //     "lgas": [
-    //         "Auyo",
-    //         "Babura",
-    //         "Biriniwa",
-    //         "Birnin-Kudu",
-    //         "Buji",
-    //         "Dutse",
-    //         "Gagarawa",
-    //         "Garki",
-    //         "Gumel",
-    //         "Guri",
-    //         "Gwaram",
-    //         "Gwiwa",
-    //         "Hadejia",
-    //         "Jahun",
-    //         "Kafin-Hausa",
-    //         "Kaugama",
-    //         "Kazaure",
-    //         "Kiri kasama",
-    //         "Maigatari",
-    //         "Malam Madori",
-    //         "Miga",
-    //         "Ringim",
-    //         "Roni",
-    //         "Sule-Tankarkar",
-    //         "Taura",
-    //         "Yankwashi"
-    //     ]
-    // },
-    // {
-    //     "state": "Kebbi",
-    //     "lgas": [
-    //         "Aleiro",
-    //         "Arewa-Dandi",
-    //         "Argungu",
-    //         "Augie",
-    //         "Bagudo",
-    //         "Birnin-Kebbi",
-    //         "Bunza",
-    //         "Dandi",
-    //         "Fakai",
-    //         "Gwandu",
-    //         "Jega",
-    //         "Kalgo",
-    //         "Koko-Besse",
-    //         "Maiyama",
-    //         "Ngaski",
-    //         "Sakaba",
-    //         "Shanga",
-    //         "Suru",
-    //         "Wasagu/Danko",
-    //         "Yauri",
-    //         "Zuru"
-    //     ]
-    // },
-   
-    {
-        "state": "Kaduna",
-        "lgas": [
-            "Birnin Gwari",
-            "Chikun",
-            "Giwa",
-            "Igabi",
-            "Ikara",
-            "Jaba",
-            "Jema A",
-            "Kachia",
-            "Kaduna North",
-            "Kaduna South",
-            "Kagarko",
-            "Kajuru",
-            "Kaura",
-            "Kauru",
-            "Kubau",
-            "Kudan",
-            "Lere",
-            "Makarfi",
-            "Sabon Gari",
-            "Sanga",
-            "Soba",
-            "Zangon Kataf",
-            "Zaria"
-        ]
-    },
-    {
-        "state": "Kano",
-        "lgas": [
-            "Ajingi",
-            "Albasu",
-            "Bagwai",
-            "Bebeji",
-            "Bichi",
-            "Bunkure",
-            "Dala",
-            "Dambatta",
-            "Dawakin Kudu",
-            "Dawakin Tofa",
-            "Doguwa",
-            "Fagge",
-            "Gabasawa",
-            "Garko",
-            "Garun Mallam",
-            "Gaya",
-            "Gezawa",
-            "Gwale",
-            "Gwarzo",
-            "Kabo",
-            "Kano Municipal",
-            "Karaye",
-            "Kibiya",
-            "Kiru",
-            "Kumbotso",
-            "Kunchi",
-            "Kura",
-            "Madobi",
-            "Makoda",
-            "Minjibir",
-            "Nasarawa",
-            "Rano",
-            "Rimin Gado",
-            "Rogo",
-            "Shanono",
-            "Sumaila",
-            "Takai",
-            "Tarauni",
-            "Tofa",
-            "Tsanyawa",
-            "Tudun Wada",
-            "Ungogo",
-            "Warawa",
-            "Wudil"
-        ]
-    },
-    // {
-    //     "state": "Kogi",
-    //     "lgas": [
-    //         "Adavi",
-    //         "Ajaokuta",
-    //         "Ankpa",
-    //         "Dekina",
-    //         "Ibaji",
-    //         "Idah",
-    //         "Igalamela-Odolu",
-    //         "Ijumu",
-    //         "Kabba\/Bunu",
-    //         "Kogi",
-    //         "Lokoja",
-    //         "Mopa-Muro",
-    //         "Ofu",
-    //         "Ogori\/Magongo",
-    //         "Okehi",
-    //         "Okene",
-    //         "Olamaboro",
-    //         "Omala",
-    //         "Oyi",
-    //         "Yagba-East",
-    //         "Yagba-West"
-    //     ]
-    // },
-    // {
-    //     "state": "Katsina",
-    //     "lgas": [
-    //         "Bakori",
-    //         "Batagarawa",
-    //         "Batsari",
-    //         "Baure",
-    //         "Bindawa",
-    //         "Charanchi",
-    //         "Dan-Musa",
-    //         "Dandume",
-    //         "Danja",
-    //         "Daura",
-    //         "Dutsi",
-    //         "Dutsin-Ma",
-    //         "Faskari",
-    //         "Funtua",
-    //         "Ingawa",
-    //         "Jibia",
-    //         "Kafur",
-    //         "Kaita",
-    //         "Kankara",
-    //         "Kankia",
-    //         "Katsina",
-    //         "Kurfi",
-    //         "Kusada",
-    //         "Mai-Adua",
-    //         "Malumfashi",
-    //         "Mani",
-    //         "Mashi",
-    //         "Matazu",
-    //         "Musawa",
-    //         "Rimi",
-    //         "Sabuwa",
-    //         "Safana",
-    //         "Sandamu",
-    //         "Zango"
-    //     ]
-    // },
-    // {
-    //     "state": "Kwara",
-    //     "lgas": [
-    //         "Asa",
-    //         "Baruten",
-    //         "Edu",
-    //         "Ekiti (Araromi/Opin)",
-    //         "Ilorin-East",
-    //         "Ilorin-South",
-    //         "Ilorin-West",
-    //         "Isin",
-    //         "Kaiama",
-    //         "Moro",
-    //         "Offa",
-    //         "Oke-Ero",
-    //         "Oyun",
-    //         "Pategi"
-    //     ]
-    // },
-    // {
-    //     "state": "Lagos",
-    //     "lgas": [
-    //         "Agege",
-    //         "Ajeromi-Ifelodun",
-    //         "Alimosho",
-    //         "Amuwo-Odofin",
-    //         "Apapa",
-    //         "Badagry",
-    //         "Epe",
-    //         "Eti-Osa",
-    //         "Ibeju-Lekki",
-    //         "Ifako-Ijaiye",
-    //         "Ikeja",
-    //         "Ikorodu",
-    //         "Kosofe",
-    //         "Lagos-Island",
-    //         "Lagos-Mainland",
-    //         "Mushin",
-    //         "Ojo",
-    //         "Oshodi-Isolo",
-    //         "Shomolu",
-    //         "Surulere",
-    //         "Yewa-South"
-    //     ]
-    // },
-    // {
-    //     "state": "Nasarawa",
-    //     "lgas": [
-    //         "Akwanga",
-    //         "Awe",
-    //         "Doma",
-    //         "Karu",
-    //         "Keana",
-    //         "Keffi",
-    //         "Kokona",
-    //         "Lafia",
-    //         "Nasarawa",
-    //         "Nasarawa-Eggon",
-    //         "Obi",
-    //         "Wamba",
-    //         "Toto"
-    //     ]
-    // },
-    // {
-    //     "state": "Niger",
-    //     "lgas": [
-    //         "Agaie",
-    //         "Agwara",
-    //         "Bida",
-    //         "Borgu",
-    //         "Bosso",
-    //         "Chanchaga",
-    //         "Edati",
-    //         "Gbako",
-    //         "Gurara",
-    //         "Katcha",
-    //         "Kontagora",
-    //         "Lapai",
-    //         "Lavun",
-    //         "Magama",
-    //         "Mariga",
-    //         "Mashegu",
-    //         "Mokwa",
-    //         "Moya",
-    //         "Paikoro",
-    //         "Rafi",
-    //         "Rijau",
-    //         "Shiroro",
-    //         "Suleja",
-    //         "Tafa",
-    //         "Wushishi"
-    //     ]
-    // },
-    // {
-    //     "state": "Ogun",
-    //     "lgas": [
-    //         "Abeokuta-North",
-    //         "Abeokuta-South",
-    //         "Ado-Odo\/Ota",
-    //         "Ewekoro",
-    //         "Ifo",
-    //         "Ijebu-East",
-    //         "Ijebu-North",
-    //         "Ijebu-North-East",
-    //         "Ijebu-Ode",
-    //         "Ikenne",
-    //         "Imeko-Afon",
-    //         "Ipokia",
-    //         "Obafemi-Owode",
-    //         "Odeda",
-    //         "Odogbolu",
-    //         "Ogun-Waterside",
-    //         "Remo-North",
-    //         "Shagamu",
-    //         "Yewa North"
-    //     ]
-    // },
-    // {
-    //     "state": "Ondo",
-    //     "lgas": [
-    //         "Akoko North-East",
-    //         "Akoko North-West",
-    //         "Akoko South-West",
-    //         "Akoko South-East",
-    //         "Akure-North",
-    //         "Akure-South",
-    //         "Ese-Odo",
-    //         "Idanre",
-    //         "Ifedore",
-    //         "Ilaje",
-    //         "Ile-Oluji-Okeigbo",
-    //         "Irele",
-    //         "Odigbo",
-    //         "Okitipupa",
-    //         "Ondo West",
-    //         "Ondo-East",
-    //         "Ose",
-    //         "Owo"
-    //     ]
-    // },
-    // {
-    //     "state": "Osun",
-    //     "lgas": [
-    //         "Atakumosa West",
-    //         "Atakumosa East",
-    //         "Ayedaade",
-    //         "Ayedire",
-    //         "Boluwaduro",
-    //         "Boripe",
-    //         "Ede South",
-    //         "Ede North",
-    //         "Egbedore",
-    //         "Ejigbo",
-    //         "Ife North",
-    //         "Ife South",
-    //         "Ife-Central",
-    //         "Ife-East",
-    //         "Ifelodun",
-    //         "Ila",
-    //         "Ilesa-East",
-    //         "Ilesa-West",
-    //         "Irepodun",
-    //         "Irewole",
-    //         "Isokan",
-    //         "Iwo",
-    //         "Obokun",
-    //         "Odo-Otin",
-    //         "Ola Oluwa",
-    //         "Olorunda",
-    //         "Oriade",
-    //         "Orolu",
-    //         "Osogbo"
-    //     ]
-    // },
-    // {
-    //     "state": "Oyo",
-    //     "lgas": [
-    //         "Afijio",
-    //         "Akinyele",
-    //         "Atiba",
-    //         "Atisbo",
-    //         "Egbeda",
-    //         "Ibadan North",
-    //         "Ibadan North-East",
-    //         "Ibadan North-West",
-    //         "Ibadan South-East",
-    //         "Ibadan South-West",
-    //         "Ibarapa-Central",
-    //         "Ibarapa-East",
-    //         "Ibarapa-North",
-    //         "Ido",
-    //         "Ifedayo",
-    //         "Irepo",
-    //         "Iseyin",
-    //         "Itesiwaju",
-    //         "Iwajowa",
-    //         "Kajola",
-    //         "Lagelu",
-    //         "Ogo-Oluwa",
-    //         "Ogbomosho-North",
-    //         "Ogbomosho-South",
-    //         "Olorunsogo",
-    //         "Oluyole",
-    //         "Ona-Ara",
-    //         "Orelope",
-    //         "Ori-Ire",
-    //         "Oyo-West",
-    //         "Oyo-East",
-    //         "Saki-East",
-    //         "Saki-West",
-    //         "Surulere"
-    //     ]
-    // },
-    // {
-    //     "state": "Plateau",
-    //     "lgas": [
-    //         "Barkin-Ladi",
-    //         "Bassa",
-    //         "Bokkos",
-    //         "Jos-East",
-    //         "Jos-North",
-    //         "Jos-South",
-    //         "Kanam",
-    //         "Kanke",
-    //         "Langtang-North",
-    //         "Langtang-South",
-    //         "Mangu",
-    //         "Mikang",
-    //         "Pankshin",
-    //         "Qua'an Pan",
-    //         "Riyom",
-    //         "Shendam",
-    //         "Wase"
-    //     ]
-    // },
-    // {
-    //     "state": "Rivers",
-    //     "lgas": [
-    //         "Abua\/Odual",
-    //         "Ahoada-East",
-    //         "Ahoada-West",
-    //         "Akuku Toru",
-    //         "Andoni",
-    //         "Asari-Toru",
-    //         "Bonny",
-    //         "Degema",
-    //         "Eleme",
-    //         "Emuoha",
-    //         "Etche",
-    //         "Gokana",
-    //         "Ikwerre",
-    //         "Khana",
-    //         "Obio\/Akpor",
-    //         "Ogba-Egbema-Ndoni",
-    //         "Ogba\/Egbema\/Ndoni",
-    //         "Ogu\/Bolo",
-    //         "Okrika",
-    //         "Omuma",
-    //         "Opobo\/Nkoro",
-    //         "Oyigbo",
-    //         "Port-Harcourt",
-    //         "Tai"
-    //     ]
-    // },
-    // {
-    //     "state": "Sokoto",
-    //     "lgas": [
-    //         "Binji",
-    //         "Bodinga",
-    //         "Dange-Shuni",
-    //         "Gada",
-    //         "Goronyo",
-    //         "Gudu",
-    //         "Gwadabawa",
-    //         "Illela",
-    //         "Kebbe",
-    //         "Kware",
-    //         "Rabah",
-    //         "Sabon Birni",
-    //         "Shagari",
-    //         "Silame",
-    //         "Sokoto-North",
-    //         "Sokoto-South",
-    //         "Tambuwal",
-    //         "Tangaza",
-    //         "Tureta",
-    //         "Wamako",
-    //         "Wurno",
-    //         "Yabo"
-    //     ]
-    // },
-    // {
-    //     "state": "Taraba",
-    //     "lgas": [
-    //         "Ardo-Kola",
-    //         "Bali",
-    //         "Donga",
-    //         "Gashaka",
-    //         "Gassol",
-    //         "Ibi",
-    //         "Jalingo",
-    //         "Karim-Lamido",
-    //         "Kurmi",
-    //         "Lau",
-    //         "Sardauna",
-    //         "Takum",
-    //         "Ussa",
-    //         "Wukari",
-    //         "Yorro",
-    //         "Zing"
-    //     ]
-    // },
-    // {
-    //     "state": "Yobe",
-    //     "lgas": [
-    //         "Bade",
-    //         "Bursari",
-    //         "Damaturu",
-    //         "Fika",
-    //         "Fune",
-    //         "Geidam",
-    //         "Gujba",
-    //         "Gulani",
-    //         "Jakusko",
-    //         "Karasuwa",
-    //         "Machina",
-    //         "Nangere",
-    //         "Nguru",
-    //         "Potiskum",
-    //         "Tarmuwa",
-    //         "Yunusari",
-    //         "Yusufari"
-    //     ]
-    // },
-    // {
-    //     "state": "Zamfara",
-    //     "lgas": [
-    //         "Anka",
-    //         "Bakura",
-    //         "Birnin Magaji/Kiyaw",
-    //         "Bukkuyum",
-    //         "Bungudu",
-    //         "Gummi",
-    //         "Gusau",
-    //         "Isa",
-    //         "Kaura-Namoda",
-    //         "Kiyawa",
-    //         "Maradun",
-    //         "Maru",
-    //         "Shinkafi",
-    //         "Talata-Mafara",
-    //         "Tsafe",
-    //         "Zurmi"
-    //     ]
-    // }
+  // {
+  //     "state": "Abia",
+  //     "lgas": [
+  //         "Aba North",
+  //         "Aba South",
+  //         "Arochukwu",
+  //         "Bende",
+  //         "Ikawuno",
+  //         "Ikwuano",
+  //         "Isiala-Ngwa North",
+  //         "Isiala-Ngwa South",
+  //         "Isuikwuato",
+  //         "Umu Nneochi",
+  //         "Obi Ngwa",
+  //         "Obioma Ngwa",
+  //         "Ohafia",
+  //         "Ohaozara",
+  //         "Osisioma",
+  //         "Ugwunagbo",
+  //         "Ukwa West",
+  //         "Ukwa East",
+  //         "Umuahia North",
+  //         "Umuahia South"
+  //     ]
+  // },
+  // {
+  //     "state": "Adamawa",
+  //     "lgas": [
+  //         "Demsa",
+  //         "Fufore",
+  //         "Ganye",
+  //         "Girei",
+  //         "Gombi",
+  //         "Guyuk",
+  //         "Hong",
+  //         "Jada",
+  //         "Lamurde",
+  //         "Madagali",
+  //         "Maiha",
+  //         "Mayo-Belwa",
+  //         "Michika",
+  //         "Mubi-North",
+  //         "Mubi-South",
+  //         "Numan",
+  //         "Shelleng",
+  //         "Song",
+  //         "Toungo",
+  //         "Yola North",
+  //         "Yola South"
+  //     ]
+  // },
+  // {
+  //     "state": "Akwa Ibom",
+  //     "lgas": [
+  //         "Abak",
+  //         "Eastern-Obolo",
+  //         "Eket",
+  //         "Esit-Eket",
+  //         "Essien-Udim",
+  //         "Etim-Ekpo",
+  //         "Etinan",
+  //         "Ibeno",
+  //         "Ibesikpo-Asutan",
+  //         "Ibiono-Ibom",
+  //         "Ika",
+  //         "Ikono",
+  //         "Ikot-Abasi",
+  //         "Ikot-Ekpene",
+  //         "Ini",
+  //         "Itu",
+  //         "Mbo",
+  //         "Mkpat-Enin",
+  //         "Nsit-Atai",
+  //         "Nsit-Ibom",
+  //         "Nsit-Ubium",
+  //         "Obot-Akara",
+  //         "Okobo",
+  //         "Onna",
+  //         "Oron",
+  //         "Oruk Anam",
+  //         "Udung-Uko",
+  //         "Ukanafun",
+  //         "Urue-Offong/Oruko",
+  //         "Uruan",
+  //         "Uyo"
+  //     ]
+  // },
+  // {
+  //     "state": "Anambra",
+  //     "lgas": [
+  //         "Aguata",
+  //         "Anambra East",
+  //         "Anambra West",
+  //         "Anaocha",
+  //         "Awka North",
+  //         "Awka South",
+  //         "Ayamelum",
+  //         "Dunukofia",
+  //         "Ekwusigo",
+  //         "Idemili-North",
+  //         "Idemili-South",
+  //         "Ihiala",
+  //         "Njikoka",
+  //         "Nnewi-North",
+  //         "Nnewi-South",
+  //         "Ogbaru",
+  //         "Onitsha-North",
+  //         "Onitsha-South",
+  //         "Orumba-North",
+  //         "Orumba-South"
+  //     ]
+  // },
+  // {
+  //     "state": "Bauchi",
+  //     "lgas": [
+  //         "Alkaleri",
+  //         "Bauchi",
+  //         "Bogoro",
+  //         "Damban",
+  //         "Darazo",
+  //         "Dass",
+  //         "Gamawa",
+  //         "Ganjuwa",
+  //         "Giade",
+  //         "Itas\/Gadau",
+  //         "Jama'Are",
+  //         "Katagum",
+  //         "Kirfi",
+  //         "Misau",
+  //         "Ningi",
+  //         "Shira",
+  //         "Tafawa-Balewa",
+  //         "Toro",
+  //         "Warji",
+  //         "Zaki"
+  //     ]
+  // },
+  // {
+  //     "state": "Benue",
+  //     "lgas": [
+  //         "Ado",
+  //         "Agatu",
+  //         "Apa",
+  //         "Buruku",
+  //         "Gboko",
+  //         "Guma",
+  //         "Gwer-East",
+  //         "Gwer-West",
+  //         "Katsina-Ala",
+  //         "Konshisha",
+  //         "Kwande",
+  //         "Logo",
+  //         "Makurdi",
+  //         "Ogbadibo",
+  //         "Ohimini",
+  //         "Oju",
+  //         "Okpokwu",
+  //         "Otukpo",
+  //         "Tarka",
+  //         "Ukum",
+  //         "Ushongo",
+  //         "Vandeikya"
+  //     ]
+  // },
+  // {
+  //     "state": "Borno",
+  //     "lgas": [
+  //         "Abadam",
+  //         "Askira-Uba",
+  //         "Bama",
+  //         "Bayo",
+  //         "Biu",
+  //         "Chibok",
+  //         "Damboa",
+  //         "Dikwa",
+  //         "Gubio",
+  //         "Guzamala",
+  //         "Gwoza",
+  //         "Hawul",
+  //         "Jere",
+  //         "Kaga",
+  //         "Kala\/Balge",
+  //         "Konduga",
+  //         "Kukawa",
+  //         "Kwaya-Kusar",
+  //         "Mafa",
+  //         "Magumeri",
+  //         "Maiduguri",
+  //         "Marte",
+  //         "Mobbar",
+  //         "Monguno",
+  //         "Ngala",
+  //         "Nganzai",
+  //         "Shani"
+  //     ]
+  // },
+  // {
+  //     "state": "Bayelsa",
+  //     "lgas": [
+  //         "Brass",
+  //         "Ekeremor",
+  //         "Kolokuma\/Opokuma",
+  //         "Nembe",
+  //         "Ogbia",
+  //         "Sagbama",
+  //         "Southern-Ijaw",
+  //         "Yenagoa"
+  //     ]
+  // },
+  // {
+  //     "state": "Cross River",
+  //     "lgas": [
+  //         "Abi",
+  //         "Akamkpa",
+  //         "Akpabuyo",
+  //         "Bakassi",
+  //         "Bekwarra",
+  //         "Biase",
+  //         "Boki",
+  //         "Calabar-Municipal",
+  //         "Calabar-South",
+  //         "Etung",
+  //         "Ikom",
+  //         "Obanliku",
+  //         "Obubra",
+  //         "Obudu",
+  //         "Odukpani",
+  //         "Ogoja",
+  //         "Yakurr",
+  //         "Yala"
+  //     ]
+  // },
+  // {
+  //     "state": "Delta",
+  //     "lgas": [
+  //         "Aniocha North",
+  //         "Aniocha-North",
+  //         "Aniocha-South",
+  //         "Bomadi",
+  //         "Burutu",
+  //         "Ethiope-East",
+  //         "Ethiope-West",
+  //         "Ika-North-East",
+  //         "Ika-South",
+  //         "Isoko-North",
+  //         "Isoko-South",
+  //         "Ndokwa-East",
+  //         "Ndokwa-West",
+  //         "Okpe",
+  //         "Oshimili-North",
+  //         "Oshimili-South",
+  //         "Patani",
+  //         "Sapele",
+  //         "Udu",
+  //         "Ughelli-North",
+  //         "Ughelli-South",
+  //         "Ukwuani",
+  //         "Uvwie",
+  //         "Warri South-West",
+  //         "Warri North",
+  //         "Warri South"
+  //     ]
+  // },
+  // {
+  //     "state": "Ebonyi",
+  //     "lgas": [
+  //         "Abakaliki",
+  //         "Afikpo-North",
+  //         "Afikpo South (Edda)",
+  //         "Ebonyi",
+  //         "Ezza-North",
+  //         "Ezza-South",
+  //         "Ikwo",
+  //         "Ishielu",
+  //         "Ivo",
+  //         "Izzi",
+  //         "Ohaukwu",
+  //         "Onicha"
+  //     ]
+  // },
+  // {
+  //     "state": "Edo",
+  //     "lgas": [
+  //         "Akoko Edo",
+  //         "Egor",
+  //         "Esan-Central",
+  //         "Esan-North-East",
+  //         "Esan-South-East",
+  //         "Esan-West",
+  //         "Etsako-Central",
+  //         "Etsako-East",
+  //         "Etsako-West",
+  //         "Igueben",
+  //         "Ikpoba-Okha",
+  //         "Oredo",
+  //         "Orhionmwon",
+  //         "Ovia-North-East",
+  //         "Ovia-South-West",
+  //         "Owan East",
+  //         "Owan-West",
+  //         "Uhunmwonde"
+  //     ]
+  // },
+  // {
+  //     "state": "Ekiti",
+  //     "lgas": [
+  //         "Ado-Ekiti",
+  //         "Efon",
+  //         "Ekiti-East",
+  //         "Ekiti-South-West",
+  //         "Ekiti-West",
+  //         "Emure",
+  //         "Gbonyin",
+  //         "Ido-Osi",
+  //         "Ijero",
+  //         "Ikere",
+  //         "Ikole",
+  //         "Ilejemeje",
+  //         "Irepodun\/Ifelodun",
+  //         "Ise-Orun",
+  //         "Moba",
+  //         "Oye"
+  //     ]
+  // },
+  // {
+  //     "state": "Enugu",
+  //     "lgas": [
+  //         "Aninri",
+  //         "Awgu",
+  //         "Enugu-East",
+  //         "Enugu-North",
+  //         "Enugu-South",
+  //         "Ezeagu",
+  //         "Igbo-Etiti",
+  //         "Igbo-Eze-North",
+  //         "Igbo-Eze-South",
+  //         "Isi-Uzo",
+  //         "Nkanu-East",
+  //         "Nkanu-West",
+  //         "Nsukka",
+  //         "Oji-River",
+  //         "Udenu",
+  //         "Udi",
+  //         "Uzo-Uwani"
+  //     ]
+  // },
+  // {
+  //     "state": "Federal Capital Territory",
+  //     "lgas": [
+  //         "Abuja",
+  //         "Kwali",
+  //         "Kuje",
+  //         "Gwagwalada",
+  //         "Bwari",
+  //         "Abaji"
+  //     ]
+  // },
+  // {
+  //     "state": "Gombe",
+  //     "lgas": [
+  //         "Akko",
+  //         "Balanga",
+  //         "Billiri",
+  //         "Dukku",
+  //         "Funakaye",
+  //         "Gombe",
+  //         "Kaltungo",
+  //         "Kwami",
+  //         "Nafada",
+  //         "Shongom",
+  //         "Yamaltu\/Deba"
+  //     ]
+  // },
+  // {
+  //     "state": "Imo",
+  //     "lgas": [
+  //         "Aboh-Mbaise",
+  //         "Ahiazu-Mbaise",
+  //         "Ehime-Mbano",
+  //         "Ezinihitte",
+  //         "Ideato-North",
+  //         "Ideato-South",
+  //         "Ihitte\/Uboma",
+  //         "Ikeduru",
+  //         "Isiala-Mbano",
+  //         "Isu",
+  //         "Mbaitoli",
+  //         "Ngor-Okpala",
+  //         "Njaba",
+  //         "Nkwerre",
+  //         "Nwangele",
+  //         "Obowo",
+  //         "Oguta",
+  //         "Ohaji-Egbema",
+  //         "Okigwe",
+  //         "Onuimo",
+  //         "Orlu",
+  //         "Orsu",
+  //         "Oru-East",
+  //         "Oru-West",
+  //         "Owerri-Municipal",
+  //         "Owerri-North",
+  //         "Owerri-West"
+  //     ]
+  // },
+  // {
+  //     "state": "Jigawa",
+  //     "lgas": [
+  //         "Auyo",
+  //         "Babura",
+  //         "Biriniwa",
+  //         "Birnin-Kudu",
+  //         "Buji",
+  //         "Dutse",
+  //         "Gagarawa",
+  //         "Garki",
+  //         "Gumel",
+  //         "Guri",
+  //         "Gwaram",
+  //         "Gwiwa",
+  //         "Hadejia",
+  //         "Jahun",
+  //         "Kafin-Hausa",
+  //         "Kaugama",
+  //         "Kazaure",
+  //         "Kiri kasama",
+  //         "Maigatari",
+  //         "Malam Madori",
+  //         "Miga",
+  //         "Ringim",
+  //         "Roni",
+  //         "Sule-Tankarkar",
+  //         "Taura",
+  //         "Yankwashi"
+  //     ]
+  // },
+  // {
+  //     "state": "Kebbi",
+  //     "lgas": [
+  //         "Aleiro",
+  //         "Arewa-Dandi",
+  //         "Argungu",
+  //         "Augie",
+  //         "Bagudo",
+  //         "Birnin-Kebbi",
+  //         "Bunza",
+  //         "Dandi",
+  //         "Fakai",
+  //         "Gwandu",
+  //         "Jega",
+  //         "Kalgo",
+  //         "Koko-Besse",
+  //         "Maiyama",
+  //         "Ngaski",
+  //         "Sakaba",
+  //         "Shanga",
+  //         "Suru",
+  //         "Wasagu/Danko",
+  //         "Yauri",
+  //         "Zuru"
+  //     ]
+  // },
+  {
+    "state": "Kaduna",
+    "lgas": [
+      "Birnin Gwari",
+      "Chikun",
+      "Giwa",
+      "Igabi",
+      "Ikara",
+      "Jaba",
+      "Jema A",
+      "Kachia",
+      "Kaduna North",
+      "Kaduna South",
+      "Kagarko",
+      "Kajuru",
+      "Kaura",
+      "Kauru",
+      "Kubau",
+      "Kudan",
+      "Lere",
+      "Makarfi",
+      "Sabon Gari",
+      "Sanga",
+      "Soba",
+      "Zangon Kataf",
+      "Zaria",
+    ],
+  },
+  {
+    "state": "Kano",
+    "lgas": [
+      "Ajingi",
+      "Albasu",
+      "Bagwai",
+      "Bebeji",
+      "Bichi",
+      "Bunkure",
+      "Dala",
+      "Dambatta",
+      "Dawakin Kudu",
+      "Dawakin Tofa",
+      "Doguwa",
+      "Fagge",
+      "Gabasawa",
+      "Garko",
+      "Garun Mallam",
+      "Gaya",
+      "Gezawa",
+      "Gwale",
+      "Gwarzo",
+      "Kabo",
+      "Kano Municipal",
+      "Karaye",
+      "Kibiya",
+      "Kiru",
+      "Kumbotso",
+      "Kunchi",
+      "Kura",
+      "Madobi",
+      "Makoda",
+      "Minjibir",
+      "Nasarawa",
+      "Rano",
+      "Rimin Gado",
+      "Rogo",
+      "Shanono",
+      "Sumaila",
+      "Takai",
+      "Tarauni",
+      "Tofa",
+      "Tsanyawa",
+      "Tudun Wada",
+      "Ungogo",
+      "Warawa",
+      "Wudil",
+    ],
+  },
 
+  // {
+  //     "state": "Kogi",
+  //     "lgas": [
+  //         "Adavi",
+  //         "Ajaokuta",
+  //         "Ankpa",
+  //         "Dekina",
+  //         "Ibaji",
+  //         "Idah",
+  //         "Igalamela-Odolu",
+  //         "Ijumu",
+  //         "Kabba\/Bunu",
+  //         "Kogi",
+  //         "Lokoja",
+  //         "Mopa-Muro",
+  //         "Ofu",
+  //         "Ogori\/Magongo",
+  //         "Okehi",
+  //         "Okene",
+  //         "Olamaboro",
+  //         "Omala",
+  //         "Oyi",
+  //         "Yagba-East",
+  //         "Yagba-West"
+  //     ]
+  // },
+  // {
+  //     "state": "Katsina",
+  //     "lgas": [
+  //         "Bakori",
+  //         "Batagarawa",
+  //         "Batsari",
+  //         "Baure",
+  //         "Bindawa",
+  //         "Charanchi",
+  //         "Dan-Musa",
+  //         "Dandume",
+  //         "Danja",
+  //         "Daura",
+  //         "Dutsi",
+  //         "Dutsin-Ma",
+  //         "Faskari",
+  //         "Funtua",
+  //         "Ingawa",
+  //         "Jibia",
+  //         "Kafur",
+  //         "Kaita",
+  //         "Kankara",
+  //         "Kankia",
+  //         "Katsina",
+  //         "Kurfi",
+  //         "Kusada",
+  //         "Mai-Adua",
+  //         "Malumfashi",
+  //         "Mani",
+  //         "Mashi",
+  //         "Matazu",
+  //         "Musawa",
+  //         "Rimi",
+  //         "Sabuwa",
+  //         "Safana",
+  //         "Sandamu",
+  //         "Zango"
+  //     ]
+  // },
+  // {
+  //     "state": "Kwara",
+  //     "lgas": [
+  //         "Asa",
+  //         "Baruten",
+  //         "Edu",
+  //         "Ekiti (Araromi/Opin)",
+  //         "Ilorin-East",
+  //         "Ilorin-South",
+  //         "Ilorin-West",
+  //         "Isin",
+  //         "Kaiama",
+  //         "Moro",
+  //         "Offa",
+  //         "Oke-Ero",
+  //         "Oyun",
+  //         "Pategi"
+  //     ]
+  // },
+  // {
+  //     "state": "Lagos",
+  //     "lgas": [
+  //         "Agege",
+  //         "Ajeromi-Ifelodun",
+  //         "Alimosho",
+  //         "Amuwo-Odofin",
+  //         "Apapa",
+  //         "Badagry",
+  //         "Epe",
+  //         "Eti-Osa",
+  //         "Ibeju-Lekki",
+  //         "Ifako-Ijaiye",
+  //         "Ikeja",
+  //         "Ikorodu",
+  //         "Kosofe",
+  //         "Lagos-Island",
+  //         "Lagos-Mainland",
+  //         "Mushin",
+  //         "Ojo",
+  //         "Oshodi-Isolo",
+  //         "Shomolu",
+  //         "Surulere",
+  //         "Yewa-South"
+  //     ]
+  // },
+  // {
+  //     "state": "Nasarawa",
+  //     "lgas": [
+  //         "Akwanga",
+  //         "Awe",
+  //         "Doma",
+  //         "Karu",
+  //         "Keana",
+  //         "Keffi",
+  //         "Kokona",
+  //         "Lafia",
+  //         "Nasarawa",
+  //         "Nasarawa-Eggon",
+  //         "Obi",
+  //         "Wamba",
+  //         "Toto"
+  //     ]
+  // },
+  // {
+  //     "state": "Niger",
+  //     "lgas": [
+  //         "Agaie",
+  //         "Agwara",
+  //         "Bida",
+  //         "Borgu",
+  //         "Bosso",
+  //         "Chanchaga",
+  //         "Edati",
+  //         "Gbako",
+  //         "Gurara",
+  //         "Katcha",
+  //         "Kontagora",
+  //         "Lapai",
+  //         "Lavun",
+  //         "Magama",
+  //         "Mariga",
+  //         "Mashegu",
+  //         "Mokwa",
+  //         "Moya",
+  //         "Paikoro",
+  //         "Rafi",
+  //         "Rijau",
+  //         "Shiroro",
+  //         "Suleja",
+  //         "Tafa",
+  //         "Wushishi"
+  //     ]
+  // },
+  // {
+  //     "state": "Ogun",
+  //     "lgas": [
+  //         "Abeokuta-North",
+  //         "Abeokuta-South",
+  //         "Ado-Odo\/Ota",
+  //         "Ewekoro",
+  //         "Ifo",
+  //         "Ijebu-East",
+  //         "Ijebu-North",
+  //         "Ijebu-North-East",
+  //         "Ijebu-Ode",
+  //         "Ikenne",
+  //         "Imeko-Afon",
+  //         "Ipokia",
+  //         "Obafemi-Owode",
+  //         "Odeda",
+  //         "Odogbolu",
+  //         "Ogun-Waterside",
+  //         "Remo-North",
+  //         "Shagamu",
+  //         "Yewa North"
+  //     ]
+  // },
+  // {
+  //     "state": "Ondo",
+  //     "lgas": [
+  //         "Akoko North-East",
+  //         "Akoko North-West",
+  //         "Akoko South-West",
+  //         "Akoko South-East",
+  //         "Akure-North",
+  //         "Akure-South",
+  //         "Ese-Odo",
+  //         "Idanre",
+  //         "Ifedore",
+  //         "Ilaje",
+  //         "Ile-Oluji-Okeigbo",
+  //         "Irele",
+  //         "Odigbo",
+  //         "Okitipupa",
+  //         "Ondo West",
+  //         "Ondo-East",
+  //         "Ose",
+  //         "Owo"
+  //     ]
+  // },
+  // {
+  //     "state": "Osun",
+  //     "lgas": [
+  //         "Atakumosa West",
+  //         "Atakumosa East",
+  //         "Ayedaade",
+  //         "Ayedire",
+  //         "Boluwaduro",
+  //         "Boripe",
+  //         "Ede South",
+  //         "Ede North",
+  //         "Egbedore",
+  //         "Ejigbo",
+  //         "Ife North",
+  //         "Ife South",
+  //         "Ife-Central",
+  //         "Ife-East",
+  //         "Ifelodun",
+  //         "Ila",
+  //         "Ilesa-East",
+  //         "Ilesa-West",
+  //         "Irepodun",
+  //         "Irewole",
+  //         "Isokan",
+  //         "Iwo",
+  //         "Obokun",
+  //         "Odo-Otin",
+  //         "Ola Oluwa",
+  //         "Olorunda",
+  //         "Oriade",
+  //         "Orolu",
+  //         "Osogbo"
+  //     ]
+  // },
+  // {
+  //     "state": "Oyo",
+  //     "lgas": [
+  //         "Afijio",
+  //         "Akinyele",
+  //         "Atiba",
+  //         "Atisbo",
+  //         "Egbeda",
+  //         "Ibadan North",
+  //         "Ibadan North-East",
+  //         "Ibadan North-West",
+  //         "Ibadan South-East",
+  //         "Ibadan South-West",
+  //         "Ibarapa-Central",
+  //         "Ibarapa-East",
+  //         "Ibarapa-North",
+  //         "Ido",
+  //         "Ifedayo",
+  //         "Irepo",
+  //         "Iseyin",
+  //         "Itesiwaju",
+  //         "Iwajowa",
+  //         "Kajola",
+  //         "Lagelu",
+  //         "Ogo-Oluwa",
+  //         "Ogbomosho-North",
+  //         "Ogbomosho-South",
+  //         "Olorunsogo",
+  //         "Oluyole",
+  //         "Ona-Ara",
+  //         "Orelope",
+  //         "Ori-Ire",
+  //         "Oyo-West",
+  //         "Oyo-East",
+  //         "Saki-East",
+  //         "Saki-West",
+  //         "Surulere"
+  //     ]
+  // },
+  // {
+  //     "state": "Plateau",
+  //     "lgas": [
+  //         "Barkin-Ladi",
+  //         "Bassa",
+  //         "Bokkos",
+  //         "Jos-East",
+  //         "Jos-North",
+  //         "Jos-South",
+  //         "Kanam",
+  //         "Kanke",
+  //         "Langtang-North",
+  //         "Langtang-South",
+  //         "Mangu",
+  //         "Mikang",
+  //         "Pankshin",
+  //         "Qua'an Pan",
+  //         "Riyom",
+  //         "Shendam",
+  //         "Wase"
+  //     ]
+  // },
+  // {
+  //     "state": "Rivers",
+  //     "lgas": [
+  //         "Abua\/Odual",
+  //         "Ahoada-East",
+  //         "Ahoada-West",
+  //         "Akuku Toru",
+  //         "Andoni",
+  //         "Asari-Toru",
+  //         "Bonny",
+  //         "Degema",
+  //         "Eleme",
+  //         "Emuoha",
+  //         "Etche",
+  //         "Gokana",
+  //         "Ikwerre",
+  //         "Khana",
+  //         "Obio\/Akpor",
+  //         "Ogba-Egbema-Ndoni",
+  //         "Ogba\/Egbema\/Ndoni",
+  //         "Ogu\/Bolo",
+  //         "Okrika",
+  //         "Omuma",
+  //         "Opobo\/Nkoro",
+  //         "Oyigbo",
+  //         "Port-Harcourt",
+  //         "Tai"
+  //     ]
+  // },
+  // {
+  //     "state": "Sokoto",
+  //     "lgas": [
+  //         "Binji",
+  //         "Bodinga",
+  //         "Dange-Shuni",
+  //         "Gada",
+  //         "Goronyo",
+  //         "Gudu",
+  //         "Gwadabawa",
+  //         "Illela",
+  //         "Kebbe",
+  //         "Kware",
+  //         "Rabah",
+  //         "Sabon Birni",
+  //         "Shagari",
+  //         "Silame",
+  //         "Sokoto-North",
+  //         "Sokoto-South",
+  //         "Tambuwal",
+  //         "Tangaza",
+  //         "Tureta",
+  //         "Wamako",
+  //         "Wurno",
+  //         "Yabo"
+  //     ]
+  // },
+  // {
+  //     "state": "Taraba",
+  //     "lgas": [
+  //         "Ardo-Kola",
+  //         "Bali",
+  //         "Donga",
+  //         "Gashaka",
+  //         "Gassol",
+  //         "Ibi",
+  //         "Jalingo",
+  //         "Karim-Lamido",
+  //         "Kurmi",
+  //         "Lau",
+  //         "Sardauna",
+  //         "Takum",
+  //         "Ussa",
+  //         "Wukari",
+  //         "Yorro",
+  //         "Zing"
+  //     ]
+  // },
+  // {
+  //     "state": "Yobe",
+  //     "lgas": [
+  //         "Bade",
+  //         "Bursari",
+  //         "Damaturu",
+  //         "Fika",
+  //         "Fune",
+  //         "Geidam",
+  //         "Gujba",
+  //         "Gulani",
+  //         "Jakusko",
+  //         "Karasuwa",
+  //         "Machina",
+  //         "Nangere",
+  //         "Nguru",
+  //         "Potiskum",
+  //         "Tarmuwa",
+  //         "Yunusari",
+  //         "Yusufari"
+  //     ]
+  // },
+  // {
+  //     "state": "Zamfara",
+  //     "lgas": [
+  //         "Anka",
+  //         "Bakura",
+  //         "Birnin Magaji/Kiyaw",
+  //         "Bukkuyum",
+  //         "Bungudu",
+  //         "Gummi",
+  //         "Gusau",
+  //         "Isa",
+  //         "Kaura-Namoda",
+  //         "Kiyawa",
+  //         "Maradun",
+  //         "Maru",
+  //         "Shinkafi",
+  //         "Talata-Mafara",
+  //         "Tsafe",
+  //         "Zurmi"
+  //     ]
+  // }
 ];

@@ -59,7 +59,9 @@ class _ResourceHistoryPageState<T> extends State<ResourceHistoryPage<T>> {
 
   @override
   void didUpdateWidget(covariant ResourceHistoryPage<T> oldWidget) {
-    if (oldWidget.title != widget.title) {
+    if (oldWidget.title != widget.title ||  oldWidget.items != widget.items) {
+      
+    print("=================did update widget called");
       allItems.value = List.from(widget.items);
       curFilter.value = "All";
       tec.clear();
@@ -150,14 +152,20 @@ class _ResourceHistoryPageState<T> extends State<ResourceHistoryPage<T>> {
                 if (allItems[i].runtimeType == Delivery) {
                   return DeliveryInfo(allItems[i] as Delivery);
                 }
-                if (allItems[i].runtimeType == User) {
+                if (allItems[i].runtimeType == User && widget.title.toLowerCase() == "drivers") {
                   return DriverInfo(allItems[i] as User);
+                }
+                if (allItems[i].runtimeType == User && widget.title.toLowerCase() == "users") {
+                  return UserInfo(allItems[i] as User);
                 }
                 if (allItems[i].runtimeType == Location) {
                   return LocationInfo(allItems[i] as Location);
                 }
                 if (allItems[i].runtimeType == StateLocation) {
                   return StateInfo(allItems[i] as StateLocation);
+                }
+                if (allItems[i].runtimeType == Vehicle) {
+                  return VehicleInfo(allItems[i] as Vehicle);
                 }
                 return SizedBox();
               },

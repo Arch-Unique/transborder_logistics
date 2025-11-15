@@ -86,4 +86,8 @@ abstract class UtilFunctions {
   static bool isSuccess(int? a) {
     return successCodes.contains(a);
   }
+
+  static bool validateTecs(List<TextEditingController> tecs) {
+    return !(tecs.any((test) => test.text.isEmpty));
+  }
 }

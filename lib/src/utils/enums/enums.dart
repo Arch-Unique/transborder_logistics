@@ -79,6 +79,7 @@ enum DashboardItem{
   trips("Trips",HugeIcons.strokeRoundedBus03),
   users("Users",HugeIcons.strokeRoundedUserMultiple02),
   drivers("Drivers",HugeIcons.strokeRoundedUser),
+  vehicles("Vehicles",HugeIcons.strokeRoundedCar01),
   location("Location",HugeIcons.strokeRoundedLocation05);
 
   final String name;

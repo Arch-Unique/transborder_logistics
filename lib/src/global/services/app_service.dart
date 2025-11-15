@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:transborder_logistics/src/features/dashboard/controllers/dashboard_controller.dart';
 import 'package:transborder_logistics/src/global/model/user.dart';
 import 'package:transborder_logistics/src/global/services/barrel.dart';
 import 'package:transborder_logistics/src/plugin/jwt.dart';
@@ -29,6 +30,7 @@ class AppService extends GetxService {
 
   Future<void> logout() async {
     // await apiService.post(AppUrls.logout);
+    Get.find<DashboardController>().resetApp();
     await _logout();
   }
 
