@@ -31,10 +31,12 @@ class DashboardController extends GetxController {
   Rx<ResourceHistory> curResourceHistory = ResourceHistory(
     title: "Dashboard",
     filters: [],
-    items: [],
+    items: <Slugger>[],
   ).obs;
 
   RxInt curMode = 0.obs;
+  Rx<Slugger> currentModel = User().obs;
+  RxInt currentModelIndex = 0.obs;
   final appRepo = Get.find<AppRepo>();
   final isLoading = false.obs;
 

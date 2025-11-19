@@ -78,7 +78,8 @@ class _CurvedContainerState extends State<CurvedContainer>
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return InkWell(
+      
       onTapDown: widget.onPressed == null ? null : _handleTapDown,
       onTapUp: widget.onPressed == null ? null : _handleTapUp,
       onTap: widget.onPressed == null ? null : _handleTap,
@@ -96,7 +97,7 @@ class _CurvedContainerState extends State<CurvedContainer>
           width: widget.width,
           height: widget.height,
           margin: widget.margin,
-
+    
           // onEnd: () {
           //   setState(() {
           //     scaleFactor = _sizeAnimation.value;

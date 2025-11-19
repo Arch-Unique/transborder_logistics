@@ -28,8 +28,10 @@ class AppDrawer extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Ui.boxHeight(24),
-            AppIcon(Assets.logo, size: 48),
-            Ui.boxHeight(48),
+            Align(
+              alignment: Alignment.center,
+              child: Image.asset(Assets.fulllogo, width: 150)),
+            Ui.boxHeight(24),
             AppContainer(
               "",
               DashboardMode.values
@@ -37,22 +39,31 @@ class AppDrawer extends StatelessWidget {
                     (e) => InkWell(
                       onTap: () {
                         controller.curDashboardIndex.value = e.index;
+                        
+                          controller.currentModelIndex.value = 0;
+                        
+
                         if (e != DashboardMode.dashboard) {
                           // List items = [];
                           ResourceHistory rh;
                           if (e == DashboardMode.trips) {
+                            controller.currentModel = Delivery(createdAt: DateTime.now()).obs;
+                        
                             rh = ResourceHistory<Delivery>(
                               items: controller.allCustomerDeliveries,
                             );
                           } else if (e == DashboardMode.users) {
+                            controller.currentModel = User().obs;
                             rh = ResourceHistory<User>(
                               items: controller.allCustomers,
                             );
                           } else if (e == DashboardMode.drivers) {
+                            controller.currentModel = User().obs;
                             rh = ResourceHistory<User>(
                               items: controller.allDrivers,
                             );
                           } else if (e == DashboardMode.location) {
+                            controller.currentModel = StateLocation().obs;
                             rh = ResourceHistory<StateLocation>(
                               items: List.from(
                                 States.states.map((e) {
@@ -64,18 +75,22 @@ class AppDrawer extends StatelessWidget {
                               ),
                             );
                           } else if (e == DashboardMode.facilities) {
+                            controller.currentModel = Location().obs;
                             rh = ResourceHistory<Location>(
                               items: controller.allFacilities,
                             );
                           } else if (e == DashboardMode.pickups) {
+                            controller.currentModel = Location().obs;
                             rh = ResourceHistory<Location>(
                               items: controller.allLoadingPoints,
                             );
                           } else if (e == DashboardMode.vehicles) {
-                            rh = ResourceHistory(items: controller.allVehicles);
+                            controller.currentModel = Vehicle().obs;
+                            rh = ResourceHistory<Vehicle>(items: controller.allVehicles);
                           } else {
                             rh = ResourceHistory(items: []);
                           }
+                          controller.currentModel.refresh();
                           rh.title = e.name;
                           rh.filters = e.filters;
                           rh.onFilter = (v, s) {
@@ -117,9 +132,11 @@ class AppDrawer extends StatelessWidget {
                   .toList(),
               hasBorder: false,
               margin: 36,
+              
             ),
             Spacer(),
-            InkWell(
+            SafeArea(
+              child: InkWell(
               onTap: () {
                 Get.to(
                   SinglePageScaffold(title: "Profile", child: ProfilePage()),
@@ -144,6 +161,8 @@ class AppDrawer extends StatelessWidget {
                 ],
               ),
             ),
+            )
+            
           ],
         ),
       ),

@@ -55,7 +55,7 @@ class CustomTextField extends StatelessWidget {
     return StatefulBuilder(
       builder: (context, setState) {
         return SizedBox(
-          width: Ui.width(context) - 48,
+          width: Ui.swidth(context) - 48,
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [

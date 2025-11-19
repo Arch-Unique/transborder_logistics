@@ -4,8 +4,13 @@ import 'package:intl/intl.dart';
 
 abstract class Slugger {
   final String slug;
+  final String rawId;
+  final List<String> tableTitle;
+  final List<String> tableValue;
 
-  Slugger(this.slug);
+  final Map<String, String> fields;
+
+  Slugger(this.slug, this.tableTitle, this.tableValue, this.rawId, this.fields);
 }
 
 class User implements Slugger {
@@ -29,19 +34,24 @@ class User implements Slugger {
   bool get isAdmin => role == "admin";
   bool get isStaff => role == "admin" || role == "user";
 
-  static List<String> get tableTitle => [
+  @override
+  List<String> get tableTitle => [
+    "Id",
     "Name",
     "Phone",
     "Location",
     "Role",
-    "TruckNo",
+    "Email",
   ];
+
+  @override
   List<String> get tableValue => [
+    id.toString(),
     name ?? "",
     phone ?? "",
     location ?? "",
     role,
-    truckno ?? "",
+    email ?? "",
   ];
 
   @override
@@ -60,6 +70,20 @@ class User implements Slugger {
     );
   }
 
+  @override
+  String get rawId => "#$id";
+
+  @override
+  Map<String, String> get fields {
+    return {
+      "Id": id.toString(),
+      "Name": name ?? "",
+      "Phone": phone ?? "",
+      "Location": location ?? "",
+      "Role": role,
+      "Email": email ?? "",
+    };
+  }
 }
 
 class Location implements Slugger {
@@ -69,11 +93,20 @@ class Location implements Slugger {
   String? state;
   String? facilityType;
 
-  Location({this.id = 0, this.name = "", this.lga = "", this.state = "",this.facilityType=""});
+  Location({
+    this.id = 0,
+    this.name = "",
+    this.lga = "",
+    this.state = "",
+    this.facilityType = "",
+  });
 
   String get desc => "$name, $lga, $state";
 
-  static List<String> get tableTitle => ["Name", "LGA", "State"];
+  @override
+  List<String> get tableTitle => ["Name", "LGA", "State"];
+
+  @override
   List<String> get tableValue => [name ?? "", lga ?? "", state ?? ""];
 
   factory Location.fromJson(Map<String, dynamic> json) {
@@ -82,12 +115,26 @@ class Location implements Slugger {
       lga: json["lga"],
       state: json["state"],
       name: json["name"],
-      facilityType: json["type"] ?? "Hospital"
+      facilityType: json["type"] ?? "Hospital",
     );
   }
-  
+
   @override
   String get slug => desc;
+
+  @override
+  String get rawId => "#$id";
+
+    @override
+  Map<String, String> get fields {
+    return {
+      "Id": id.toString(),
+      "Name": name ?? "",
+      "LGA": lga ?? "",
+      "State": state ?? "",
+      "Facility Type": facilityType ?? "",
+    };
+  }
 }
 
 class StateLocation implements Slugger {
@@ -99,31 +146,62 @@ class StateLocation implements Slugger {
 
   String get desc => "$name, $isActive";
 
-  static List<String> get tableTitle => ["Name", "Active"];
+  @override
+  List<String> get tableTitle => ["Name", "Active"];
+
+  @override
   List<String> get tableValue => [name ?? "", isActive.toString()];
+
+  @override
+  String get rawId => "#$id";
 
   factory StateLocation.fromJson(Map<String, dynamic> json) {
     return StateLocation(
       id: json["id"],
       name: json["name"],
-      isActive: json["isactive"] ?? false
+      isActive: json["isactive"] ?? false,
     );
   }
-  
+
+  @override
+  Map<String, String> get fields {
+    return {
+      "Id": id.toString(),
+      "Name": name ?? "",
+      "Active": (isActive ?? false) ? "Yes" : "No",
+    };
+  }
+
   @override
   String get slug => desc;
 }
 
 class Vehicle implements Slugger {
   int id;
-  String? name,regno,type;
+  String? name, regno, type;
 
   Vehicle({this.id = 0, this.name = "", this.regno = "", this.type = ""});
 
   String get desc => "$name $regno $type";
 
-  static List<String> get tableTitle => ["Name", "Regno","Type"];
+  @override
+  List<String> get tableTitle => ["Name", "Regno", "Type"];
+
+  @override
   List<String> get tableValue => [name ?? "", regno ?? "", type ?? ""];
+
+  @override
+  String get rawId => "#$id";
+
+  @override
+  Map<String, String> get fields {
+    return {
+      "Id": id.toString(),
+      "Name": name ?? "",
+      "Regno": regno ?? "",
+      "Type": type ?? "",
+    };
+  }
 
   factory Vehicle.fromJson(Map<String, dynamic> json) {
     return Vehicle(
@@ -133,12 +211,12 @@ class Vehicle implements Slugger {
       type: json["type"],
     );
   }
-  
+
   @override
   String get slug => desc;
 }
 
-class Delivery implements Slugger{
+class Delivery implements Slugger {
   int id;
   int driverId, ownerId;
   String? driver, owner, truckno;
@@ -167,7 +245,11 @@ class Delivery implements Slugger{
       )
       .toList();
 
-  static List<String> get tableTitle => [
+  @override
+  String get rawId => "#$waybill";
+
+  @override
+  List<String> get tableTitle => [
     "Waybill",
     "Creator",
     "Driver",
@@ -177,6 +259,8 @@ class Delivery implements Slugger{
     "Start Date",
     "End Date",
   ];
+
+  @override
   List<String> get tableValue => [
     waybill,
     owner ?? "",
@@ -194,7 +278,7 @@ class Delivery implements Slugger{
 
   Delivery({
     this.id = 0,
-    this.waybill = "",
+    this.waybill = "0",
     this.driverId = 0,
     this.picture = const [],
     this.driver,
@@ -256,5 +340,30 @@ class Delivery implements Slugger{
                     .toList() ??
                 [],
     );
+  }
+
+  @override
+  Map<String, String> get fields {
+    final stopsJoined = stops.isNotEmpty ? stops.join(", ") : "";
+    final stopsDatesJoined = formattedStopsDate.map((e) => e ?? "").where((e) => e.isNotEmpty).join(", ");
+    final itemsJoined = items.isNotEmpty ? items.map((it) => it.join(", ")).join("; ") : "";
+    final picturesJoined = picture.isNotEmpty ? picture.join(", ") : "";
+
+    return {
+      "Waybill": waybill,
+      "Owner": owner ?? "",
+      "Driver": driver ?? "",
+      "Truckno": truckno ?? "",
+      "Pickup": pickup ?? "",
+      "Stops": stopsJoined,
+      "Stops Dates": stopsDatesJoined,
+      "Created At": created,
+      "Start Date": start,
+      "End Date": isDelivered ? (formattedStopsDate.isNotEmpty ? formattedStopsDate.last ?? "" : "") : "",
+      "Amount": amt.toString(),
+      "Items": itemsJoined,
+      "Pictures": picturesJoined,
+      "Delivered": isDelivered ? "Yes" : "No",
+    };
   }
 }

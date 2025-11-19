@@ -29,8 +29,16 @@ abstract class Ui {
     return MediaQuery.of(context).size.width;
   }
 
+  static double swidth(BuildContext context) {
+    return isBigScreen(context) ? 400 : width(context);
+  }
+
   static bool isSmallScreen(BuildContext context) {
     return width(context) < 330;
+  }
+
+    static bool isBigScreen(BuildContext context) {
+    return width(context) > 800;
   }
 
   static double height(BuildContext context) {

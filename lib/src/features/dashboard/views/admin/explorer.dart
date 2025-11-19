@@ -28,7 +28,9 @@ class _AdminExplorerState extends State<AdminExplorer> {
   @override
   Widget build(BuildContext context) {
     final gkey = GlobalKey<ScaffoldState>();
-    return Scaffold(
+    return Ui.isBigScreen(context)
+        ? desktopVersion()
+        : Scaffold(
       key: gkey,
       drawer: AppDrawer(),
       appBar: backAppBar(
@@ -90,6 +92,35 @@ class _AdminExplorerState extends State<AdminExplorer> {
                 hasDrawer: true,
               );
       }),
+    );
+  }
+
+  desktopVersion(){
+    return Scaffold(
+      body: Row(
+        children: [
+          SizedBox(
+            width: Ui.width(context) / 5,
+            child: AppDrawer(),
+          ),
+          Expanded(
+            child: Obx(() {
+              if (controller.isLoading.value) {
+                return Center(child: CircularProgressIndicator());
+              }
+              return controller.curResourceHistory.value.title == "Dashboard"
+                  ? DashboardScreen()
+                  : ResourceHistoryDesktopPage(
+                      controller.curResourceHistory.value.title,
+                      controller.curResourceHistory.value.items,
+                      filters: controller.curResourceHistory.value.filters,
+                      onFilter: controller.curResourceHistory.value.onFilter,
+                      hasDrawer: false,
+                    );
+            }),
+          ),
+        ],
+      ),
     );
   }
 }
