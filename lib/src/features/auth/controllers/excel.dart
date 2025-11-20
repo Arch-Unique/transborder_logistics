@@ -22,9 +22,12 @@ Future<String?> generateExcelReport({
 
     // Add title and date range (merged cells for title)
     sheet.merge(
-        CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 0),
-        CellIndex.indexByColumnRow(
-            columnIndex: columnHeaders!.length - 1, rowIndex: 0));
+      CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 0),
+      CellIndex.indexByColumnRow(
+        columnIndex: columnHeaders!.length - 1,
+        rowIndex: 0,
+      ),
+    );
     final titleCell = sheet.cell(CellIndex.indexByString("A1"));
     titleCell.value = TextCellValue(reportTitle);
     titleCell.cellStyle = CellStyle(
@@ -35,9 +38,12 @@ Future<String?> generateExcelReport({
 
     // Add date range
     sheet.merge(
-        CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 1),
-        CellIndex.indexByColumnRow(
-            columnIndex: columnHeaders!.length - 1, rowIndex: 1));
+      CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 1),
+      CellIndex.indexByColumnRow(
+        columnIndex: columnHeaders!.length - 1,
+        rowIndex: 1,
+      ),
+    );
     final dateRangeCell = sheet.cell(CellIndex.indexByString("A2"));
     dateRangeCell.cellStyle = CellStyle(
       italic: true,
@@ -56,10 +62,9 @@ Future<String?> generateExcelReport({
 
     // Write headers
     for (final header in headers) {
-      final cell = sheet.cell(CellIndex.indexByColumnRow(
-        columnIndex: colIndex,
-        rowIndex: rowIndex,
-      ));
+      final cell = sheet.cell(
+        CellIndex.indexByColumnRow(columnIndex: colIndex, rowIndex: rowIndex),
+      );
       cell.value = TextCellValue(columnHeaders[header] ?? header);
       cell.cellStyle = CellStyle(
         bold: true,
@@ -74,16 +79,14 @@ Future<String?> generateExcelReport({
     // Map to store totals for specified columns
     final totals = <String, num>{};
 
-
     // Write data rows
     for (final item in data) {
       colIndex = 0;
 
       for (final header in headers) {
-        final cell = sheet.cell(CellIndex.indexByColumnRow(
-          columnIndex: colIndex,
-          rowIndex: rowIndex,
-        ));
+        final cell = sheet.cell(
+          CellIndex.indexByColumnRow(columnIndex: colIndex, rowIndex: rowIndex),
+        );
 
         final value = item[header];
 
@@ -98,10 +101,7 @@ Future<String?> generateExcelReport({
           cell.value = TextCellValue(value.toString());
         }
 
-
-        cell.cellStyle = CellStyle(
-          horizontalAlign: HorizontalAlign.Center,
-        );
+        cell.cellStyle = CellStyle(horizontalAlign: HorizontalAlign.Center);
 
         colIndex++;
       }
@@ -110,7 +110,6 @@ Future<String?> generateExcelReport({
     }
 
     // Add a total row if we have columns to total
-    
 
     // Auto fit columns
     for (var i = 0; i < headers.length; i++) {
@@ -121,8 +120,9 @@ Future<String?> generateExcelReport({
 
     // Prepare the file name (with timestamp to avoid duplicates)
     final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
-    final sanitizedTitle =
-        reportTitle.replaceAll(RegExp(r'[^\w\s]+'), '').replaceAll(' ', '_');
+    final sanitizedTitle = reportTitle
+        .replaceAll(RegExp(r'[^\w\s]+'), '')
+        .replaceAll(' ', '_');
     final fileName = "${sanitizedTitle}_$timestamp.xlsx";
 
     // Save the file based on platform
@@ -152,7 +152,7 @@ Future<String?> _saveExcelFile(Excel excel, String fileName) async {
       String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
 
       if (selectedDirectory == null) {
-        return null; // User canceled the picker
+        return null; // User Cancelled the picker
       }
 
       final file = File('$selectedDirectory/$fileName');

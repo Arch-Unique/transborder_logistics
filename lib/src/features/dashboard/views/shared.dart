@@ -1,9 +1,12 @@
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:syncfusion_flutter_signaturepad/signaturepad.dart';
 import 'package:transborder_logistics/src/features/dashboard/controllers/dashboard_controller.dart';
 import 'package:transborder_logistics/src/global/services/barrel.dart';
 import 'package:transborder_logistics/src/global/ui/ui_barrel.dart';
@@ -12,6 +15,8 @@ import 'package:transborder_logistics/src/global/ui/widgets/fields/custom_textfi
 import 'package:transborder_logistics/src/global/ui/widgets/others/containers.dart';
 import 'package:transborder_logistics/src/global/ui/widgets/others/others.dart';
 import 'package:transborder_logistics/src/src_barrel.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../global/model/barrel.dart';
 
@@ -36,19 +41,20 @@ class DeliveryInfo extends StatelessWidget {
               children: [
                 AppText.medium("#${delivery.waybill}", fontSize: 14),
                 Spacer(),
-                if (!delivery.hasStarted) WaybillStatusChip("New"),
-                if (delivery.isDelivered) WaybillStatusChip("Finished"),
-                if (delivery.hasStarted && !delivery.isDelivered)
+                if (delivery.hasNotStarted) WaybillStatusChip("New"),
+                if (delivery.isDelivered) WaybillStatusChip("Completed"),
+                if (delivery.hasStarted && delivery.isNotDelivered)
                   GestureDetector(
                     onTap: () {
                       //todo
                     },
                     child: WaybillStatusChip("Track"),
                   ),
-                if (delivery.hasStarted && !delivery.isDelivered)
+                if (delivery.hasStarted && delivery.isNotDelivered)
                   Ui.boxWidth(8),
-                if (delivery.hasStarted && !delivery.isDelivered)
-                  WaybillStatusChip("Ongoing"),
+                if (delivery.hasStarted && delivery.isNotDelivered)
+                  WaybillStatusChip("In Progress"),
+                if (delivery.isCanceled) WaybillStatusChip("Cancelled"),
               ],
             ),
           ),
@@ -67,7 +73,7 @@ class DeliveryInfo extends StatelessWidget {
                 ),
                 Ui.boxWidth(24),
                 Expanded(
-                  child: InfoValue("Delivery Location", delivery.stops[0]),
+                  child: InfoValue("Delivery Location", delivery.stops.last),
                 ),
               ],
             ),
@@ -105,6 +111,12 @@ class DriverInfo extends StatelessWidget {
       title: user.name,
       desc: user.role,
       subtitle: user.location,
+      chipTitle:
+          Get.find<DashboardController>().undeliveredDeliveries
+              .map((e) => e.driverId)
+              .contains(user.id)
+          ? "Busy"
+          : "Available",
       image: "",
       vb: () {
         Get.bottomSheet(AddResource<User>("Drivers", obj: user));
@@ -123,6 +135,12 @@ class UserInfo extends StatelessWidget {
       title: user.name,
       desc: user.role,
       subtitle: user.location,
+      chipTitle:
+          Get.find<DashboardController>().undeliveredDeliveries
+              .map((e) => e.driverId)
+              .contains(user.id)
+          ? "Busy"
+          : "Available",
       image: "",
       vb: () {
         Get.bottomSheet(AddResource<User>("Users", obj: user));
@@ -141,6 +159,7 @@ class VehicleInfo extends StatelessWidget {
       title: vehicle.name,
       desc: vehicle.type,
       subtitle: vehicle.regno,
+      chipTitle: vehicle.isActive ? "Available" : "Inactive",
       image: "",
       vb: () {
         Get.bottomSheet(AddResource<Vehicle>("Vehicles", obj: vehicle));
@@ -152,6 +171,7 @@ class VehicleInfo extends StatelessWidget {
 class RawInfo extends StatelessWidget {
   const RawInfo({
     this.title,
+    this.chipTitle = "Available",
     this.desc,
     this.subtitle,
     this.image = "",
@@ -159,6 +179,7 @@ class RawInfo extends StatelessWidget {
     super.key,
   });
   final String? title, desc, subtitle, image;
+  final String chipTitle;
   final VoidCallback? vb;
 
   @override
@@ -193,7 +214,7 @@ class RawInfo extends StatelessWidget {
             ),
           ),
           Ui.boxWidth(24),
-          DriverStatusChip("Available"),
+          DriverStatusChip(chipTitle),
         ],
       ),
     );
@@ -278,7 +299,13 @@ class WaybillStatusChip extends StatelessWidget {
 class AppChip extends StatelessWidget {
   const AppChip(
     this.title, {
-    this.titles = const ["New", "Track", "Ongoing", "Finished", "Canceled"],
+    this.titles = const [
+      "New",
+      "Track",
+      "In Progress",
+      "Completed",
+      "Cancelled",
+    ],
     this.icons = const [
       HugeIcons.strokeRoundedAlertCircle,
       HugeIcons.strokeRoundedRoute03,
@@ -357,22 +384,25 @@ class WaybillDetailPage extends StatelessWidget {
                         Ui.boxWidth(16),
                         AppText.medium("Waybill", fontSize: 14),
                         const Spacer(),
-                        if (!delivery.hasStarted) WaybillStatusChip("New"),
-                        if (delivery.isDelivered) WaybillStatusChip("Finished"),
-                        if (delivery.hasStarted && !delivery.isDelivered)
+                        if (delivery.hasNotStarted) WaybillStatusChip("New"),
+                        if (delivery.isDelivered)
+                          WaybillStatusChip("Completed"),
+                        if (delivery.hasStarted && delivery.isNotDelivered)
                           GestureDetector(
                             onTap: () {
                               //todo
                             },
                             child: WaybillStatusChip("Track"),
                           ),
-                        if (delivery.hasStarted && !delivery.isDelivered)
+                        if (delivery.hasStarted && delivery.isNotDelivered)
                           Ui.boxWidth(8),
-                        if (delivery.hasStarted && !delivery.isDelivered)
-                          WaybillStatusChip("Ongoing"),
+                        if (delivery.hasStarted && delivery.isNotDelivered)
+                          WaybillStatusChip("In Progress"),
+                        if (delivery.isCanceled) WaybillStatusChip("Cancelled"),
                       ],
                     ),
                   ),
+                  QrImageView(data: delivery.waybill, size: 100),
                   Ui.align(
                     align: Alignment.centerRight,
                     child: SizedBox(
@@ -469,33 +499,50 @@ class WaybillDetailPage extends StatelessWidget {
                       ],
                     ),
                   ),
-
-                  Padding(
-                    padding: EdgeInsetsGeometry.only(
-                      top: 0,
-                      bottom: 12,
-                      left: 12,
-                      right: 12,
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: InfoValue(
-                            "Delivery Location",
-                            delivery.stops[0],
-                            isStart: true,
+                  ...List.generate(delivery.stops.length, (j) {
+                    return Padding(
+                      padding: EdgeInsetsGeometry.only(
+                        top: 0,
+                        bottom: 12,
+                        left: 12,
+                        right: 12,
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: InfoValue(
+                                  "Delivery Location ${j + 1}",
+                                  delivery.stops[j],
+                                  isStart: true,
+                                ),
+                              ),
+                              Ui.boxWidth(24),
+                              AppIcon(
+                                HugeIcons.strokeRoundedLocation05,
+                                color: delivery.hasStarted
+                                    ? Color(0xFF229EFF)
+                                    : AppColors.lightTextColor,
+                              ),
+                            ],
                           ),
-                        ),
-                        Ui.boxWidth(24),
-                        AppIcon(
-                          HugeIcons.strokeRoundedLocation05,
-                          color: delivery.hasStarted
-                              ? Color(0xFF229EFF)
-                              : AppColors.lightTextColor,
-                        ),
-                      ],
-                    ),
-                  ),
+
+                          if (!Delivery.nv.contains(delivery.picture.elementAtOrNull(j)))
+                            Ui.boxHeight(8),
+                          if (!Delivery.nv.contains(delivery.picture.elementAtOrNull(j)))
+                            SizedBox(
+                              width: Ui.width(context) - 56,
+                              height: 200,
+                              child: Image.network(
+                                "${AppUrls.baseURL}/upload/upload/${delivery.picture.elementAtOrNull(j)}",
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                        ],
+                      ),
+                    );
+                  }),
                 ],
               ),
             ),
@@ -545,33 +592,75 @@ class WaybillDetailPage extends StatelessWidget {
                   ],
                 ),
               ),
+
             Ui.boxHeight(16),
             if (appService.currentUser.value.role == "admin")
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (!delivery.hasStarted && !delivery.isDelivered)
+                  if (delivery.hasNotStarted && delivery.isNotDelivered)
                     CircleIcon(
                       HugeIcons.strokeRoundedEdit01,
                       onTap: () {
                         Get.bottomSheet(
                           AddResource<Delivery>("Trips", obj: delivery),
+
+                          isScrollControlled: true,
                         );
                       },
                     ),
-                  if (!delivery.hasStarted && !delivery.isDelivered)
+
+                  if (delivery.hasNotStarted && delivery.isNotDelivered)
+                    Ui.boxWidth(16),
+                  if (delivery.isNotDelivered &&
+                      !delivery.isCanceled &&
+                      Get.find<AppService>().currentUser.value.role == "admin")
+                    CircleIcon(
+                      HugeIcons.strokeRoundedDelete01,
+                      onTap: () {
+                        Get.bottomSheet(
+                          AppBottomSheet(
+                            "Cancel Trip",
+                            "Confirm",
+                            msg:
+                                "Are you sure you want to cancel this trip ?. This action is irreversible",
+                            onTap: () async {
+                              try {
+                                await Get.find<DashboardController>().appRepo
+                                    .cancelDelivery(
+                                      delivery.waybill,
+                                      delivery.vehicleId,
+                                      delivery.id,
+                                    );
+                                Get.back();
+                                await Get.find<DashboardController>().initApp();
+                                Get.find<DashboardController>()
+                                    .refreshResource();
+
+                                Get.back();
+                              } catch (e) {
+                                print(e);
+                              }
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  if (delivery.isNotDelivered &&
+                      !delivery.isCanceled &&
+                      Get.find<AppService>().currentUser.value.role == "admin")
                     Ui.boxWidth(16),
                   CircleIcon(HugeIcons.strokeRoundedShare08),
                 ],
               ),
 
             if (appService.currentUser.value.role == "driver" &&
-                !delivery.isDelivered)
+                delivery.isNotDelivered)
               SizedBox(
                 width: Ui.width(context) / 3,
                 child: AppButton(
                   onPressed: () {
-                    if (!delivery.hasStarted) {
+                    if (delivery.hasNotStarted) {
                       Get.bottomSheet(
                         AppBottomSheet(
                           "Confirm Start",
@@ -582,6 +671,8 @@ class WaybillDetailPage extends StatelessWidget {
                                 .startDelivery(delivery.id);
                             if (a) {
                               Get.back();
+                              Get.back();
+                              await Get.find<DashboardController>().getCustomerDelivery();
                               Ui.showInfo("Delivery Started Successfully");
                             } else {
                               Ui.showError("Failed to start delivery");
@@ -590,89 +681,278 @@ class WaybillDetailPage extends StatelessWidget {
                         ),
                       );
                     } else {
-                      List<TextEditingController> tecs = List.generate(
-                        3,
-                        (i) => TextEditingController(),
-                      );
-                      RxString img = "".obs;
-                      Get.bottomSheet(
-                        AppBottomSheet(
-                          "Confirm Delivery",
-                          "Confirm",
-                          onTap: () async {
-                            if (UtilFunctions.validateTecs(tecs)) {
-                              final a = await Get.find<DashboardController>()
-                                  .stopDelivery(
-                                    delivery.id,
-                                    0,
-                                    tecs[2].text,
-                                    tecs[0].text,
-                                    tecs[1].text,
-                                  );
-                              if (a) {
-                                Get.back();
-                                Ui.showInfo("Delivery Ended Successfully");
-                              } else {
-                                Ui.showInfo("Delivery failed to end");
-                              }
-                            } else {
-                              Ui.showError("All Fields are mandatory to fill");
-                            }
-                          },
-                          actions: [
-                            CustomTextField(
-                              "Add Name",
-                              tecs[0],
-                              label: "Name of receiver",
-                            ),
-                            CustomTextField(
-                              "Add Contact",
-                              tecs[1],
-                              label: "Contact",
-                            ),
-
-                            FieldValue(
-                              "Proof Image",
-                              child: InkWell(
-                                onTap: () async {
-                                  // img.value="";
-                                  final path = await Get.bottomSheet(
-                                    ChooseCam(),
-                                  );
-                                  //upload image;
-                                  if (path != null) {
-                                    tecs[2].text = path;
-                                    img.value = path;
-                                  }
-                                },
-                                child: Obx(() {
-                                  if (img.value.isNotEmpty) {
-                                    return Image.file(
-                                      File(img.value),
-                                      height: 12,
-                                      width: 24,
+                      try {
+                        List<TextEditingController> tecs = List.generate(
+                          3,
+                          (i) => TextEditingController(),
+                        );
+                        RxString img = "".obs;
+                        RxString curStop = "".obs;
+                        Rx<Uint8List> u8 = Uint8List(0).obs;
+                        int curStopIndex = 0;
+                        Get.bottomSheet(
+                          AppBottomSheet(
+                            "Confirm Delivery",
+                            "Confirm",
+                            onTap: () async {
+                              try {
+                                if (UtilFunctions.validateTecs(tecs)) {
+                                  if (u8.value.isEmpty && curStop.value.isEmpty) {
+                                    return Ui.showError(
+                                      "Signature and Stop must be filled",
                                     );
                                   }
-                                  return AppText.thin(
-                                    "Select image >",
-                                    color: AppColors.lightTextColor,
-                                    fontSize: 12,
+                                  final c = await UtilFunctions.saveToTempFile(u8.value);
+                                  final a =
+                                      await Get.find<DashboardController>()
+                                          .stopDelivery(
+                                            delivery.id,
+                                            curStopIndex,
+                                            tecs[2].text,
+                                            tecs[0].text,
+                                            tecs[1].text,
+                                            c.path,
+                                          );
+                                  if (a) {
+                                    Get.back();
+                              await Get.find<DashboardController>().getCustomerDelivery();
+                                    Ui.showInfo("Delivery Ended Successfully");
+
+                                  } else {
+                                    Ui.showInfo("Delivery failed to end");
+                                  }
+                                } else {
+                                  Ui.showError(
+                                    "All Fields are mandatory to fill",
                                   );
-                                }),
+                                }
+                              } catch (e) {
+                                print(e);
+                              }
+                            },
+                            actions: [
+                              CustomDropdown.city(
+                                hint: "Stop",
+                                label: "Select Stop",
+                                selectedValue: curStop.value,
+                                onChanged: (v) {
+                                  curStop.value = v ?? "";
+                                  curStopIndex = delivery.stops.indexOf(
+                                    curStop.value,
+                                  );
+                                },
+                                cities: delivery.undeliveredStops
+                                    .where((e) => e.isNotEmpty)
+                                    .toList(),
                               ),
-                            ),
-                          ],
-                        ),
-                      );
+                              CustomTextField(
+                                "Add Name",
+                                tecs[0],
+                                label: "Name of receiver",
+                              ),
+                              CustomTextField(
+                                "Add Contact",
+                                tecs[1],
+                                label: "Contact",
+                              ),
+
+                              FieldValue(
+                                "Proof Image",
+                                child: InkWell(
+                                  onTap: () async {
+                                    // img.value="";
+                                    final path = await Get.bottomSheet(
+                                      ChooseCam(),
+                                    );
+                                    //upload image;
+                                    if (path != null) {
+                                      tecs[2].text = path;
+                                      img.value = path;
+                                    }
+                                  },
+                                  child: Obx(() {
+                                    if (img.value.isNotEmpty) {
+                                      return Image.file(
+                                        File(img.value),
+                                        height: 100,
+                                        fit: BoxFit.contain,
+                                      );
+                                    }
+                                    return AppText.thin(
+                                      "Select image >",
+                                      color: AppColors.lightTextColor,
+                                      fontSize: 12,
+                                    );
+                                  }),
+                                ),
+                              ),
+                              FieldValue(
+                                "Signature",
+                                child: Expanded(child: SignatureView(u8, "")),
+                              ),
+                              // Obx(() {
+                              //   if (img.value.isNotEmpty) {
+                              //     return Image.file(
+                              //       File(img.value),
+                              //       height: 100,
+                              //       fit: BoxFit.contain,
+                              //     );
+                              //   }
+                              //   return SizedBox();
+                              // }),
+                            ],
+                          ),
+                        );
+                      } catch (e) {
+                        print(e);
+                      }
                     }
                   },
-                  text: !delivery.hasStarted ? "Start Trip" : "End Trip",
+                  text: delivery.hasNotStarted ? "Start Trip" : "End Trip",
                 ),
               ),
           ],
         ),
       ),
     );
+  }
+}
+
+class SignatureView extends StatefulWidget {
+  const SignatureView(this.tec, this.label, {this.size, super.key});
+  final Rx<Uint8List> tec;
+  final String label;
+  final double? size;
+
+  @override
+  State<SignatureView> createState() => _SignatureViewState();
+}
+
+class _SignatureViewState extends State<SignatureView> {
+  bool isCaptured = false;
+  Uint8List? bytes;
+
+  GlobalKey<SfSignaturePadState> signaturePadKey = GlobalKey();
+
+  @override
+  void initState() {
+    if (widget.tec.value.isNotEmpty) {
+      isCaptured = true;
+      bytes = widget.tec.value;
+    }
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final content = Padding(
+      padding: const EdgeInsets.only(left: 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppText.thin(widget.label),
+          Ui.boxHeight(8),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: AppColors.lightTextColor.withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  height: 84,
+                  clipBehavior: Clip.hardEdge,
+                  width: Ui.width(context) - 72,
+                  child: bytes != null
+                      ? Image.memory(bytes!)
+                      : SfSignaturePad(
+                          key: signaturePadKey,
+                          backgroundColor: AppColors.white,
+                        ),
+                ),
+              ),
+              Ui.boxWidth(8),
+              Column(
+                children: [
+                  CircleIcon(
+                    HugeIcons.strokeRoundedCamera01,
+                    radius: 12,
+                    size: 16,
+                    bg: AppColors.green,
+                    onTap: () async {
+                      ui.Image image = await signaturePadKey.currentState!
+                          .toImage();
+                      var data = await image.toByteData(
+                        format: ui.ImageByteFormat.png,
+                      );
+                      final dd = data!.buffer.asUint8List();
+
+                      widget.tec.value = dd;
+                      Ui.showInfo("Signature captured");
+                      setState(() {
+                        bytes = dd;
+                        isCaptured = true;
+                      });
+                    },
+                  ),
+                  Ui.boxHeight(20),
+                  CircleIcon(
+                    HugeIcons.strokeRoundedDelete02,
+                    radius: 12,
+                    size: 16,
+                    onTap: () {
+                      if (isCaptured) {
+                        widget.tec.value = Uint8List(0);
+                        setState(() {
+                          isCaptured = false;
+                          bytes = null;
+                        });
+                      } else {
+                        signaturePadKey.currentState!.clear();
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+          // Ui.boxHeight(24),
+          // AppButton.row(
+          //   "Capture",
+          //   () async {
+          //     ui.Image image = await signaturePadKey.currentState!.toImage();
+          //     var data = await image.toByteData(format: ui.ImageByteFormat.png);
+          //     final dd = data!.buffer.asUint8List();
+
+          //     widget.tec.value = dd;
+          //     Ui.showInfo("Signature captured");
+          //     setState(() {
+          //       bytes = dd;
+          //       isCaptured = true;
+          //     });
+          //   },
+          //   "Clear",
+          //   () {
+          //     if (isCaptured) {
+          //       setState(() {
+          //         isCaptured = false;
+          //         bytes = null;
+          //       });
+          //     } else {
+          //       signaturePadKey.currentState!.clear();
+          //     }
+          //   },
+          // ),
+          // Ui.boxHeight(24),
+        ],
+      ),
+    );
+    if (widget.size == null) {
+      return content;
+    }
+    return SizedBox(width: widget.size!, child: content);
   }
 }
 
@@ -940,17 +1220,32 @@ class ProfilePage extends StatelessWidget {
           ]),
           Ui.boxHeight(24),
           AppContainer("ABOUT", [
-            AppContainerItem.icony(
-              HugeIcons.strokeRoundedHelpCircle,
-              "Help Center",
+            InkWell(
+              onTap: () async {
+                await launchUrl(Uri.parse("https://wa.me/+23470672246467"));
+              },
+              child: AppContainerItem.icony(
+                HugeIcons.strokeRoundedHelpCircle,
+                "Help Center",
+              ),
             ),
-            AppContainerItem.icony(
-              HugeIcons.strokeRoundedLeftToRightListBullet,
-              "Terms Of Use",
+            InkWell(
+              onTap: () async {
+                await launchUrl(Uri.parse("https://wa.me/+23470672246467"));
+              },
+              child: AppContainerItem.icony(
+                HugeIcons.strokeRoundedLeftToRightListBullet,
+                "Terms Of Use",
+              ),
             ),
-            AppContainerItem.icony(
-              HugeIcons.strokeRoundedMail01,
-              "Privacy Policy",
+            InkWell(
+              onTap: () async {
+                await launchUrl(Uri.parse("https://wa.me/+23470672246467"));
+              },
+              child: AppContainerItem.icony(
+                HugeIcons.strokeRoundedMail01,
+                "Privacy Policy",
+              ),
             ),
           ]),
           Ui.boxHeight(24),
@@ -1002,28 +1297,39 @@ class AppBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CurvedContainer(
-      borderRadius: BorderRadius.only(
-        topLeft: Radius.circular(12),
-        topRight: Radius.circular(12),
-      ),
-      padding: EdgeInsets.all(16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AppText.medium(title),
-          Ui.boxHeight(24),
-          if (msg != null)
-            AppText.thin(msg!, fontSize: 12, color: AppColors.lightTextColor),
-          if (actions.isNotEmpty) AppContainer("", actions, margin: 0),
-          Row(),
-          Ui.boxHeight(24),
-          SizedBox(
-            width: Ui.width(context) / 3,
-            child: AppButton(onPressed: onTap, text: btnText),
-          ),
-          Ui.boxHeight(24),
-        ],
+    return SingleChildScrollView(
+      child: CurvedContainer(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(12),
+          topRight: Radius.circular(12),
+        ),
+        padding: EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: EdgeInsets.only(top: 0, bottom: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.borderColor,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            AppText.medium(title),
+            Ui.boxHeight(24),
+            if (msg != null)
+              AppText.thin(msg!, fontSize: 12, color: AppColors.lightTextColor),
+            if (actions.isNotEmpty) AppContainer("", actions, margin: 0),
+            Row(),
+            Ui.boxHeight(24),
+            SizedBox(
+              width: Ui.width(context) / 3,
+              child: AppButton(onPressed: onTap, text: btnText),
+            ),
+            Ui.boxHeight(24),
+          ],
+        ),
       ),
     );
   }
@@ -1040,7 +1346,7 @@ class FieldValue extends StatelessWidget {
       padding: const EdgeInsets.all(0.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [AppText.medium(title, fontSize: 14), child],
+        children: [AppText.medium(title, fontSize: 14), Ui.boxWidth(8), child],
       ),
     );
   }
@@ -1054,6 +1360,9 @@ class AddResource<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<DashboardController>();
+    RxList<String> facilities = <String>[].obs;
+    Rx<User> curDriver = User().obs;
+    RxBool isActive = false.obs;
     final List<TextEditingController> tecs = List.generate(
       10,
       (i) => TextEditingController(),
@@ -1078,6 +1387,7 @@ class AddResource<T> extends StatelessWidget {
         tecs[2].text = user.facilityType ?? "";
         tecs[3].text = user.state ?? "Kano";
         locState.value = tecs[3].text;
+        tecs[4].text = user.code ?? "";
       }
 
       if (title.toLowerCase() == "vehicles") {
@@ -1085,354 +1395,481 @@ class AddResource<T> extends StatelessWidget {
         tecs[0].text = vehicle.name ?? "";
         tecs[1].text = vehicle.regno ?? "";
         tecs[2].text = vehicle.type ?? "";
+        tecs[3].text = vehicle.driver ?? "";
+        isActive.value = vehicle.isActive;
+        curDriver.value =
+            controller.allDrivers.firstWhereOrNull(
+              (e) => e.name == tecs[3].text,
+            ) ??
+            User();
       }
 
       if (title.toLowerCase() == "trips") {
         final delivery = obj as Delivery;
         tecs[0].text = delivery.pickup ?? "";
-        tecs[1].text = delivery.stops[0];
+        facilities.value = delivery.stops;
         tecs[2].text = delivery.driver ?? "";
         tecs[3].text = delivery.truckno ?? "";
         tecs[4].text = delivery.waybill;
+        tecs[1].text = delivery.invoiceno ?? "";
       }
     } else {
       if (title.toLowerCase() == "trips") {
         controller.generateWayBill(locState.value == "Kano").then((v) {
           tecs[4].text = v;
         });
+        facilities.value = [""];
       }
     }
 
-    return AppBottomSheet(
-      obj == null ? "Add $title" : "Edit $title",
-      obj == null ? "Add" : "Edit",
-      onTap: () async {
-        try {
-          if (title.toLowerCase() == "trips") {
-            if (UtilFunctions.validateTecs(tecs.sublist(0, 4))) {
-              if (obj == null) {
-                //add trip
-                await controller.addDelivery(
-                  tecs[4].text,
-                  tecs[1].text,
-                  controller.allDrivers
-                      .firstWhere((d) => d.name == tecs[2].text)
-                      .id,
-                  controller.allVehicles
-                      .firstWhere((v) => v.slug == tecs[3].text)
-                      .id,
-                  tecs[0].text,
-                  tecs[3].text,
-                );
+    return SingleChildScrollView(
+      child: AppBottomSheet(
+        obj == null ? "Add $title" : "Edit $title",
+        obj == null ? "Add" : "Edit",
+        onTap: () async {
+          try {
+            if (title.toLowerCase() == "trips") {
+              if (UtilFunctions.validateTecs(tecs.sublist(0, 4))) {
+                if (obj == null) {
+                  //add trip
+                  await controller.addDelivery(
+                    tecs[4].text,
+                    facilities,
+                    controller.allDrivers
+                        .firstWhere((d) => d.name == tecs[2].text)
+                        .id,
+                    controller.allVehicles
+                        .firstWhere((v) => v.slug == tecs[3].text)
+                        .id,
+                    tecs[0].text,
+                    tecs[3].text,
+                    tecs[1].text,
+                  );
+                } else {
+                  //edit trip
+                  final trip = obj as Delivery;
+                  await controller.appRepo.updateDelivery(
+                    tecs[4].text,
+                    facilities,
+                    controller.allDrivers
+                        .firstWhere((d) => d.name == tecs[2].text)
+                        .id,
+                    controller.allVehicles
+                        .firstWhere((v) => v.slug == tecs[3].text)
+                        .id,
+                    tecs[0].text,
+                    tecs[3].text,
+                    tecs[1].text,
+                    trip.id,
+                  );
+                }
+                Ui.showInfo("Successfully saved");
               } else {
-                //edit trip
-                final trip = obj as Delivery;
-                await controller.appRepo.updateDelivery(
-                  tecs[4].text,
-                  tecs[1].text,
-                  controller.allDrivers
-                      .firstWhere((d) => d.name == tecs[2].text)
-                      .id,
-                  controller.allVehicles
-                      .firstWhere((v) => v.slug == tecs[3].text)
-                      .id,
-                  tecs[0].text,
-                  tecs[3].text,
-                  trip.id,
-                );
+                throw "All Fields are mandatory to fill";
               }
-              Ui.showInfo("Successfully saved");
-            } else {
-              throw "All Fields are mandatory to fill";
-            }
-          } else if (title.toLowerCase() == "users" ||
-              title.toLowerCase() == "drivers") {
-            if (title.toLowerCase() == "drivers") {
-              tecs[3].text = "driver";
-            }
-            if (UtilFunctions.validateTecs(tecs.sublist(0, 5))) {
-              if (obj == null) {
-                //add user
-                await controller.addUser(
-                  tecs[0].text,
-                  tecs[1].text,
-                  tecs[2].text,
-                  tecs[3].text,
-                  tecs[4].text,
-                );
+            } else if (title.toLowerCase() == "users" ||
+                title.toLowerCase() == "drivers") {
+              if (title.toLowerCase() == "drivers") {
+                tecs[3].text = "driver";
+              }
+              if (UtilFunctions.validateTecs(tecs.sublist(0, 5))) {
+                if (obj == null) {
+                  //add user
+                  await controller.addUser(
+                    tecs[0].text,
+                    tecs[1].text,
+                    tecs[2].text,
+                    tecs[3].text,
+                    tecs[4].text,
+                  );
+                } else {
+                  //edit user
+                  final user = obj as User;
+                  await controller.editUser(
+                    tecs[0].text,
+                    tecs[1].text,
+                    tecs[2].text,
+                    tecs[3].text,
+                    tecs[4].text,
+                    user.id,
+                  );
+                }
+                Ui.showInfo("Successfully saved");
               } else {
-                //edit user
-                final user = obj as User;
-                await controller.editUser(
-                  tecs[0].text,
-                  tecs[1].text,
-                  tecs[2].text,
-                  tecs[3].text,
-                  tecs[4].text,
-                  user.id,
-                );
+                throw "All Fields are mandatory to fill";
               }
-              Ui.showInfo("Successfully saved");
-            } else {
-              throw "All Fields are mandatory to fill";
-            }
-          } else if (title.toLowerCase() == "facilities" ||
-              title.toLowerCase() == "loading points") {
-            if (title.toLowerCase() == "loading points") {
-              tecs[2].text = "Loading Point";
-            }
-            if (UtilFunctions.validateTecs(tecs.sublist(0, 4))) {
-              if (obj == null) {
-                //add user
-                await controller.addLocation(
-                  tecs[0].text,
-                  tecs[3].text,
-                  tecs[1].text,
-                  tecs[2].text,
-                );
-              } else {
-                //edit user
-                final user = obj as Location;
-                await controller.editLocation(
-                  tecs[0].text,
-                  tecs[3].text,
-                  tecs[1].text,
-                  tecs[2].text,
-                  user.id,
-                );
+            } else if (title.toLowerCase() == "facilities" ||
+                title.toLowerCase() == "loading points") {
+              if (title.toLowerCase() == "loading points") {
+                tecs[2].text = "Loading Point";
               }
+              if (UtilFunctions.validateTecs(tecs.sublist(0, 4))) {
+                if (obj == null) {
+                  //add user
+                  await controller.addLocation(
+                    tecs[0].text,
+                    tecs[3].text,
+                    tecs[1].text,
+                    tecs[2].text,
+                    tecs[4].text,
+                  );
+                } else {
+                  //edit user
+                  final user = obj as Location;
+                  await controller.editLocation(
+                    tecs[0].text,
+                    tecs[3].text,
+                    tecs[1].text,
+                    tecs[2].text,
+                    tecs[4].text,
+                    user.id,
+                  );
+                }
 
-              Ui.showInfo("Successfully saved");
-            } else {
-              throw "All Fields are mandatory to fill";
-            }
-          } else if (title.toLowerCase() == "vehicles") {
-            if (UtilFunctions.validateTecs(tecs.sublist(0, 2))) {
-              if (obj == null) {
-                //add vehicle
-                await controller.appRepo.addVehicle(
-                  tecs[0].text,
-                  tecs[1].text,
-                  tecs[2].text,
-                );
+                Ui.showInfo("Successfully saved");
               } else {
-                //edit vehicle
-                final vehicle = obj as Vehicle;
-                await controller.appRepo.updateVehicle(
-                  tecs[0].text,
-                  tecs[1].text,
-                  tecs[2].text,
-                  vehicle.id,
-                );
+                throw "All Fields are mandatory to fill";
               }
+            } else if (title.toLowerCase() == "vehicles") {
+              if (UtilFunctions.validateTecs(tecs.sublist(0, 2))) {
+                if (obj == null) {
+                  //add vehicle
+                  await controller.appRepo.addVehicle(
+                    tecs[0].text,
+                    tecs[1].text,
+                    tecs[2].text,
+                    isActive.value,
+                    driver: (curDriver.value.name?.isEmpty ?? true)
+                        ? null
+                        : curDriver.value.name,
+                    driverid: curDriver.value.id == 0
+                        ? null
+                        : curDriver.value.id,
+                  );
+                } else {
+                  //edit vehicle
+                  final vehicle = obj as Vehicle;
+                  await controller.appRepo.updateVehicle(
+                    tecs[0].text,
+                    tecs[1].text,
+                    tecs[2].text,
+                    isActive.value,
+                    vehicle.id,
+                    driver: (curDriver.value.name?.isEmpty ?? true)
+                        ? null
+                        : curDriver.value.name,
+                    driverid: curDriver.value.id == 0
+                        ? null
+                        : curDriver.value.id,
+                  );
+                }
 
-              Ui.showInfo("Successfully saved");
-            } else {
-              throw "All Fields are mandatory to fill";
+                Ui.showInfo("Successfully saved");
+              } else {
+                throw "All Fields are mandatory to fill";
+              }
             }
+            await controller.initApp();
+            controller.refreshResource();
+
+            Get.back();
+          } catch (e) {
+            Ui.showError(e.toString());
           }
-          await controller.initApp();
-          controller.refreshResource();
-
-          Get.back();
-        } catch (e) {
-          Ui.showError(e.toString());
-        }
-      },
-      actions: [
-        //TRIP
-        if (title.toLowerCase() == "trips")
-          CustomTextField("Waybill", tecs[4], label: "Waybill", readOnly: true),
-        if (title.toLowerCase() == "trips")
-          CustomDropdown.city(
-            cities: controller.allLoadingPoints.map((e) => e.slug).toList(),
-            hint: "Add Loading Point",
-            label: "Loading Point",
-            selectedValue: tecs[0].text,
-            onChanged: (v) {
-              tecs[0].text = v ?? "";
-            },
-          ),
-        if (title.toLowerCase() == "trips")
-          CustomDropdown.city(
-            cities: controller.allFacilities.map((e) => e.slug).toList(),
-            hint: "Add Facility",
-            label: "Facility",
-            selectedValue: tecs[1].text,
-            onChanged: (v) {
-              tecs[1].text = v ?? "";
-            },
-          ),
-        if (title.toLowerCase() == "trips")
-          CustomDropdown.city(
-            cities: controller.allDrivers.map((e) => e.name ?? "").toList(),
-            hint: "Add Driver",
-            label: "Driver",
-            selectedValue: tecs[2].text,
-            onChanged: (v) {
-              tecs[2].text = v ?? "";
-            },
-          ),
-        if (title.toLowerCase() == "trips")
-          CustomDropdown.city(
-            cities: controller.allVehicles.map((e) => e.slug).toList(),
-            hint: "Add Vehicle",
-            label: "Vehicle",
-            selectedValue: tecs[3].text,
-            onChanged: (v) {
-              tecs[3].text = v ?? "";
-            },
-          ),
-
-        //USER
-        if (title.toLowerCase() == "users")
-          CustomTextField("Add user", tecs[0], label: "Name"),
-        if (title.toLowerCase() == "users")
-          CustomTextField("Add email", tecs[1], label: "Email"),
-        if (title.toLowerCase() == "users")
-          CustomTextField("Add phone", tecs[2], label: "Phone"),
-        if (title.toLowerCase() == "users")
-          CustomDropdown.city(
-            cities: ["driver", "admin", "operator"],
-            hint: "Add account type",
-            label: "Account type",
-            selectedValue: tecs[3].text,
-            onChanged: (v) {
-              tecs[3].text = v ?? "";
-            },
-          ),
-        if (title.toLowerCase() == "users")
-          CustomDropdown.city(
-            cities: ["Kano", "Kaduna"],
-            hint: "Add location",
-            label: "Location",
-            selectedValue: tecs[4].text,
-            onChanged: (v) {
-              tecs[4].text = v ?? "";
-            },
-          ),
-
-        //DRIVER
-        if (title.toLowerCase() == "drivers")
-          CustomTextField("Add name", tecs[0], label: "Name"),
-        if (title.toLowerCase() == "drivers")
-          CustomTextField("Add email", tecs[1], label: "Email"),
-        if (title.toLowerCase() == "drivers")
-          CustomTextField("Add phone", tecs[2], label: "Phone"),
-        if (title.toLowerCase() == "drivers")
-          CustomDropdown.city(
-            cities: ["Kano", "Kaduna"],
-            hint: "Add location",
-            label: "Location",
-            selectedValue: tecs[4].text,
-            onChanged: (v) {
-              tecs[4].text = v ?? "";
-            },
-          ),
-
-        //Location
-        if (title.toLowerCase() == "facilities" ||
-            title.toLowerCase() == "loading points")
-          CustomTextField("Add name", tecs[0], label: "Name"),
-        if (title.toLowerCase() == "facilities")
-          CustomDropdown.city(
-            cities: ["Hospital", "Clinic", "Loading Point"],
-            hint: "",
-            label: "Facilty Type",
-            selectedValue: tecs[2].text,
-            onChanged: (v) {
-              tecs[2].text = v ?? "";
-            },
-          ),
-        if (title.toLowerCase() == "facilities" ||
-            title.toLowerCase() == "loading points")
-          CustomDropdown.city(
-            cities: ["Kano", "Kaduna"],
-            hint: "Add State",
-            label: "State",
-            selectedValue: tecs[3].text,
-            onChanged: (v) {
-              tecs[3].text = v ?? "";
-              locState.value = v ?? "Kano";
-              tecs[1].text =
-                  (lgas
-                          .where(
-                            (e) =>
-                                e["state"] ==
-                                (locState.value.isEmpty
-                                    ? "Kano"
-                                    : locState.value),
-                          )
-                          .first["lgas"]
-                      as List<String>)[0];
-            },
-          ),
-        if (title.toLowerCase() == "facilities" ||
-            title.toLowerCase() == "loading points")
-          Obx(() {
-            return CustomDropdown.city(
-              cities:
-                  lgas
-                          .where(
-                            (e) =>
-                                e["state"] ==
-                                (locState.value.isEmpty
-                                    ? "Kano"
-                                    : locState.value),
-                          )
-                          .first["lgas"]
-                      as List<String>,
-              hint: "",
-              label: "LGA",
-              selectedValue: tecs[1].text,
+        },
+        actions: [
+          //TRIP
+          if (title.toLowerCase() == "trips")
+            CustomTextField(
+              "Waybill",
+              tecs[4],
+              label: "Waybill",
+              readOnly: true,
+            ),
+          if (title.toLowerCase() == "trips")
+            CustomDropdown.city(
+              cities: controller.allLoadingPoints.map((e) => e.slug).toList(),
+              hint: "Add Loading Point",
+              label: "Loading Point",
+              selectedValue: tecs[0].text,
               onChanged: (v) {
-                tecs[1].text = v ?? "";
+                tecs[0].text = v ?? "";
               },
-            );
-          }),
+            ),
+          if (title.toLowerCase() == "trips")
+            Obx(() {
+              final gf = List.generate(facilities.length, (i) {
+                return Padding(
+                  padding: EdgeInsets.only(
+                    bottom: i == facilities.length - 1 ? 0 : 8.0,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: CustomDropdown.city(
+                          cities: controller.allFacilities
+                              .map((e) => e.slug)
+                              .toList(),
+                          hint: "Add Facility",
+                          label: "Facility ${i + 1}",
+                          selectedValue: facilities[i],
+                          onChanged: (v) {
+                            if (facilities.contains(v)) {
+                              facilities[i] = "";
+                              Ui.showError("Facility already selected");
+                            } else {
+                              facilities[i] = v ?? "";
+                            }
+                          },
+                        ),
+                      ),
+                      Ui.boxWidth(8),
+                      CircleIcon(
+                        HugeIcons.strokeRoundedAdd01,
+                        onTap: () {
+                          facilities.add("");
+                        },
+                        radius: 12,
+                        size: 16,
+                      ),
+                      if (facilities.length > 1) Ui.boxWidth(8),
 
-        //VEHICLE
-        if (title.toLowerCase() == "vehicles")
-          CustomTextField("Vehicle Name", tecs[0], label: "Vehicle Name"),
-        if (title.toLowerCase() == "vehicles")
-          CustomTextField("Reg Number", tecs[1], label: "Reg Number"),
-        if (title.toLowerCase() == "vehicles")
-          CustomDropdown.city(
-            cities: ["Bus", "Truck", "Pickup"],
-            hint: "Vehicle Type",
-            label: "Vehicle Type",
-            selectedValue: tecs[2].text,
-            onChanged: (v) {
-              tecs[2].text = v ?? "";
-            },
-          ),
+                      if (facilities.length > 1)
+                        CircleIcon(
+                          HugeIcons.strokeRoundedMinusSign,
+                          onTap: () {
+                            facilities.removeAt(i);
+                          },
+                          radius: 12,
+                          size: 16,
+                        ),
+                    ],
+                  ),
+                );
+              });
+              return Column(children: gf);
+            }),
 
-        //Location
-        // if (title.toLowerCase() == "loading points")
-        //   CustomTextField("Add name", tecs[0], label: "Name"),
-        // if (title.toLowerCase() == "loading points")
-        //   CustomTextField("Add address", tecs[1], label: "Address"),
-        // if (title.toLowerCase() == "loading points")
-        //   CustomDropdown.city(
-        //     cities: ["Hospital", "Clinic","Loading Point"],
-        //     hint: "",
-        //     label: "Facilty Type",
-        //     selectedValue: tecs[2].text,
-        //     onChanged: (v) {
-        //       tecs[2].text = v ?? "";
-        //     },
-        //   ),
-        // if (title.toLowerCase() == "loading points")
-        //   CustomDropdown.city(
-        //     cities: ["Kano", "Kaduna"],
-        //     hint: "Add State",
-        //     label: "State",
-        //     selectedValue: tecs[2].text,
-        //     onChanged: (v) {
-        //       tecs[3].text = v ?? "";
-        //     },
-        //   ),
-      ],
+          if (title.toLowerCase() == "trips")
+            CustomDropdown.city(
+              cities: controller.allDrivers.map((e) => e.name ?? "").toList(),
+              hint: "Add Driver",
+              label: "Driver",
+              selectedValue: tecs[2].text,
+              onChanged: (v) {
+                tecs[2].text = v ?? "";
+                tecs[3].text =
+                    controller.allVehicles
+                        .firstWhereOrNull((test) => test.driver == v)
+                        ?.slug ??
+                    tecs[3].text;
+              },
+            ),
+          if (title.toLowerCase() == "trips")
+            CustomDropdown.city(
+              cities: controller.allVehicles
+                  .where((test) => test.isActive)
+                  .map((e) => e.slug)
+                  .toList(),
+              hint: "Add Vehicle",
+              label: "Vehicle",
+              selectedValue: tecs[3].text,
+              onChanged: (v) {
+                tecs[3].text = v ?? "";
+                tecs[2].text =
+                    controller.allVehicles
+                        .firstWhereOrNull((test) => test.name == v)
+                        ?.driver ??
+                    tecs[2].text;
+              },
+            ),
+          if (title.toLowerCase() == "trips")
+            CustomTextField("Add Invoice No", tecs[1], label: "invoice No"),
+
+          //USER
+          if (title.toLowerCase() == "users")
+            CustomTextField("Add user", tecs[0], label: "Name"),
+          if (title.toLowerCase() == "users")
+            CustomTextField("Add email", tecs[1], label: "Email"),
+          if (title.toLowerCase() == "users")
+            CustomTextField("Add phone", tecs[2], label: "Phone"),
+          if (title.toLowerCase() == "users")
+            CustomDropdown.city(
+              cities: ["driver", "admin", "operator"],
+              hint: "Add account type",
+              label: "Account type",
+              selectedValue: tecs[3].text,
+              onChanged: (v) {
+                tecs[3].text = v ?? "";
+              },
+            ),
+          if (title.toLowerCase() == "users")
+            CustomDropdown.city(
+              cities: ["Kano", "Kaduna"],
+              hint: "Add location",
+              label: "Location",
+              selectedValue: tecs[4].text,
+              onChanged: (v) {
+                tecs[4].text = v ?? "";
+              },
+            ),
+
+          //DRIVER
+          if (title.toLowerCase() == "drivers")
+            CustomTextField("Add name", tecs[0], label: "Name"),
+          if (title.toLowerCase() == "drivers")
+            CustomTextField("Add email", tecs[1], label: "Email"),
+          if (title.toLowerCase() == "drivers")
+            CustomTextField("Add phone", tecs[2], label: "Phone"),
+          if (title.toLowerCase() == "drivers")
+            CustomDropdown.city(
+              cities: ["Kano", "Kaduna"],
+              hint: "Add location",
+              label: "Location",
+              selectedValue: tecs[4].text,
+              onChanged: (v) {
+                tecs[4].text = v ?? "";
+              },
+            ),
+
+          //Location
+          if (title.toLowerCase() == "facilities" ||
+              title.toLowerCase() == "loading points")
+            CustomTextField("Add name", tecs[0], label: "Name"),
+          if (title.toLowerCase() == "facilities" ||
+              title.toLowerCase() == "loading points")
+            CustomTextField("Add Facility Code", tecs[4], label: "Code"),
+          if (title.toLowerCase() == "facilities")
+            CustomDropdown.city(
+              cities: ["Hospital", "Clinic", "Loading Point"],
+              hint: "",
+              label: "Facilty Type",
+              selectedValue: tecs[2].text,
+              onChanged: (v) {
+                tecs[2].text = v ?? "";
+              },
+            ),
+          if (title.toLowerCase() == "facilities" ||
+              title.toLowerCase() == "loading points")
+            CustomDropdown.city(
+              cities: ["Kano", "Kaduna"],
+              hint: "Add State",
+              label: "State",
+              selectedValue: tecs[3].text,
+              onChanged: (v) {
+                tecs[3].text = v ?? "";
+                locState.value = v ?? "Kano";
+                tecs[1].text =
+                    (lgas
+                            .where(
+                              (e) =>
+                                  e["state"] ==
+                                  (locState.value.isEmpty
+                                      ? "Kano"
+                                      : locState.value),
+                            )
+                            .first["lgas"]
+                        as List<String>)[0];
+              },
+            ),
+          if (title.toLowerCase() == "facilities" ||
+              title.toLowerCase() == "loading points")
+            Obx(() {
+              return CustomDropdown.city(
+                cities:
+                    lgas
+                            .where(
+                              (e) =>
+                                  e["state"] ==
+                                  (locState.value.isEmpty
+                                      ? "Kano"
+                                      : locState.value),
+                            )
+                            .first["lgas"]
+                        as List<String>,
+                hint: "Select LGA",
+                label: "LGA",
+                selectedValue: tecs[1].text,
+                onChanged: (v) {
+                  tecs[1].text = v ?? "";
+                },
+              );
+            }),
+
+          //VEHICLE
+          if (title.toLowerCase() == "vehicles")
+            CustomTextField("Vehicle Name", tecs[0], label: "Make & Modell"),
+          if (title.toLowerCase() == "vehicles")
+            CustomTextField("Reg Number", tecs[1], label: "Plate number"),
+          if (title.toLowerCase() == "vehicles")
+            CustomDropdown.city(
+              cities: ["Bus", "Truck", "Pickup"],
+              hint: "Vehicle Type",
+              label: "Vehicle Type",
+              selectedValue: tecs[2].text,
+              onChanged: (v) {
+                tecs[2].text = v ?? "";
+              },
+            ),
+          if (title.toLowerCase() == "vehicles")
+            CustomDropdown.city(
+              cities: controller.allDrivers.map((e) => e.name ?? "").toList(),
+              hint: "Add Driver",
+              label: "Driver",
+              selectedValue: curDriver.value.name,
+              onChanged: (v) {
+                curDriver.value = v == null
+                    ? User()
+                    : controller.allDrivers.firstWhereOrNull(
+                            (e) => e.name == v,
+                          ) ??
+                          User();
+              },
+            ),
+          if (title.toLowerCase() == "vehicles")
+            Row(
+              children: [
+                AppText.medium("Enabled", fontSize: 14),
+                Spacer(),
+                Obx(() {
+                  return Switch(
+                    value: isActive.value,
+                    activeThumbColor: AppColors.green,
+                    onChanged: (v) {
+                      isActive.value = v;
+                    },
+                  );
+                }),
+              ],
+            ),
+
+          //Location
+          // if (title.toLowerCase() == "loading points")
+          //   CustomTextField("Add name", tecs[0], label: "Name"),
+          // if (title.toLowerCase() == "loading points")
+          //   CustomTextField("Add address", tecs[1], label: "Address"),
+          // if (title.toLowerCase() == "loading points")
+          //   CustomDropdown.city(
+          //     cities: ["Hospital", "Clinic","Loading Point"],
+          //     hint: "",
+          //     label: "Facilty Type",
+          //     selectedValue: tecs[2].text,
+          //     onChanged: (v) {
+          //       tecs[2].text = v ?? "";
+          //     },
+          //   ),
+          // if (title.toLowerCase() == "loading points")
+          //   CustomDropdown.city(
+          //     cities: ["Kano", "Kaduna"],
+          //     hint: "Add State",
+          //     label: "State",
+          //     selectedValue: tecs[2].text,
+          //     onChanged: (v) {
+          //       tecs[3].text = v ?? "";
+          //     },
+          //   ),
+        ],
+      ),
     );
   }
 }
@@ -1459,7 +1896,10 @@ class ScannerPage extends StatelessWidget {
                       return;
                     }
                     final waybill = qrcode;
-                    dlv.value = (controller.appRepo.appService.currentUser.value.isAdmin ? controller.allCustomerDeliveries: controller.allDeliveries)
+                    dlv.value =
+                        (controller.appRepo.appService.currentUser.value.isAdmin
+                                ? controller.allCustomerDeliveries
+                                : controller.allDeliveries)
                             .where((test) => test.waybill == waybill)
                             .firstOrNull ??
                         Delivery(createdAt: DateTime.now());
@@ -1481,7 +1921,6 @@ class ScannerPage extends StatelessWidget {
     );
   }
 }
-
 
 const lgas = [
   // {

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "144305290224",
+    "project_id": "fleetsync-7b223",
+    "storage_bucket": "fleetsync-7b223.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:144305290224:android:27fab9d03a46756f687b35",
+        "android_client_info": {
+          "package_name": "com.archyuniq.fleetsync"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD2qi0gbMlr-ik-XDLvLlmxSyPBX_6TKQs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

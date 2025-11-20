@@ -42,7 +42,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyAC8lnkX3MvJVNtxZzXKB4ZtxHFRBU1MYA',
-    appId: '1:144305290224:web:b8870dc5bdd0df09687b35',
+    appId: '1:144305290224:web:1eb67fbc6fc3b0b7687b35',
     messagingSenderId: '144305290224',
     projectId: 'fleetsync-7b223',
     authDomain: 'fleetsync-7b223.firebaseapp.com',
@@ -77,10 +77,11 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions windows = FirebaseOptions(
     apiKey: 'AIzaSyAC8lnkX3MvJVNtxZzXKB4ZtxHFRBU1MYA',
-    appId: '1:144305290224:web:1eb67fbc6fc3b0b7687b35',
+    appId: '1:144305290224:web:55ef1b0cfe35b838687b35',
     messagingSenderId: '144305290224',
     projectId: 'fleetsync-7b223',
     authDomain: 'fleetsync-7b223.firebaseapp.com',
     storageBucket: 'fleetsync-7b223.firebasestorage.app',
   );
+
 }

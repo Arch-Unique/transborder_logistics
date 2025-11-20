@@ -61,13 +61,39 @@ class _AdminExplorerState extends State<AdminExplorer> {
                     controller.curResourceHistory.value.title == "Location"
                 ? SizedBox()
                 : InkWell(
+                    onTap: () async {
+                      await controller.exportData();
+                      
+                    },
+                    child: Padding(
+                      padding: EdgeInsets.only(left: 8.0, right: 16),
+                      child: AppIcon(
+                        HugeIcons.strokeRoundedDownload01,
+                        color: AppColors.primaryColor,
+                      ),
+                    ),
+                  );
+          }),
+          Obx(() {
+            return controller.curResourceHistory.value.title == "Dashboard" || 
+                    controller.curResourceHistory.value.title == "Location"
+                ? InkWell(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: AppIcon(HugeIcons.strokeRoundedQrCode),
+                ),
+                onTap: () {
+                  Get.to(ScannerPage());
+                },
+              )
+                : InkWell(
                     onTap: () {
                       Get.bottomSheet(
                         AddResource(controller.curResourceHistory.value.title),
                       );
                     },
                     child: Padding(
-                      padding: EdgeInsets.only(left: 8.0, right: 8),
+                      padding: EdgeInsets.only(left: 8.0, right: 16),
                       child: AppIcon(
                         HugeIcons.strokeRoundedAddCircle,
                         color: AppColors.primaryColor,
@@ -75,6 +101,9 @@ class _AdminExplorerState extends State<AdminExplorer> {
                     ),
                   );
           }),
+
+          
+          
         ],
       ),
       body: Obx(() {

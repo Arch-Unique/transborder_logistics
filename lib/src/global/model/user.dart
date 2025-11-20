@@ -31,7 +31,7 @@ class User implements Slugger {
     this.role = "",
   });
 
-  bool get isAdmin => role == "admin";
+  bool get isAdmin => role == "admin" || role == "operator";
   bool get isStaff => role == "admin" || role == "user";
 
   @override
@@ -90,15 +90,18 @@ class Location implements Slugger {
   int id;
   String? name;
   String? lga;
-  String? state;
+  String? state, code;
   String? facilityType;
+  bool isActive;
 
   Location({
     this.id = 0,
     this.name = "",
     this.lga = "",
     this.state = "",
+    this.code = "",
     this.facilityType = "",
+    this.isActive = true,
   });
 
   String get desc => "$name, $lga, $state";
@@ -115,6 +118,8 @@ class Location implements Slugger {
       lga: json["lga"],
       state: json["state"],
       name: json["name"],
+      code: json["code"],
+      isActive: json["isactive"],
       facilityType: json["type"] ?? "Hospital",
     );
   }
@@ -125,7 +130,7 @@ class Location implements Slugger {
   @override
   String get rawId => "#$id";
 
-    @override
+  @override
   Map<String, String> get fields {
     return {
       "Id": id.toString(),
@@ -179,16 +184,31 @@ class StateLocation implements Slugger {
 class Vehicle implements Slugger {
   int id;
   String? name, regno, type;
+  String? image, driver;
+  bool isActive;
 
-  Vehicle({this.id = 0, this.name = "", this.regno = "", this.type = ""});
+  Vehicle({
+    this.id = 0,
+    this.name = "",
+    this.regno = "",
+    this.type = "",
+    this.image = "",
+    this.driver = "",
+    this.isActive = true,
+  });
 
   String get desc => "$name $regno $type";
 
   @override
-  List<String> get tableTitle => ["Name", "Regno", "Type"];
+  List<String> get tableTitle => ["Name", "Regno", "Type", "Driver"];
 
   @override
-  List<String> get tableValue => [name ?? "", regno ?? "", type ?? ""];
+  List<String> get tableValue => [
+    name ?? "",
+    regno ?? "",
+    type ?? "",
+    driver ?? "N/A",
+  ];
 
   @override
   String get rawId => "#$id";
@@ -209,6 +229,9 @@ class Vehicle implements Slugger {
       name: json["name"],
       regno: json["regno"],
       type: json["type"],
+      image: json["image"],
+      isActive: json["isactive"],
+      driver: json["driver"],
     );
   }
 
@@ -218,7 +241,7 @@ class Vehicle implements Slugger {
 
 class Delivery implements Slugger {
   int id;
-  int driverId, ownerId;
+  int driverId, ownerId, vehicleId;
   String? driver, owner, truckno;
   String waybill;
   DateTime? startDate;
@@ -226,15 +249,28 @@ class Delivery implements Slugger {
   List<String> stops, picture;
   List<DateTime?> stopsDate;
   List<List<String>> items;
+  List<List<String>?> receiver;
   double amt;
-  String? pickup;
+  bool isCanceled;
+  String? pickup, pickupName, pickupContact, pickupSignature, invoiceno;
+
+  static const nv = [null,"","[]",[],"null"];
 
   bool get isDelivered =>
       stopsDate.isNotEmpty &&
       stopsDate.length == stops.length &&
-      !stopsDate.contains(null);
+      !stopsDate.any((e) => nv.contains(e)) &&
+      !isCanceled;
+  bool get isNotDelivered =>
+      !(stopsDate.isNotEmpty &&
+          stopsDate.length == stops.length &&
+          !stopsDate.any((e) => nv.contains(e))) &&
+      !isCanceled;
   bool get hasStarted =>
-      startDate != null && startDate!.isBefore(DateTime.now());
+      startDate != null && startDate!.isBefore(DateTime.now()) && !isCanceled;
+  bool get hasNotStarted =>
+      !(startDate != null && startDate!.isBefore(DateTime.now())) &&
+      !isCanceled;
   String get start => startDate == null
       ? ""
       : DateFormat("dd/MM/yyyy hh:mm:aa").format(startDate!);
@@ -244,6 +280,21 @@ class Delivery implements Slugger {
         (e) => e == null ? null : DateFormat("dd/MM/yyyy hh:mm:aa").format(e),
       )
       .toList();
+
+  List<String> get undeliveredStops {
+    List<String> g = List.from(stops);
+    final h = List.from(formattedStopsDate);
+    return h.isEmpty
+        ? stops
+        : g
+              .map(
+                (e) =>
+                    (nv.contains(h[g.indexOf(e)]))
+                    ? e
+                    : "",
+              )
+              .toList();
+  }
 
   @override
   String get rawId => "#$waybill";
@@ -280,6 +331,7 @@ class Delivery implements Slugger {
     this.id = 0,
     this.waybill = "0",
     this.driverId = 0,
+    this.vehicleId = 0,
     this.picture = const [],
     this.driver,
     this.pickup,
@@ -288,9 +340,15 @@ class Delivery implements Slugger {
     this.amt = 0,
     this.truckno,
     this.ownerId = 0,
+    this.isCanceled = false,
     this.stops = const [],
     this.stopsDate = const [],
     this.items = const [],
+    this.receiver = const [],
+    this.invoiceno = "",
+    this.pickupName = "",
+    this.pickupContact = "",
+    this.pickupSignature = "",
     required this.createdAt,
   });
 
@@ -299,10 +357,16 @@ class Delivery implements Slugger {
       id: json["id"],
       waybill: json["waybill"],
       driverId: json["driverid"],
+      vehicleId: json["vehicleid"] ?? 0,
       ownerId: json["ownerid"],
       pickup: json["pickup"],
       driver: json["drivername"],
       owner: json["ownername"],
+      isCanceled: json["iscanceled"],
+      pickupName: json["pickupname"],
+      pickupContact: json["pickupphone"],
+      pickupSignature: json["pickupsignature"],
+      invoiceno: json["invoiceno"],
       amt: json["amount"] ?? 0,
       truckno: json["truckno"] ?? "",
       picture: json["picture"] == null
@@ -329,6 +393,17 @@ class Delivery implements Slugger {
                     )
                     .toList() ??
                 [],
+      receiver: json["receiver"] == null
+          ? []
+          : (jsonDecode(json["receiver"]) as List<dynamic>?)
+                    ?.map(
+                      (e) => (e == null || e == "" || e == "null")
+                          ? null : ((e as List<dynamic>)
+                          .map((e) => e.toString())
+                          .toList()),
+                    )
+                    .toList() ??
+                [],
       stopsDate: json["stopsdate"] == null
           ? []
           : (jsonDecode(json["stopsdate"]) as List<dynamic>?)
@@ -345,8 +420,13 @@ class Delivery implements Slugger {
   @override
   Map<String, String> get fields {
     final stopsJoined = stops.isNotEmpty ? stops.join(", ") : "";
-    final stopsDatesJoined = formattedStopsDate.map((e) => e ?? "").where((e) => e.isNotEmpty).join(", ");
-    final itemsJoined = items.isNotEmpty ? items.map((it) => it.join(", ")).join("; ") : "";
+    final stopsDatesJoined = formattedStopsDate
+        .map((e) => e ?? "")
+        .where((e) => e.isNotEmpty)
+        .join(", ");
+    final itemsJoined = items.isNotEmpty
+        ? items.map((it) => it.join(", ")).join("; ")
+        : "";
     final picturesJoined = picture.isNotEmpty ? picture.join(", ") : "";
 
     return {
@@ -359,7 +439,9 @@ class Delivery implements Slugger {
       "Stops Dates": stopsDatesJoined,
       "Created At": created,
       "Start Date": start,
-      "End Date": isDelivered ? (formattedStopsDate.isNotEmpty ? formattedStopsDate.last ?? "" : "") : "",
+      "End Date": isDelivered
+          ? (formattedStopsDate.isNotEmpty ? formattedStopsDate.last ?? "" : "")
+          : "",
       "Amount": amt.toString(),
       "Items": itemsJoined,
       "Pictures": picturesJoined,

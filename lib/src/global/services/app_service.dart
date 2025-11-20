@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:transborder_logistics/fcm_functions.dart';
 import 'package:transborder_logistics/src/features/dashboard/controllers/dashboard_controller.dart';
+import 'package:transborder_logistics/src/features/dashboard/repository/app_repo.dart';
 import 'package:transborder_logistics/src/global/model/user.dart';
 import 'package:transborder_logistics/src/global/services/barrel.dart';
 import 'package:transborder_logistics/src/plugin/jwt.dart';
@@ -32,6 +34,15 @@ class AppService extends GetxService {
     // await apiService.post(AppUrls.logout);
     Get.find<DashboardController>().resetApp();
     await _logout();
+  }
+
+  Future<void> updateFCMtoken() async {
+    if (GetPlatform.isMobile) {
+      final token = await FCMFunctions().getFCMToken();
+      if (token != null) {
+        await Get.find<AppRepo>().updateFCM(token);
+      }
+    }
   }
 
   Future<void> _hasOpened() async {

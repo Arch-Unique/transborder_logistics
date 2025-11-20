@@ -17,56 +17,64 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   final controller = Get.find<DashboardController>();
+
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(16),
-      child: Column(
-        children: [
-          AppContainer("",
-            [ CustomDropdown.city(
-              hint: "Select Location",
-              label: "Location",
-              selectedValue: controller.curLoc.value,
-              onChanged: (v) async {
-                await controller.changeLocation(v ?? "All");
-              },
-              cities: ["All", "Kano", "Kaduna"],
-            ),]
-          ),
-          Ui.boxHeight(16),
-          Wrap(
-            spacing: 16,
-            runSpacing: 16,
-            children: [
-              dashboardItem(
-                DashboardItem.trips,
-                controller.allCustomerDeliveries.length,
-                20,
+    print(Ui.width(context));
+    return RefreshScrollView(
+      onExtend: () async {},
+      onRefreshed: () async {
+        await controller.initApp();
+      },
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          children: [
+            AppContainer("", [
+              CustomDropdown.city(
+                hint: "Select Location",
+                label: "Location",
+                selectedValue: controller.curLoc.value,
+                onChanged: (v) async {
+                  await controller.changeLocation(v ?? "All");
+                },
+                cities: ["All", "Kano", "Kaduna"],
               ),
-              dashboardItem(
-                DashboardItem.users,
-                controller.allCustomers.length,
-                0,
-              ),
-              dashboardItem(
-                DashboardItem.drivers,
-                controller.allDrivers.length,
-                -10,
-              ),
-              dashboardItem(
-                DashboardItem.location,
-                controller.allLocation.length,
-                0,
-              ),
-              dashboardItem(
-                DashboardItem.vehicles,
-                controller.allVehicles.length,
-                0,
-              ),
-            ],
-          ),
-        ],
+            ]),
+            Ui.boxHeight(16),
+            Wrap(
+              spacing: 16,
+              runSpacing: 16,
+              children: [
+                dashboardItem(
+                  DashboardItem.trips,
+                  controller.allCustomerDeliveries.length,
+                  20,
+                ),
+                dashboardItem(
+                  DashboardItem.users,
+                  controller.allCustomers.length,
+                  0,
+                ),
+                dashboardItem(
+                  DashboardItem.drivers,
+                  controller.allDrivers.length,
+                  -10,
+                ),
+                dashboardItem(
+                  DashboardItem.location,
+                  controller.allLocation.length,
+                  0,
+                ),
+                dashboardItem(
+                  DashboardItem.vehicles,
+                  controller.allVehicles.length,
+                  0,
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

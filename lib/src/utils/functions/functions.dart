@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '/src/utils/utils_barrel.dart';
 
@@ -89,5 +92,28 @@ abstract class UtilFunctions {
 
   static bool validateTecs(List<TextEditingController> tecs) {
     return !(tecs.any((test) => test.text.isEmpty));
+  }
+
+    static Future<File> saveToTempFile(Uint8List uint8list,
+      {String? filename}) async {
+    try {
+      // Get the system's temporary directory
+      final tempDir = await getTemporaryDirectory();
+
+      // Generate a unique filename if none provided
+      final uniqueFileName =
+          filename ?? '${DateTime.now().millisecondsSinceEpoch}.png';
+
+      // Create the file path
+      final filePath = '${tempDir.path}/$uniqueFileName';
+
+      // Write the Uint8List to a file
+      final file = File(filePath);
+      await file.writeAsBytes(uint8list);
+
+      return file;
+    } catch (e) {
+      throw Exception('Failed to convert Uint8List to File: $e');
+    }
   }
 }

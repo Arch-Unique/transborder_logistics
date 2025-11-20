@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:transborder_logistics/src/features/auth/controllers/excel.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/admin/resource_history.dart';
 import 'package:transborder_logistics/src/global/model/user.dart';
 import 'package:transborder_logistics/src/global/ui/functions/ui_functions.dart';
@@ -96,7 +97,7 @@ class DashboardController extends GetxController {
   }
 
   List<Delivery> get undeliveredDeliveries {
-    return allDeliveries.where((delivery) => !delivery.isDelivered).toList();
+    return allDeliveries.where((delivery) => delivery.isNotDelivered).toList();
   }
 
   List<Location> get allFacilities {
@@ -145,8 +146,7 @@ class DashboardController extends GetxController {
     if (dm == null) {
       return Ui.showError("An Error occurred, please try again");
     }
-      return await appRepo.startDelivery(id, dm.waybill, dm.driverId);
-      
+    return await appRepo.startDelivery(id, dm.waybill, dm.driverId);
   }
 
   Future<bool> stopDelivery(
@@ -155,15 +155,22 @@ class DashboardController extends GetxController {
     String pic,
     String picName,
     String picContact,
+    String sig,
   ) async {
     final dm = undeliveredDeliveries.where((test) => test.id == id).firstOrNull;
     if (dm == null) {
       return Ui.showError("An Error occurred, please try again");
     }
     var sd = List.from(dm.stopsDate);
+    var oldPics = List.from(dm.picture);
+    var oldrecv = List.from(dm.receiver);
     List<String?> ssd = [];
+    List<String?> ops = [];
+    List<List<String>?> ors = [];
     if (sd.isEmpty) {
       ssd = List.generate(dm.stops.length, (j) => null);
+      ops = List.generate(dm.stops.length, (j) => null);
+      ors = List.generate(dm.stops.length, (j) => null);
     } else {
       ssd = List.generate(dm.stops.length, (j) {
         try {
@@ -174,20 +181,44 @@ class DashboardController extends GetxController {
           return null;
         }
       });
+      ops = List.generate(dm.stops.length, (j) {
+        try {
+          return (oldPics[j] == null ||
+                  oldPics[j] == "" ||
+                  oldPics[j] == "null")
+              ? null
+              : oldPics[j];
+        } catch (e) {
+          return null;
+        }
+      });
+      ors = List.generate(dm.stops.length, (j) {
+        try {
+          return (oldrecv[j] == null ||
+                  oldrecv[j] == "" ||
+                  oldrecv[j] == "null")
+              ? null
+              : oldrecv[j];
+        } catch (e) {
+          return null;
+        }
+      });
     }
-    List<String?> pics = List.from(dm.stops);
+    List<String?> pics = List.from(ops);
+    List<List<String>?> recvs = List.from(ors);
 
     ssd[i] = DateFormat("yyyy-MM-dd HH:mm:ss").format(DateTime.now());
     final upic = await uploadImage(pic);
+    final usig = await uploadImage(sig);
     pics[i] = upic;
+    recvs[i] = [picName, picContact, usig ?? ""];
     return await appRepo.stopDelivery(
       id,
       dm.waybill,
       dm.driverId,
       ssd,
       pics,
-      picName,
-      picContact,
+      recvs,
     );
   }
 
@@ -283,8 +314,9 @@ class DashboardController extends GetxController {
     String state,
     String lga,
     String type,
+    String code,
   ) async {
-    return await appRepo.addLocation(name, state, lga, type);
+    return await appRepo.addLocation(name, state, lga, type, code);
   }
 
   Future<bool> editLocation(
@@ -292,9 +324,10 @@ class DashboardController extends GetxController {
     String state,
     String lga,
     String type,
+    String code,
     int id,
   ) async {
-    return await appRepo.updateLocation(name, state, lga, type, id);
+    return await appRepo.updateLocation(name, state, lga, type, code, id);
   }
 
   Future<bool> deleteLocation(int id) async {
@@ -303,11 +336,12 @@ class DashboardController extends GetxController {
 
   Future<bool> addDelivery(
     String waybill,
-    String loc,
+    List<String> loc,
     int driver,
     int vehicle,
     String pickup,
     String truckno,
+    String invoiceno,
   ) async {
     return await appRepo.addDelivery(
       waybill,
@@ -316,6 +350,7 @@ class DashboardController extends GetxController {
       loc,
       pickup,
       truckno,
+      invoiceno,
     );
   }
 
@@ -326,7 +361,7 @@ class DashboardController extends GetxController {
   Future<String> generateWayBill(bool isKano) async {
     final lastId = await appRepo.getLastDeliveryID();
     final sd = DateFormat("MM/yy").format(DateTime.now());
-    return "TBL${isKano ? "KN" : "KD"}/$sd/${(lastId + 1).toString().padLeft(4,"0")}";
+    return "TBL/${isKano ? "KN" : "KD"}/$sd/${(lastId + 1).toString().padLeft(4, "0")}";
   }
 
   Future changeLocation(String v) async {
@@ -334,42 +369,70 @@ class DashboardController extends GetxController {
     await initApp();
   }
 
+  Future exportData() async {
+    try {
+      List<Slugger> allItems = curResourceHistory.value.items;
+      final a = allItems[0];
+      final f = await generateExcelReport(
+        reportTitle:
+            "Transborder Logistics ${curResourceHistory.value.title} Report",
+        data: allItems
+            .map((e) => Map.fromIterables(a.tableTitle, e.tableValue))
+            .toList(),
+        columnsToInclude: a.tableTitle,
+        columnHeaders: Map.fromIterables(a.tableTitle, a.tableTitle),
+      );
+      if (f == null) {
+        return Ui.showError("Failed to generate report");
+      }
+      return Ui.showInfo("Export saved to:\n$f");
+    } catch (e) {
+      Ui.showError("No data available to export");
+    }
+  }
+
   //filters
   void getFilters<T>(RxList<T> v, String s, String title) {
     if (title.toLowerCase() == "trips") {
-      if (s == "New") {
+      // if (s == "New") {
+      //   v.value = List.from(
+      //     allCustomerDeliveries
+      //         .where((test) => !test.hasStarted && !test.isDelivered)
+      //         .toList(),
+      //   );
+      // } else
+      if (s == "In Progress") {
         v.value = List.from(
-          allCustomerDeliveries
-              .where((test) => !test.hasStarted && !test.isDelivered)
-              .toList(),
+          allCustomerDeliveries.where((test) => test.isNotDelivered).toList(),
         );
-      } else if (s == "Ongoing") {
-        v.value = List.from(
-          allCustomerDeliveries
-              .where((test) => test.hasStarted && !test.isDelivered)
-              .toList(),
-        );
-      } else if (s == "Finished") {
+      } else if (s == "Completed") {
         v.value = List.from(
           allCustomerDeliveries.where((test) => test.isDelivered).toList(),
         );
+      } else if (s == "Cancelled") {
+        v.value = List.from(
+          allCustomerDeliveries.where((test) => test.isCanceled).toList(),
+        );
       }
     } else if (title.toLowerCase() == "drivertrips") {
-      if (s == "New") {
+      // if (s == "New") {
+      //   v.value = List.from(
+      //     allDeliveries
+      //         .where((test) => !test.hasStarted && !test.isDelivered)
+      //         .toList(),
+      //   );
+      // } else
+      if (s == "In Progress") {
         v.value = List.from(
-          allDeliveries
-              .where((test) => !test.hasStarted && !test.isDelivered)
-              .toList(),
-        );
-      } else if (s == "Ongoing") {
-        v.value = List.from(
-          allDeliveries
-              .where((test) => test.hasStarted && !test.isDelivered)
-              .toList(),
+          allDeliveries.where((test) => test.isNotDelivered).toList(),
         );
       } else if (s == "Completed") {
         v.value = List.from(
           allDeliveries.where((test) => test.isDelivered).toList(),
+        );
+      } else if (s == "Cancelled") {
+        v.value = List.from(
+          allDeliveries.where((test) => test.isCanceled).toList(),
         );
       }
     } else if (title.toLowerCase() == "users") {
@@ -381,13 +444,17 @@ class DashboardController extends GetxController {
         v.value = List.from(allOperators);
       }
     } else if (title.toLowerCase() == "drivers") {
+      final f = allDrivers
+          .where((e) => undeliveredDeliveries.any((a) => a.driverId == e.id))
+          .toList(); //unavailble driers
       if (s == "Available") {
-        v.value = List.from(allDrivers);
+        v.value = List.from(allDrivers.where((test) => !f.contains(test)));
       } else if (s == "Busy") {
-        v.value = List.from(allDrivers);
-      } else if (s == "Inactive") {
-        v.value = List.from(allDrivers);
+        v.value = List.from(f);
       }
+      // else if (s == "Inactive") {
+      //   v.value = List.from(allDrivers);
+      // }
     } else if (title.toLowerCase() == "facilities") {
       if (s == "Active") {
         v.value = List.from(allFacilities);

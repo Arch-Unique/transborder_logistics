@@ -27,7 +27,14 @@ class _DriverHomePageState extends State<DriverHomePage> {
   }
 
   Future getCustomerDeliveries() async {
-    await controller.getCustomerDelivery();
+    try {
+      await controller.getCustomerDelivery();
+      print(controller.allDeliveries.last.waybill);
+      print(controller.allDeliveries.last.isDelivered);
+      print(controller.allDeliveries.last.isNotDelivered);
+    } catch (e) {
+      print(e);
+    }
   }
 
   Future refreshDeliveries() async {
@@ -185,7 +192,10 @@ class DriverExplorer extends StatelessWidget {
         title: controller.curMode.value == 0 ? "Pick Up" : "Profile",
         trailing: [
           InkWell(
-            child: AppIcon(HugeIcons.strokeRoundedQrCode),
+            child: Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: AppIcon(HugeIcons.strokeRoundedQrCode),
+            ),
             onTap: () {
               Get.to(ScannerPage());
             },
@@ -201,7 +211,7 @@ class DriverExplorer extends StatelessWidget {
                 ResourceHistoryPage<Delivery>(
                   "All Deliveries",
                   controller.allDeliveries,
-                  filters: ["All", "New", "Ongoing", "Completed"],
+                  filters: ["All", "In Progress", "Completed", "Cancelled"],
                   onFilter: (v, s) {
                     controller.getFilters(v, s, "drivertrips");
                   },

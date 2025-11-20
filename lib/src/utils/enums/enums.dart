@@ -60,9 +60,9 @@ enum ErrorTypes {
 
 enum DashboardMode {
   dashboard("Dashboard",HugeIcons.strokeRoundedDashboardSquare02,["All"]),
-  trips("Trips",HugeIcons.strokeRoundedBus03,["All","New","Ongoing","Finished"]),
+  trips("Trips",HugeIcons.strokeRoundedBus03,["All","In Progress","Completed","Cancelled"]),
   users("Users",HugeIcons.strokeRoundedUser,["All","Driver","Admin","Operator"]),
-  drivers("Drivers",HugeIcons.strokeRoundedUserMultiple02,["All","Available","Busy","Inactive"]),
+  drivers("Drivers",HugeIcons.strokeRoundedUserMultiple02,["All","Available","Busy"]),
   vehicles("Vehicles",HugeIcons.strokeRoundedCar01,["All"]),
   facilities("Facilities",HugeIcons.strokeRoundedBuilding05,["All"]),
   pickups("Loading Points",HugeIcons.strokeRoundedShippingLoading,["All"]),
