@@ -1096,7 +1096,7 @@ class AddResource<T> extends StatelessWidget {
       }
     } else {
       if (title.toLowerCase() == "trips") {
-        controller.generateWayBill().then((v) {
+        controller.generateWayBill(locState.value == "Kano").then((v) {
           tecs[4].text = v;
         });
       }

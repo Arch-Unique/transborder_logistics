@@ -323,10 +323,10 @@ class DashboardController extends GetxController {
     return await appRepo.deleteDelivery(id);
   }
 
-  Future<String> generateWayBill() async {
+  Future<String> generateWayBill(bool isKano) async {
     final lastId = await appRepo.getLastDeliveryID();
-    final sd = DateFormat("-yyyyMMdd-hhmm-").format(DateTime.now());
-    return "WB$sd${lastId + 1}";
+    final sd = DateFormat("MM/yy").format(DateTime.now());
+    return "TBL${isKano ? "KN" : "KD"}/$sd/${(lastId + 1).toString().padLeft(4,"0")}";
   }
 
   Future changeLocation(String v) async {
