@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:transborder_logistics/src/features/dashboard/controllers/dashboard_controller.dart';
 import 'package:transborder_logistics/src/global/services/barrel.dart';
 import 'package:transborder_logistics/src/global/ui/ui_barrel.dart';
@@ -1435,6 +1436,52 @@ class AddResource<T> extends StatelessWidget {
     );
   }
 }
+
+class ScannerPage extends StatelessWidget {
+  const ScannerPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    Rx<Delivery> dlv = Delivery(createdAt: DateTime.now()).obs;
+    final controller = Get.find<DashboardController>();
+    return SinglePageScaffold(
+      title: "WayBill QR Scanner",
+      child: Center(
+        child: Obx(() {
+          return dlv.value.id == 0
+              ? MobileScanner(
+                  onDetect: (result) {
+                    String? qrcode = result.barcodes.isEmpty
+                        ? null
+                        : result.barcodes.first.rawValue;
+                    if (qrcode == null || qrcode.isEmpty) {
+                      Ui.showError("No QR Code found");
+                      return;
+                    }
+                    final waybill = qrcode;
+                    dlv.value = (controller.appRepo.appService.currentUser.value.isAdmin ? controller.allCustomerDeliveries: controller.allDeliveries)
+                            .where((test) => test.waybill == waybill)
+                            .firstOrNull ??
+                        Delivery(createdAt: DateTime.now());
+                    if (dlv.value.id == 0) {
+                      Ui.showError("No Delivery Found for $waybill");
+                      return;
+                    }
+                    Ui.showInfo("Scanned Code: $qrcode");
+                  },
+                  fit: BoxFit.cover,
+                  controller: MobileScannerController(
+                    facing: CameraFacing.back,
+                    torchEnabled: false,
+                  ),
+                )
+              : DeliveryInfo(dlv.value);
+        }),
+      ),
+    );
+  }
+}
+
 
 const lgas = [
   // {

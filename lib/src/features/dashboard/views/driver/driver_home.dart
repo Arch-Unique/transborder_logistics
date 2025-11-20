@@ -185,6 +185,12 @@ class DriverExplorer extends StatelessWidget {
         title: controller.curMode.value == 0 ? "Pick Up" : "Profile",
         trailing: [
           InkWell(
+            child: AppIcon(HugeIcons.strokeRoundedQrCode),
+            onTap: () {
+              Get.to(ScannerPage());
+            },
+          ),
+          InkWell(
             child: Padding(
               padding: const EdgeInsets.only(right: 16),
               child: AppIcon(HugeIcons.strokeRoundedNotification01),
