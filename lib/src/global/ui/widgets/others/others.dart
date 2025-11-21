@@ -66,10 +66,11 @@ class NetOrAssetImage extends StatelessWidget {
   }
 
   Widget errorImage(double w) {
-    return w <=120
+    return w <= 120
         ? Opacity(
-          opacity: 0.1,
-          child: AppIcon(Assets.logo,size: w, color: AppColors.primaryColor))
+            opacity: 0.1,
+            child: AppIcon(Assets.logo, size: w, color: AppColors.primaryColor),
+          )
         : Container(
             width: w - 48,
             height: 288,
@@ -705,24 +706,30 @@ class _ChooseCamState extends State<ChooseCam> {
       decoration: const BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(16), topRight: Radius.circular(16)),
+          topLeft: Radius.circular(16),
+          topRight: Radius.circular(16),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-              padding: const EdgeInsets.only(top: 24.0, right: 24, left: 24),
-              child: AppText.medium("Choose Photo")),
+            padding: const EdgeInsets.only(top: 24.0, right: 24, left: 24),
+            child: AppText.medium("Choose Photo"),
+          ),
           Row(
-              children: List.generate(
-                  2,
-                  (index) => GestureDetector(
-                      onTap: () async {
-                        await buildCamPicker(index);
-                      },
-                      child: buildVIT(index)))),
-          Ui.boxHeight(24)
+            children: List.generate(
+              2,
+              (index) => GestureDetector(
+                onTap: () async {
+                  await buildCamPicker(index);
+                },
+                child: buildVIT(index),
+              ),
+            ),
+          ),
+          Ui.boxHeight(24),
         ],
       ),
     );
@@ -735,7 +742,6 @@ class _ChooseCamState extends State<ChooseCam> {
       finalImage = await _picker.pickImage(source: ImageSource.gallery);
     }
 
-    
     String filepath = finalImage!.path;
 
     Get.back<String>(result: filepath);
@@ -747,17 +753,9 @@ class _ChooseCamState extends State<ChooseCam> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icons[i],
-            size: 48,
-            color: AppColors.black,
-          ),
-          const SizedBox(
-            height: 8,
-          ),
-          AppText.thin(
-            iconText[i],
-          )
+          Icon(icons[i], size: 48, color: AppColors.black),
+          const SizedBox(height: 8),
+          AppText.thin(iconText[i]),
         ],
       ),
     );
@@ -901,58 +899,58 @@ class UserProfilePic extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        // Get.to(ViewProfPicPage());
-      },
-      child: CircleAvatar(
-        backgroundColor: AppColors.white,
-        radius: url.isEmpty ? 47 : 48,
-        child: url.isEmpty
-            ? AppIcon(
-                HugeIcons.strokeRoundedUser,
-                size: 90,
-                color: AppColors.disabledColor,
-              )
-            : CachedNetworkImage(
-                imageUrl: url,
-                width: 90,
-                height: 90,
-                imageBuilder: (context, imageProvider) {
-                  return CircleAvatar(
-                    backgroundImage: imageProvider,
-                    radius: 47,
-                  );
-                },
-                placeholder: (context, url) {
-                  return TweenAnimationBuilder(
-                    tween: ColorTween(
-                      begin: AppColors.disabledColor,
-                      end: AppColors.primaryColor,
-                    ),
-                    duration: Duration(seconds: 5),
-                    builder: (context, value, child) {
-                      return Center(
-                        child: Icon(
-                          Iconsax.profile_circle_outline,
-                          size: 94,
-                          color: value,
+    return CircleAvatar(
+      backgroundColor: AppColors.white,
+      radius: url.isEmpty ? 47 : 48,
+      child: url.isEmpty
+          ? AppIcon(
+              HugeIcons.strokeRoundedUser,
+              size: 90,
+              color: AppColors.disabledColor,
+            )
+          : (url.startsWith("http")
+                ? CachedNetworkImage(
+                    imageUrl: url,
+                    width: 90,
+                    height: 90,
+                    imageBuilder: (context, imageProvider) {
+                      return CircleAvatar(
+                        backgroundImage: imageProvider,
+                        radius: 47,
+                      );
+                    },
+                    placeholder: (context, url) {
+                      return TweenAnimationBuilder(
+                        tween: ColorTween(
+                          begin: AppColors.disabledColor,
+                          end: AppColors.primaryColor,
+                        ),
+                        duration: Duration(seconds: 5),
+                        builder: (context, value, child) {
+                          return Center(
+                            child: Icon(
+                              Iconsax.profile_circle_outline,
+                              size: 94,
+                              color: value,
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    errorWidget: (_, __, ___) {
+                      return const Center(
+                        child: AppIcon(
+                          HugeIcons.strokeRoundedUser,
+                          size: 90,
+                          color: AppColors.disabledColor,
                         ),
                       );
                     },
-                  );
-                },
-                errorWidget: (_, __, ___) {
-                  return const Center(
-                    child: Icon(
-                      Iconsax.profile_circle_outline,
-                      size: 94,
-                      color: AppColors.red,
-                    ),
-                  );
-                },
-              ),
-      ),
+                  )
+                : ClipRRect(
+                    borderRadius: BorderRadius.circular(47),
+                    child: AppIcon(url, size: 90, fit: BoxFit.cover),
+                  )),
     );
   }
 }
@@ -983,19 +981,23 @@ class AppIcon extends StatelessWidget {
     this.asset, {
     this.size = 24,
     this.color = AppColors.lightTextColor,
+    this.fit,
     super.key,
   });
   final dynamic asset;
   final Color color;
   final double size;
+  final BoxFit? fit;
 
   @override
   Widget build(BuildContext context) {
     return asset is String
         ? asset.endsWith(".svg")
               ? SvgIcon(asset, size: size, color: color)
-              : UniversalImage(asset, width: size, height: size)
-        : asset is List<List<dynamic>> ? HugeIcon(icon: asset,size: size,color: color,) : Icon(asset, size: size, color: color);
+              : UniversalImage(asset, width: size, height: size, fit: fit)
+        : asset is List<List<dynamic>>
+        ? HugeIcon(icon: asset, size: size, color: color)
+        : Icon(asset, size: size, color: color);
   }
 }
 

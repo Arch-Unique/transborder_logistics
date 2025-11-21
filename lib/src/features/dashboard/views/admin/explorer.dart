@@ -90,6 +90,7 @@ class _AdminExplorerState extends State<AdminExplorer> {
                     onTap: () {
                       Get.bottomSheet(
                         AddResource(controller.curResourceHistory.value.title),
+                         isScrollControlled: true,
                       );
                     },
                     child: Padding(

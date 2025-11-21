@@ -137,10 +137,9 @@ class AppRepo extends GetxController {
     String phone,
     String role,
     String email, {
-    String? truckno,
+    String? truckno,String? image
   }) async {
     const uri = "${AppUrls.profileURL}/user";
-
     final res = await apiService.post(
       uri,
       data: {
@@ -150,6 +149,7 @@ class AppRepo extends GetxController {
         "role": role,
         "email": email,
         "truckno": truckno,
+        if (image != null) "image": image
       },
     );
     return res.statusCode!.isSuccess();
@@ -162,7 +162,7 @@ class AppRepo extends GetxController {
     String role,
     int id,
     String email, {
-    String? truckno,
+    String? truckno,String? image
   }) async {
     final uri = "${AppUrls.profileURL}/user/$id";
 
@@ -175,6 +175,7 @@ class AppRepo extends GetxController {
         "role": role,
         "truckno": truckno,
         "email": email,
+        if (image != null) "image": image
       },
     );
     return res.statusCode!.isSuccess();
@@ -412,7 +413,7 @@ class AppRepo extends GetxController {
     String regno,
     String type,
     bool isActive, {
-    String? driver,
+    String? driver,String?  image,
     int? driverid,
   }) async {
     const uri = "${AppUrls.utilsURL}/vehicle";
@@ -424,6 +425,8 @@ class AppRepo extends GetxController {
         "regno": regno,
         "type": type,
         "isactive": isActive,
+
+        if (image != null) "image": image,
         if (driver != null) "driver": driver,
         if (driverid != null) "driverid": driverid,
       },
@@ -437,7 +440,7 @@ class AppRepo extends GetxController {
     String type,
     bool isActive,
     int id, {
-    String? driver,
+    String? driver,String?  image,
     int? driverid,
   }) async {
     final uri = "${AppUrls.utilsURL}/vehicle/$id";
@@ -449,6 +452,8 @@ class AppRepo extends GetxController {
         "regno": regno,
         "type": type,
         "isactive": isActive,
+
+        if (image != null) "image": image,
         if (driver != null) "driver": driver,
         if (driverid != null) "driverid": driverid,
       },

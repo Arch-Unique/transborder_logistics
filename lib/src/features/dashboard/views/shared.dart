@@ -6,7 +6,9 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:syncfusion_flutter_signaturepad/signaturepad.dart';
+import 'package:transborder_logistics/src/features/auth/controllers/excel.dart';
 import 'package:transborder_logistics/src/features/dashboard/controllers/dashboard_controller.dart';
 import 'package:transborder_logistics/src/global/services/barrel.dart';
 import 'package:transborder_logistics/src/global/ui/ui_barrel.dart';
@@ -17,6 +19,7 @@ import 'package:transborder_logistics/src/global/ui/widgets/others/others.dart';
 import 'package:transborder_logistics/src/src_barrel.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:widgets_to_image/widgets_to_image.dart';
 
 import '../../../global/model/barrel.dart';
 
@@ -112,14 +115,17 @@ class DriverInfo extends StatelessWidget {
       desc: user.role,
       subtitle: user.location,
       chipTitle:
-          Get.find<DashboardController>().undeliveredDeliveries
+          Get.find<DashboardController>().allUndeliveredDeliveries
               .map((e) => e.driverId)
               .contains(user.id)
           ? "Busy"
           : "Available",
-      image: "",
+      image: user.image ?? "",
       vb: () {
-        Get.bottomSheet(AddResource<User>("Drivers", obj: user));
+        Get.bottomSheet(
+          AddResource<User>("Drivers", obj: user),
+          isScrollControlled: true,
+        );
       },
     );
   }
@@ -136,14 +142,17 @@ class UserInfo extends StatelessWidget {
       desc: user.role,
       subtitle: user.location,
       chipTitle:
-          Get.find<DashboardController>().undeliveredDeliveries
+          Get.find<DashboardController>().allUndeliveredDeliveries
               .map((e) => e.driverId)
               .contains(user.id)
           ? "Busy"
           : "Available",
-      image: "",
+      image: user.image ?? "",
       vb: () {
-        Get.bottomSheet(AddResource<User>("Users", obj: user));
+        Get.bottomSheet(
+          AddResource<User>("Users", obj: user),
+          isScrollControlled: true,
+        );
       },
     );
   }
@@ -160,9 +169,12 @@ class VehicleInfo extends StatelessWidget {
       desc: vehicle.type,
       subtitle: vehicle.regno,
       chipTitle: vehicle.isActive ? "Available" : "Inactive",
-      image: "",
+      image: vehicle.image ?? "",
       vb: () {
-        Get.bottomSheet(AddResource<Vehicle>("Vehicles", obj: vehicle));
+        Get.bottomSheet(
+          AddResource<Vehicle>("Vehicles", obj: vehicle),
+          isScrollControlled: true,
+        );
       },
     );
   }
@@ -178,7 +190,8 @@ class RawInfo extends StatelessWidget {
     this.vb,
     super.key,
   });
-  final String? title, desc, subtitle, image;
+  final String? title, desc, subtitle;
+  final String image;
   final String chipTitle;
   final VoidCallback? vb;
 
@@ -192,7 +205,12 @@ class RawInfo extends StatelessWidget {
       radius: 12,
       child: Row(
         children: [
-          CurvedImage(image ?? "", w: 48, h: 48),
+          CurvedImage(
+            image == "" ? "" : "${AppUrls.baseURL}/upload/upload/$image",
+            w: 48,
+            h: 48,
+            fit: BoxFit.cover,
+          ),
           Ui.boxWidth(12),
           Expanded(
             child: Column(
@@ -232,7 +250,10 @@ class LocationInfo extends StatelessWidget {
       desc: user.facilityType,
       subtitle: "${user.lga}, ${user.state}",
       vb: () {
-        Get.bottomSheet(AddResource<Location>("Facilities", obj: user));
+        Get.bottomSheet(
+          AddResource<Location>("Facilities", obj: user),
+          isScrollControlled: true,
+        );
         // Get.to(WaybillDetailPage(delivery));
       },
     );
@@ -361,191 +382,268 @@ class WaybillDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appService = Get.find<AppService>();
+    WidgetsToImageController wsController = WidgetsToImageController();
+
+    final wbBody = CurvedContainer(
+      border: Border.all(color: AppColors.borderColor),
+      radius: 12,
+      margin: EdgeInsets.all(16),
+      child: Column(
+        children: [
+          Ui.padding(
+            padding: 12,
+            child: Row(
+              children: [
+                AppIcon(
+                  HugeIcons.strokeRoundedBus03,
+                  color: AppColors.lightTextColor,
+                ),
+                Ui.boxWidth(16),
+                AppText.medium("Waybill", fontSize: 14),
+                const Spacer(),
+                if (delivery.hasNotStarted) WaybillStatusChip("New"),
+                if (delivery.isDelivered) WaybillStatusChip("Completed"),
+                if (delivery.hasStarted && delivery.isNotDelivered)
+                  GestureDetector(
+                    onTap: () {
+                      //todo
+                    },
+                    child: WaybillStatusChip("Track"),
+                  ),
+                if (delivery.hasStarted && delivery.isNotDelivered)
+                  Ui.boxWidth(8),
+                if (delivery.hasStarted && delivery.isNotDelivered)
+                  WaybillStatusChip("In Progress"),
+                if (delivery.isCanceled) WaybillStatusChip("Cancelled"),
+              ],
+            ),
+          ),
+          QrImageView(data: delivery.waybill, size: 100),
+          Ui.align(
+            align: Alignment.centerRight,
+            child: SizedBox(width: Ui.width(context) - 88, child: AppDivider()),
+          ),
+
+          Padding(
+            padding: EdgeInsetsGeometry.symmetric(vertical: 0, horizontal: 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: InfoValue(
+                    "Request Date",
+                    delivery.created,
+                    isStart: true,
+                  ),
+                ),
+                Ui.boxWidth(24),
+                Expanded(child: InfoValue("Request By", delivery.owner)),
+              ],
+            ),
+          ),
+
+          Padding(
+            padding: EdgeInsetsGeometry.symmetric(vertical: 12, horizontal: 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: InfoValue(
+                    "Trip",
+                    delivery.id.toString(),
+                    isStart: true,
+                  ),
+                ),
+                Ui.boxWidth(24),
+                Expanded(child: InfoValue("Vehicle Reg No", delivery.truckno)),
+              ],
+            ),
+          ),
+
+          Padding(
+            padding: EdgeInsetsGeometry.symmetric(vertical: 0, horizontal: 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: InfoValue("Driver", delivery.driver, isStart: true),
+                ),
+                Ui.boxWidth(24),
+                Builder(
+                  builder: (context) {
+                    final img = Get.find<DashboardController>().allDrivers
+                        .firstWhereOrNull((e) => e.id == delivery.driverId)
+                        ?.image;
+                    return CurvedImage(
+                      Delivery.nv.contains(img)
+                          ? ""
+                          : "${AppUrls.baseURL}/upload/upload/$img",
+                      w: 24,
+                      h: 24,
+                      fit: BoxFit.cover,
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+
+          Padding(
+            padding: EdgeInsetsGeometry.symmetric(vertical: 12, horizontal: 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: InfoValue(
+                    "Pick up Location",
+                    delivery.pickup,
+                    isStart: true,
+                  ),
+                ),
+                Ui.boxWidth(24),
+                AppIcon(
+                  HugeIcons.strokeRoundedLocation05,
+                  color: delivery.hasStarted
+                      ? Color(0xFF229EFF)
+                      : AppColors.lightTextColor,
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: EdgeInsetsGeometry.only(
+              top: 0,
+              bottom: 12,
+              left: 12,
+              right: 12,
+            ),
+            child: Row(
+              children: [
+                InfoValue(
+                  "Pick up Date",
+                  delivery.start.isEmpty ? "Not Started" : delivery.start,
+                  isStart: true,
+                ),
+              ],
+            ),
+          ),
+          ...List.generate(delivery.stops.length, (j) {
+            return Padding(
+              padding: EdgeInsetsGeometry.only(
+                top: 0,
+                bottom: 12,
+                left: 12,
+                right: 12,
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: InfoValue(
+                          "Delivery Location ${j + 1}",
+                          delivery.stops[j],
+                          isStart: true,
+                        ),
+                      ),
+                      Ui.boxWidth(24),
+                      AppIcon(
+                        HugeIcons.strokeRoundedLocation05,
+                        color: delivery.hasStarted
+                            ? Color(0xFF229EFF)
+                            : AppColors.lightTextColor,
+                      ),
+                    ],
+                  ),
+                  if (!Delivery.nv.contains(
+                    delivery.receiver.elementAtOrNull(j),
+                  ))
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                InfoValue(
+                                  "Receiver Details",
+                                  "${delivery.receiver.elementAtOrNull(j)![0]}, ${delivery.receiver.elementAtOrNull(j)![0]}",
+                                  isStart: true,
+                                ),
+                                Ui.boxHeight(8),
+                                InfoValue(
+                                  "Received Date",
+                                  delivery.formattedStopsDate.elementAtOrNull(
+                                    j,
+                                  )!,
+                                  isStart: true,
+                                ),
+                              ],
+                            ),
+                          ),
+                          Ui.boxWidth(24),
+                          SizedBox(
+                            width: Ui.width(context) / 3,
+                            height: 36,
+                            child: Image.network(
+                              "${AppUrls.baseURL}/upload/upload/${delivery.receiver.elementAtOrNull(j)![2]}",
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  if (!Delivery.nv.contains(
+                    delivery.picture.elementAtOrNull(j),
+                  ))
+                    Ui.boxHeight(8),
+                  if (!Delivery.nv.contains(
+                    delivery.picture.elementAtOrNull(j),
+                  ))
+                    SizedBox(
+                      width: Ui.width(context) - 56,
+                      height: 200,
+                      child: Image.network(
+                        "${AppUrls.baseURL}/upload/upload/${delivery.picture.elementAtOrNull(j)}",
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+
+    final shareBody = WidgetsToImage(
+      controller: wsController,
+      child: Column(
+        children: [
+          CurvedContainer(
+            radius: 12,
+            padding: EdgeInsets.all(16),
+            margin: EdgeInsets.only(left: 16, right: 16, top: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(),
+                Image.asset(Assets.fulllogo, width: 150),
+                AppText.bold("#${delivery.waybill}"),
+              ],
+            ),
+          ),
+
+          wbBody,
+        ],
+      ),
+    );
+
     return SinglePageScaffold(
       title: "#${delivery.waybill}",
 
       child: SingleChildScrollView(
         child: Column(
           children: [
-            CurvedContainer(
-              border: Border.all(color: AppColors.borderColor),
-              radius: 12,
-              margin: EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Ui.padding(
-                    padding: 12,
-                    child: Row(
-                      children: [
-                        AppIcon(
-                          HugeIcons.strokeRoundedBus03,
-                          color: AppColors.lightTextColor,
-                        ),
-                        Ui.boxWidth(16),
-                        AppText.medium("Waybill", fontSize: 14),
-                        const Spacer(),
-                        if (delivery.hasNotStarted) WaybillStatusChip("New"),
-                        if (delivery.isDelivered)
-                          WaybillStatusChip("Completed"),
-                        if (delivery.hasStarted && delivery.isNotDelivered)
-                          GestureDetector(
-                            onTap: () {
-                              //todo
-                            },
-                            child: WaybillStatusChip("Track"),
-                          ),
-                        if (delivery.hasStarted && delivery.isNotDelivered)
-                          Ui.boxWidth(8),
-                        if (delivery.hasStarted && delivery.isNotDelivered)
-                          WaybillStatusChip("In Progress"),
-                        if (delivery.isCanceled) WaybillStatusChip("Cancelled"),
-                      ],
-                    ),
-                  ),
-                  QrImageView(data: delivery.waybill, size: 100),
-                  Ui.align(
-                    align: Alignment.centerRight,
-                    child: SizedBox(
-                      width: Ui.width(context) - 88,
-                      child: AppDivider(),
-                    ),
-                  ),
-
-                  Padding(
-                    padding: EdgeInsetsGeometry.symmetric(
-                      vertical: 0,
-                      horizontal: 12,
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: InfoValue(
-                            "Request Date",
-                            delivery.created,
-                            isStart: true,
-                          ),
-                        ),
-                        Ui.boxWidth(24),
-                        Expanded(
-                          child: InfoValue("Request By", delivery.owner),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  Padding(
-                    padding: EdgeInsetsGeometry.symmetric(
-                      vertical: 12,
-                      horizontal: 12,
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: InfoValue(
-                            "Trip",
-                            delivery.id.toString(),
-                            isStart: true,
-                          ),
-                        ),
-                        Ui.boxWidth(24),
-                        Expanded(
-                          child: InfoValue("Vehicle Reg No", delivery.truckno),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  Padding(
-                    padding: EdgeInsetsGeometry.symmetric(
-                      vertical: 0,
-                      horizontal: 12,
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: InfoValue(
-                            "Driver",
-                            delivery.driver,
-                            isStart: true,
-                          ),
-                        ),
-                        Ui.boxWidth(24),
-                        CurvedImage("", w: 24, h: 24),
-                      ],
-                    ),
-                  ),
-
-                  Padding(
-                    padding: EdgeInsetsGeometry.symmetric(
-                      vertical: 12,
-                      horizontal: 12,
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: InfoValue(
-                            "Pick up Location",
-                            delivery.pickup,
-                            isStart: true,
-                          ),
-                        ),
-                        Ui.boxWidth(24),
-                        AppIcon(
-                          HugeIcons.strokeRoundedLocation05,
-                          color: delivery.hasStarted
-                              ? Color(0xFF229EFF)
-                              : AppColors.lightTextColor,
-                        ),
-                      ],
-                    ),
-                  ),
-                  ...List.generate(delivery.stops.length, (j) {
-                    return Padding(
-                      padding: EdgeInsetsGeometry.only(
-                        top: 0,
-                        bottom: 12,
-                        left: 12,
-                        right: 12,
-                      ),
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: InfoValue(
-                                  "Delivery Location ${j + 1}",
-                                  delivery.stops[j],
-                                  isStart: true,
-                                ),
-                              ),
-                              Ui.boxWidth(24),
-                              AppIcon(
-                                HugeIcons.strokeRoundedLocation05,
-                                color: delivery.hasStarted
-                                    ? Color(0xFF229EFF)
-                                    : AppColors.lightTextColor,
-                              ),
-                            ],
-                          ),
-
-                          if (!Delivery.nv.contains(delivery.picture.elementAtOrNull(j)))
-                            Ui.boxHeight(8),
-                          if (!Delivery.nv.contains(delivery.picture.elementAtOrNull(j)))
-                            SizedBox(
-                              width: Ui.width(context) - 56,
-                              height: 200,
-                              child: Image.network(
-                                "${AppUrls.baseURL}/upload/upload/${delivery.picture.elementAtOrNull(j)}",
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-                        ],
-                      ),
-                    );
-                  }),
-                ],
-              ),
-            ),
+            wbBody,
             //items
             if (delivery.items.isNotEmpty)
               Padding(
@@ -650,7 +748,87 @@ class WaybillDetailPage extends StatelessWidget {
                       !delivery.isCanceled &&
                       Get.find<AppService>().currentUser.value.role == "admin")
                     Ui.boxWidth(16),
-                  CircleIcon(HugeIcons.strokeRoundedShare08),
+                  CircleIcon(
+                    HugeIcons.strokeRoundedDownload01,
+                    onTap: () async {
+                      try {
+                        Get.bottomSheet(
+                          Builder(
+                            builder: (context) {
+                              return SingleChildScrollView(
+                                child: Column(
+                                  children: [
+                                    shareBody,
+                                    Ui.boxHeight(16),
+                                    CircleIcon(
+                                      HugeIcons.strokeRoundedShare08,
+                                      onTap: () async {
+                                        try {
+                                          final a = await wsController
+                                              .capturePng();
+                                          if (a != null) {
+                                            final b =
+                                                await UtilFunctions.saveToTempFile(
+                                                  a,
+                                                );
+
+                                            if (GetPlatform.isMobile) {
+                                              final x = XFile(b.path);
+
+                                              await SharePlus.instance.share(
+                                                ShareParams(
+                                                  title:
+                                                      "Share Waybill #${delivery.waybill}",
+                                                  previewThumbnail: x,
+                                                  files: [x],
+                                                ),
+                                              );
+                                            } else {
+                                              final x = await saveFileDesktop(
+                                                b.readAsBytesSync(),
+                                                "Share${DateTime.now()}.png",
+                                              );
+                                              if (x != null) {
+                                                Ui.showInfo(
+                                                  "Successfully Saved to $x",
+                                                );
+                                              }
+                                            }
+                                          }
+                                        } catch (e) {
+                                          print(e);
+                                        }
+                                      },
+                                    ),
+
+                                    Ui.boxHeight(16),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                          backgroundColor: AppColors.white.withOpacity(0.5),
+                          isScrollControlled: true,
+                        );
+                        final a = await wsController.capturePng();
+                        if (a != null) {
+                          final b = await UtilFunctions.saveToTempFile(a);
+
+                          final x = XFile(b.path);
+
+                          await SharePlus.instance.share(
+                            ShareParams(
+                              title: "Share Waybill #${delivery.waybill}",
+                              previewThumbnail: x,
+                              files: [x],
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        print(e);
+                      }
+                    },
+                  ),
                 ],
               ),
 
@@ -672,7 +850,8 @@ class WaybillDetailPage extends StatelessWidget {
                             if (a) {
                               Get.back();
                               Get.back();
-                              await Get.find<DashboardController>().getCustomerDelivery();
+                              await Get.find<DashboardController>()
+                                  .getCustomerDelivery();
                               Ui.showInfo("Delivery Started Successfully");
                             } else {
                               Ui.showError("Failed to start delivery");
@@ -697,12 +876,15 @@ class WaybillDetailPage extends StatelessWidget {
                             onTap: () async {
                               try {
                                 if (UtilFunctions.validateTecs(tecs)) {
-                                  if (u8.value.isEmpty && curStop.value.isEmpty) {
+                                  if (u8.value.isEmpty &&
+                                      curStop.value.isEmpty) {
                                     return Ui.showError(
                                       "Signature and Stop must be filled",
                                     );
                                   }
-                                  final c = await UtilFunctions.saveToTempFile(u8.value);
+                                  final c = await UtilFunctions.saveToTempFile(
+                                    u8.value,
+                                  );
                                   final a =
                                       await Get.find<DashboardController>()
                                           .stopDelivery(
@@ -715,9 +897,9 @@ class WaybillDetailPage extends StatelessWidget {
                                           );
                                   if (a) {
                                     Get.back();
-                              await Get.find<DashboardController>().getCustomerDelivery();
+                                    await Get.find<DashboardController>()
+                                        .getCustomerDelivery();
                                     Ui.showInfo("Delivery Ended Successfully");
-
                                   } else {
                                     Ui.showInfo("Delivery failed to end");
                                   }
@@ -802,6 +984,7 @@ class WaybillDetailPage extends StatelessWidget {
                               // }),
                             ],
                           ),
+                          isScrollControlled: true,
                         );
                       } catch (e) {
                         print(e);
@@ -811,6 +994,7 @@ class WaybillDetailPage extends StatelessWidget {
                   text: delivery.hasNotStarted ? "Start Trip" : "End Trip",
                 ),
               ),
+            Ui.boxHeight(24),
           ],
         ),
       ),
@@ -1143,7 +1327,10 @@ class ProfilePage extends StatelessWidget {
       padding: EdgeInsets.all(16),
       child: Column(
         children: [
-          UserProfilePic(),
+          UserProfilePic(
+            url:
+                "${AppUrls.baseURL}/upload/upload/${appService.currentUser.value.image}",
+          ),
           Ui.boxHeight(24),
           AppContainer("ACCOUNT", [
             AppContainerItem.text(
@@ -1166,12 +1353,12 @@ class ProfilePage extends StatelessWidget {
               "Contact",
               appService.currentUser.value.phone ?? "N/A",
             ),
-            if (appService.currentUser.value.role == "driver")
-              AppContainerItem.text(
-                HugeIcons.strokeRoundedRegister,
-                "Truck Reg No",
-                appService.currentUser.value.truckno ?? "N/A",
-              ),
+            // if (appService.currentUser.value.role == "driver")
+            //   AppContainerItem.text(
+            //     HugeIcons.strokeRoundedRegister,
+            //     "Truck Reg No",
+            //     appService.currentUser.value.truckno ?? "N/A",
+            //   ),
             // AppContainerItem.text(HugeIcons.strokeRoundedMail01, "Email", appService.currentUser.value.email ?? "N/A"),
           ]),
           Ui.boxHeight(24),
@@ -1214,6 +1401,7 @@ class ProfilePage extends StatelessWidget {
                       ),
                     ],
                   ),
+                  isScrollControlled: true,
                 );
               },
             ),
@@ -1363,6 +1551,7 @@ class AddResource<T> extends StatelessWidget {
     RxList<String> facilities = <String>[].obs;
     Rx<User> curDriver = User().obs;
     RxBool isActive = false.obs;
+    RxString image = "".obs;
     final List<TextEditingController> tecs = List.generate(
       10,
       (i) => TextEditingController(),
@@ -1376,6 +1565,7 @@ class AddResource<T> extends StatelessWidget {
         tecs[1].text = user.email ?? "";
         tecs[2].text = user.phone ?? "";
         tecs[3].text = user.role;
+        image.value = user.image ?? "";
         tecs[4].text = user.location ?? "Kano";
       }
 
@@ -1397,6 +1587,8 @@ class AddResource<T> extends StatelessWidget {
         tecs[2].text = vehicle.type ?? "";
         tecs[3].text = vehicle.driver ?? "";
         isActive.value = vehicle.isActive;
+
+        image.value = vehicle.image ?? "";
         curDriver.value =
             controller.allDrivers.firstWhereOrNull(
               (e) => e.name == tecs[3].text,
@@ -1481,6 +1673,7 @@ class AddResource<T> extends StatelessWidget {
                     tecs[2].text,
                     tecs[3].text,
                     tecs[4].text,
+                    image: image.value,
                   );
                 } else {
                   //edit user
@@ -1492,6 +1685,7 @@ class AddResource<T> extends StatelessWidget {
                     tecs[3].text,
                     tecs[4].text,
                     user.id,
+                    image: image.value,
                   );
                 }
                 Ui.showInfo("Successfully saved");
@@ -1545,6 +1739,7 @@ class AddResource<T> extends StatelessWidget {
                     driverid: curDriver.value.id == 0
                         ? null
                         : curDriver.value.id,
+                    image: image.value,
                   );
                 } else {
                   //edit vehicle
@@ -1561,6 +1756,7 @@ class AddResource<T> extends StatelessWidget {
                     driverid: curDriver.value.id == 0
                         ? null
                         : curDriver.value.id,
+                    image: image.value,
                   );
                 }
 
@@ -1686,6 +1882,24 @@ class AddResource<T> extends StatelessWidget {
           if (title.toLowerCase() == "trips")
             CustomTextField("Add Invoice No", tecs[1], label: "invoice No"),
 
+          //USER OR VEHICLE
+          if (title.toLowerCase() == "users" ||
+              title.toLowerCase() == "drivers" ||
+              title.toLowerCase() == "vehicles")
+            InkWell(
+              onTap: () async {
+                final f = await Get.bottomSheet<String>(ChooseCam());
+                image.value = f ?? "";
+              },
+              child: Obx(() {
+                return UserProfilePic(
+                  url: image.value.isEmpty
+                      ? ""
+                      : "${AppUrls.baseURL}/upload/upload/${image.value}",
+                );
+              }),
+            ),
+
           //USER
           if (title.toLowerCase() == "users")
             CustomTextField("Add user", tecs[0], label: "Name"),
@@ -1798,7 +2012,7 @@ class AddResource<T> extends StatelessWidget {
 
           //VEHICLE
           if (title.toLowerCase() == "vehicles")
-            CustomTextField("Vehicle Name", tecs[0], label: "Make & Modell"),
+            CustomTextField("Vehicle Name", tecs[0], label: "Make & Model"),
           if (title.toLowerCase() == "vehicles")
             CustomTextField("Reg Number", tecs[1], label: "Plate number"),
           if (title.toLowerCase() == "vehicles")
@@ -1815,7 +2029,7 @@ class AddResource<T> extends StatelessWidget {
             CustomDropdown.city(
               cities: controller.allDrivers.map((e) => e.name ?? "").toList(),
               hint: "Add Driver",
-              label: "Driver",
+              label: "Assign Driver",
               selectedValue: curDriver.value.name,
               onChanged: (v) {
                 curDriver.value = v == null

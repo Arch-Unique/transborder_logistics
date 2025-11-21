@@ -29,9 +29,6 @@ class _DriverHomePageState extends State<DriverHomePage> {
   Future getCustomerDeliveries() async {
     try {
       await controller.getCustomerDelivery();
-      print(controller.allDeliveries.last.waybill);
-      print(controller.allDeliveries.last.isDelivered);
-      print(controller.allDeliveries.last.isNotDelivered);
     } catch (e) {
       print(e);
     }
@@ -203,7 +200,7 @@ class DriverExplorer extends StatelessWidget {
           InkWell(
             child: Padding(
               padding: const EdgeInsets.only(right: 16),
-              child: AppIcon(HugeIcons.strokeRoundedNotification01),
+              child: AppIcon(HugeIcons.strokeRoundedTransactionHistory),
             ),
             onTap: () {
               // Get.to(DriverHistoryPage());

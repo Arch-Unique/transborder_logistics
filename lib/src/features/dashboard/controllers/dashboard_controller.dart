@@ -100,6 +100,12 @@ class DashboardController extends GetxController {
     return allDeliveries.where((delivery) => delivery.isNotDelivered).toList();
   }
 
+  List<Delivery> get allUndeliveredDeliveries {
+    return allCustomerDeliveries
+        .where((delivery) => delivery.isNotDelivered)
+        .toList();
+  }
+
   List<Location> get allFacilities {
     return allLocation
         .where(
@@ -269,7 +275,11 @@ class DashboardController extends GetxController {
     String role,
     String address, {
     String? truckno,
+    String? image,
   }) async {
+    if (image != null) {
+      image = await uploadImage(image);
+    }
     return await appRepo.addUser(
       fullname,
       address,
@@ -277,6 +287,7 @@ class DashboardController extends GetxController {
       role,
       email,
       truckno: truckno,
+      image: image,
     );
   }
 
@@ -296,7 +307,11 @@ class DashboardController extends GetxController {
     String address,
     int id, {
     String? truckno,
+    String? image,
   }) async {
+    if (image != null) {
+      image = await uploadImage(image);
+    }
     return await appRepo.editUser(
       fullname,
       address,
@@ -305,6 +320,7 @@ class DashboardController extends GetxController {
       id,
       email,
       truckno: truckno,
+      image: image,
     );
   }
 
@@ -445,7 +461,7 @@ class DashboardController extends GetxController {
       }
     } else if (title.toLowerCase() == "drivers") {
       final f = allDrivers
-          .where((e) => undeliveredDeliveries.any((a) => a.driverId == e.id))
+          .where((e) => allUndeliveredDeliveries.any((a) => a.driverId == e.id))
           .toList(); //unavailble driers
       if (s == "Available") {
         v.value = List.from(allDrivers.where((test) => !f.contains(test)));

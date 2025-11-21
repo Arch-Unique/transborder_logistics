@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:excel/excel.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
@@ -145,6 +146,55 @@ Future<String?> _saveExcelFile(Excel excel, String fileName) async {
 
     final bytes = excel.encode();
     if (bytes == null) return null;
+
+    // Handle different platforms
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      // For desktop platforms, use file picker to choose save location
+      String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
+
+      if (selectedDirectory == null) {
+        return null; // User Cancelled the picker
+      }
+
+      final file = File('$selectedDirectory/$fileName');
+      await file.writeAsBytes(bytes);
+      return file.path;
+    } else if (Platform.isAndroid) {
+      // For Android
+      Directory? directory;
+      if (Platform.isAndroid) {
+        directory = Directory('/storage/emulated/0/Download');
+        // Make sure it exists
+        if (!await directory.exists()) {
+          // Fallback
+          directory = await getExternalStorageDirectory();
+        }
+      } else {
+        // iOS
+        directory = await getApplicationDocumentsDirectory();
+      }
+
+      if (directory == null) return null;
+
+      final file = File('${directory.path}/$fileName');
+      await file.writeAsBytes(bytes);
+      return file.path;
+    } else {
+      // iOS
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/$fileName');
+      await file.writeAsBytes(bytes);
+      return file.path;
+    }
+  } catch (e) {
+    print('Error saving Excel file: $e');
+    return null;
+  }
+}
+
+Future<String?> saveFileDesktop(Uint8List body, String fileName) async {
+  try {
+    final bytes = body;
 
     // Handle different platforms
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
