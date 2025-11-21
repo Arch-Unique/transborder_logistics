@@ -39,6 +39,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   await controller.changeLocation(v ?? "All");
                 },
                 cities: ["All", "Kano", "Kaduna"],
+                hasBottomPadding: false
               ),
             ]),
             Ui.boxHeight(16),

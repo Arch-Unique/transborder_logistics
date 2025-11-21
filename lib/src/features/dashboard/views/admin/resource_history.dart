@@ -84,11 +84,11 @@ class _ResourceHistoryPageState<T> extends State<ResourceHistoryPage<T>> {
             tec,
             textAlign: TextAlign.start,
             customOnChanged: () {
-              if (tec.text.isEmpty) {
-                curFilter.value = "All";
-                allItems.value = List.from(widget.items);
-                return;
-              }
+              // if (tec.text.isEmpty) {
+              //   curFilter.value = "All";
+              //   allItems.value = List.from(widget.items);
+              //   return;
+              // }
               if (allItems.isEmpty) {
                 return;
               }

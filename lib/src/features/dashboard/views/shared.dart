@@ -618,17 +618,19 @@ class WaybillDetailPage extends StatelessWidget {
       controller: wsController,
       child: Column(
         children: [
-          CurvedContainer(
-            radius: 12,
-            padding: EdgeInsets.all(16),
-            margin: EdgeInsets.only(left: 16, right: 16, top: 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(),
-                Image.asset(Assets.fulllogo, width: 150),
-                AppText.bold("#${delivery.waybill}"),
-              ],
+          SafeArea(
+            child: CurvedContainer(
+              radius: 12,
+              padding: EdgeInsets.all(16),
+              margin: EdgeInsets.only(left: 16, right: 16, top: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(),
+                  Image.asset(Assets.fulllogo, width: 150),
+                  AppText.bold("#${delivery.waybill}"),
+                ],
+              ),
             ),
           ),
 
@@ -801,7 +803,7 @@ class WaybillDetailPage extends StatelessWidget {
                                       },
                                     ),
 
-                                    Ui.boxHeight(16),
+                                    SafeArea(child: Ui.boxHeight(16)),
                                   ],
                                 ),
                               );
@@ -1212,6 +1214,16 @@ class AppContainer extends StatelessWidget {
   final bool hasBorder;
   final List<Widget> actions;
 
+  List<Widget> intersperseWithDivider(List<Widget> widgets, Widget divider) {
+  if (widgets.isEmpty) return [];
+  final result = <Widget>[];
+  for (var i = 0; i < widgets.length; i++) {
+    if (i > 0) result.add(divider);
+    result.add(widgets[i]);
+  }
+  return result;
+}
+
   @override
   Widget build(BuildContext context) {
     final div = Ui.align(
@@ -1221,6 +1233,19 @@ class AppContainer extends StatelessWidget {
         child: AppDivider(),
       ),
     );
+    final actionWidgets = List.generate(actions.length, (i) {
+      return Padding(
+        padding: EdgeInsets.only(
+          top: i == 0 ? 12 : 8.0,
+          bottom: i == actions.length - 1 ? 8 : 4,
+          left: 8,
+          right: 16,
+        ),
+        child: actions[i],
+      );
+    });
+final actionList = intersperseWithDivider(actionWidgets, div);
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1238,25 +1263,10 @@ class AppContainer extends StatelessWidget {
         CurvedContainer(
           border: hasBorder ? Border.all(color: AppColors.borderColor) : null,
           radius: 12,
-          child: ListView.separated(
-            shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
-            itemBuilder: (c, i) {
-              return Padding(
-                padding: EdgeInsets.only(
-                  top: i == 0 ? 12 : 8.0,
-                  bottom: i == actions.length - 1 ? 8 : 4,
-                  left: 8,
-                  right: 16,
-                ),
-                child: actions[i],
-              );
-            },
-            separatorBuilder: (c, i) {
-              return div;
-            },
-            itemCount: actions.length,
-          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [Row(),...actionList],
+          )
         ),
       ],
     );
@@ -1880,7 +1890,7 @@ class AddResource<T> extends StatelessWidget {
               },
             ),
           if (title.toLowerCase() == "trips")
-            CustomTextField("Add Invoice No", tecs[1], label: "invoice No"),
+            CustomTextField("Add Invoice No", tecs[1], label: "Invoice No"),
 
           //USER OR VEHICLE
           if (title.toLowerCase() == "users" ||
@@ -1895,6 +1905,8 @@ class AddResource<T> extends StatelessWidget {
                 return UserProfilePic(
                   url: image.value.isEmpty
                       ? ""
+                      : image.value.startsWith("/")
+                      ? image.value
                       : "${AppUrls.baseURL}/upload/upload/${image.value}",
                 );
               }),
@@ -2129,7 +2141,7 @@ class ScannerPage extends StatelessWidget {
                     torchEnabled: false,
                   ),
                 )
-              : DeliveryInfo(dlv.value);
+              : WaybillDetailPage(dlv.value);
         }),
       ),
     );
