@@ -1,3 +1,12 @@
+import java.io.File
+import java.util.*
+
+val keystoreProperties =
+    Properties().apply {
+        var file = File("key.properties")
+        if (file.exists()) load(file.reader())
+    }
+
 plugins {
     id("com.android.application")
     // START: FlutterFire Configuration
@@ -39,28 +48,30 @@ android {
         versionName = flutter.versionName
     }
 
-    val keystorePropertiesFile = rootProject.file("keystore.properties")
-    val keystoreProperties = Properties().apply {
-        load(FileInputStream(keystorePropertiesFile))
-    }
     signingConfigs {
         create("release") {
-            storeFile = keystoreProperties["storeFile"] as String
-            storePassword = keystoreProperties["storePassword"] as String
-            keyAlias = keystoreProperties["keyAlias"] as String
-            keyPassword = keystoreProperties["keyPassword"] as String
+            if (System.getenv()["CI"].toBoolean()) { // CI=true is exported by Codemagic
+                storeFile = file(System.getenv()["CM_KEYSTORE_PATH"])
+                storePassword = System.getenv()["CM_KEYSTORE_PASSWORD"]
+                keyAlias = System.getenv()["CM_KEY_ALIAS"]
+                keyPassword = System.getenv()["CM_KEY_PASSWORD"]
+            } else {
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
         }
-
     }
+
 
     buildTypes {
-        release {
-            isMinifyEnabled = true
-            isShrinkResources = true
-            isDebuggable = true
-            signingConfig = signingConfigs["release"]
+        getByName("release") {
+            isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
         }
     }
+
 }
 
 dependencies {
