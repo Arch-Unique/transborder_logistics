@@ -484,7 +484,7 @@ class DashboardController extends GetxController {
         v.value = List.from(allLoadingPoints);
       }
     }
-    v.refresh();
+    // v.refresh();
   }
 
   void refreshResource() {

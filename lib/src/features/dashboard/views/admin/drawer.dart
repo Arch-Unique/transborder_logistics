@@ -30,7 +30,8 @@ class AppDrawer extends StatelessWidget {
             Ui.boxHeight(24),
             Align(
               alignment: Alignment.center,
-              child: Image.asset(Assets.fulllogo, width: 150)),
+              child: Image.asset(Assets.fulllogo, width: 150),
+            ),
             Ui.boxHeight(24),
             AppContainer(
               "",
@@ -39,16 +40,17 @@ class AppDrawer extends StatelessWidget {
                     (e) => InkWell(
                       onTap: () {
                         controller.curDashboardIndex.value = e.index;
-                        
-                          controller.currentModelIndex.value = 0;
-                        
+
+                        controller.currentModelIndex.value = 0;
 
                         if (e != DashboardMode.dashboard) {
                           // List items = [];
                           ResourceHistory rh;
                           if (e == DashboardMode.trips) {
-                            controller.currentModel = Delivery(createdAt: DateTime.now()).obs;
-                        
+                            controller.currentModel = Delivery(
+                              createdAt: DateTime.now(),
+                            ).obs;
+
                             rh = ResourceHistory<Delivery>(
                               items: controller.allCustomerDeliveries,
                             );
@@ -86,7 +88,9 @@ class AppDrawer extends StatelessWidget {
                             );
                           } else if (e == DashboardMode.vehicles) {
                             controller.currentModel = Vehicle().obs;
-                            rh = ResourceHistory<Vehicle>(items: controller.allVehicles);
+                            rh = ResourceHistory<Vehicle>(
+                              items: controller.allVehicles,
+                            );
                           } else {
                             rh = ResourceHistory(items: []);
                           }
@@ -132,37 +136,35 @@ class AppDrawer extends StatelessWidget {
                   .toList(),
               hasBorder: false,
               margin: 36,
-              
             ),
             Spacer(),
             SafeArea(
               child: InkWell(
-              onTap: () {
-                Get.to(
-                  SinglePageScaffold(title: "Profile", child: ProfilePage()),
-                );
-              },
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CurvedImage("", w: 20, h: 20, fit: BoxFit.cover),
-                  ),
-                  Ui.boxWidth(8),
-                  Expanded(
-                    child: AppText.medium(
-                      appService.currentUser.value.name ?? "N/A",
-                      fontSize: 14,
+                onTap: () {
+                  Get.to(
+                    SinglePageScaffold(title: "Profile", child: ProfilePage()),
+                  );
+                },
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CurvedImage("", w: 20, h: 20, fit: BoxFit.cover),
                     ),
-                  ),
-                  Ui.boxWidth(8),
-                  AppIcon(HugeIcons.strokeRoundedMoreHorizontal),
-                ],
+                    Ui.boxWidth(8),
+                    Expanded(
+                      child: AppText.medium(
+                        appService.currentUser.value.name ?? "N/A",
+                        fontSize: 14,
+                      ),
+                    ),
+                    Ui.boxWidth(8),
+                    AppIcon(HugeIcons.strokeRoundedMoreHorizontal),
+                  ],
+                ),
               ),
             ),
-            )
-            
           ],
         ),
       ),

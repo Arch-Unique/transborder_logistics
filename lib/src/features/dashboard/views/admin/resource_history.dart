@@ -25,9 +25,20 @@ class ResourceHistory<T extends Slugger> {
     this.onFilter,
     this.onInit,
   });
+
+  Widget toPage({bool hasDrawer = false}) {
+    return ResourceHistoryPage<T>(
+      title,
+      items,
+      filters: filters,
+      onFilter: onFilter,
+      hasDrawer: hasDrawer,
+    );
+  }
+
 }
 
-class ResourceHistoryPage<T> extends StatefulWidget {
+class ResourceHistoryPage<T extends Slugger> extends StatefulWidget {
   const ResourceHistoryPage(
     this.title,
     this.items, {
@@ -48,7 +59,7 @@ class ResourceHistoryPage<T> extends StatefulWidget {
   State<ResourceHistoryPage<T>> createState() => _ResourceHistoryPageState<T>();
 }
 
-class _ResourceHistoryPageState<T> extends State<ResourceHistoryPage<T>> {
+class _ResourceHistoryPageState<T extends Slugger> extends State<ResourceHistoryPage<T>> {
   RxString curFilter = "All".obs;
   final tec = TextEditingController();
   RxList<T> allItems = <T>[].obs;
@@ -61,7 +72,7 @@ class _ResourceHistoryPageState<T> extends State<ResourceHistoryPage<T>> {
 
   @override
   void didUpdateWidget(covariant ResourceHistoryPage<T> oldWidget) {
-    if (oldWidget.title != widget.title || oldWidget.items != widget.items) {
+    if (oldWidget.title != widget.title) {
       allItems.value = List.from(widget.items);
       curFilter.value = "All";
       tec.clear();
@@ -84,12 +95,12 @@ class _ResourceHistoryPageState<T> extends State<ResourceHistoryPage<T>> {
             tec,
             textAlign: TextAlign.start,
             customOnChanged: () {
-              // if (tec.text.isEmpty) {
-              //   curFilter.value = "All";
-              //   allItems.value = List.from(widget.items);
-              //   return;
-              // }
-              if (allItems.isEmpty) {
+              if (tec.text.isEmpty) {
+                curFilter.value = "All";
+                allItems.value = List.from(widget.items);
+                return;
+              }
+              if (widget.items.isEmpty) {
                 return;
               }
               allItems.value = widget.items.where((test) {
@@ -296,7 +307,7 @@ class _ResourceHistoryDesktopPageState<T extends Slugger>
                 allItems.value = List.from(widget.items);
                 return;
               }
-              if (allItems.isEmpty) {
+              if (widget.items.isEmpty) {
                 return;
               }
               allItems.value = widget.items.where((test) {
@@ -609,7 +620,7 @@ class ResourceHistoryTable<T extends Slugger> extends StatelessWidget {
                   onTap: () {
                     Get.find<DashboardController>().currentModel.value =
                         pageRawItems[i];
-                        Get.find<DashboardController>().currentModelIndex.value=1;
+                    Get.find<DashboardController>().currentModelIndex.value = 1;
                   },
                   child: ResourceHistoryRowItem(
                     children: List.generate(pageItems[i].length, (j) {
@@ -680,7 +691,7 @@ class ResourceHistoryItemDetail extends StatelessWidget {
         CurvedContainer(
           radius: 12,
           border: Border.all(color: AppColors.borderColor),
-          margin: EdgeInsets.only(bottom:16,right:16,left:16),
+          margin: EdgeInsets.only(bottom: 16, right: 16, left: 16),
           padding: EdgeInsets.all(16),
           child: GridView.count(
             shrinkWrap: true,
@@ -705,7 +716,12 @@ class ResourceHistoryItemDetail extends StatelessWidget {
                       color: AppColors.lightTextColor,
                     ),
                     Ui.boxHeight(4),
-                    AppText.thin(fields.values.elementAt(i), fontSize: 14,maxlines: 1,overflow: TextOverflow.ellipsis),
+                    AppText.thin(
+                      fields.values.elementAt(i),
+                      fontSize: 14,
+                      maxlines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ],
                 ),
               );

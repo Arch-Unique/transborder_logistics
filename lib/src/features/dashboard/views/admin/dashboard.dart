@@ -20,7 +20,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print(Ui.width(context));
     return RefreshScrollView(
       onExtend: () async {},
       onRefreshed: () async {

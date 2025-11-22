@@ -618,19 +618,17 @@ class WaybillDetailPage extends StatelessWidget {
       controller: wsController,
       child: Column(
         children: [
-          SafeArea(
-            child: CurvedContainer(
-              radius: 12,
-              padding: EdgeInsets.all(16),
-              margin: EdgeInsets.only(left: 16, right: 16, top: 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(),
-                  Image.asset(Assets.fulllogo, width: 150),
-                  AppText.bold("#${delivery.waybill}"),
-                ],
-              ),
+          CurvedContainer(
+            radius: 12,
+            padding: EdgeInsets.all(16),
+            margin: EdgeInsets.only(left: 16, right: 16, top: 0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(),
+                Image.asset(Assets.fulllogo, width: 150),
+                AppText.bold("#${delivery.waybill}"),
+              ],
             ),
           ),
 
@@ -760,6 +758,20 @@ class WaybillDetailPage extends StatelessWidget {
                               return SingleChildScrollView(
                                 child: Column(
                                   children: [
+                                    SafeArea(
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(
+                                          top: 56.0,
+                                        ),
+                                        child: CircleIcon(
+                                          HugeIcons
+                                              .strokeRoundedMultiplicationSign,
+                                          onTap: () {
+                                            Get.back();
+                                          },
+                                        ),
+                                      ),
+                                    ),
                                     shareBody,
                                     Ui.boxHeight(16),
                                     CircleIcon(
@@ -767,7 +779,7 @@ class WaybillDetailPage extends StatelessWidget {
                                       onTap: () async {
                                         try {
                                           final a = await wsController
-                                              .capturePng();
+                                              .capturePng(pixelRatio: 6);
                                           if (a != null) {
                                             final b =
                                                 await UtilFunctions.saveToTempFile(
@@ -803,7 +815,7 @@ class WaybillDetailPage extends StatelessWidget {
                                       },
                                     ),
 
-                                    SafeArea(child: Ui.boxHeight(16)),
+                                    SafeArea(child: Ui.boxHeight(8)),
                                   ],
                                 ),
                               );
@@ -812,20 +824,20 @@ class WaybillDetailPage extends StatelessWidget {
                           backgroundColor: AppColors.white.withOpacity(0.5),
                           isScrollControlled: true,
                         );
-                        final a = await wsController.capturePng();
-                        if (a != null) {
-                          final b = await UtilFunctions.saveToTempFile(a);
+                        // final a = await wsController.capturePng(pixelRatio: 6);
+                        // if (a != null) {
+                        //   final b = await UtilFunctions.saveToTempFile(a);
 
-                          final x = XFile(b.path);
+                        //   final x = XFile(b.path);
 
-                          await SharePlus.instance.share(
-                            ShareParams(
-                              title: "Share Waybill #${delivery.waybill}",
-                              previewThumbnail: x,
-                              files: [x],
-                            ),
-                          );
-                        }
+                        //   await SharePlus.instance.share(
+                        //     ShareParams(
+                        //       title: "Share Waybill #${delivery.waybill}",
+                        //       previewThumbnail: x,
+                        //       files: [x],
+                        //     ),
+                        //   );
+                        // }
                       } catch (e) {
                         print(e);
                       }
@@ -1215,14 +1227,14 @@ class AppContainer extends StatelessWidget {
   final List<Widget> actions;
 
   List<Widget> intersperseWithDivider(List<Widget> widgets, Widget divider) {
-  if (widgets.isEmpty) return [];
-  final result = <Widget>[];
-  for (var i = 0; i < widgets.length; i++) {
-    if (i > 0) result.add(divider);
-    result.add(widgets[i]);
+    if (widgets.isEmpty) return [];
+    final result = <Widget>[];
+    for (var i = 0; i < widgets.length; i++) {
+      if (i > 0) result.add(divider);
+      result.add(widgets[i]);
+    }
+    return result;
   }
-  return result;
-}
 
   @override
   Widget build(BuildContext context) {
@@ -1237,14 +1249,14 @@ class AppContainer extends StatelessWidget {
       return Padding(
         padding: EdgeInsets.only(
           top: i == 0 ? 12 : 8.0,
-          bottom: i == actions.length - 1 ? 8 : 4,
+          bottom: i == actions.length - 1 ? 12 : 8,
           left: 8,
           right: 16,
         ),
         child: actions[i],
       );
     });
-final actionList = intersperseWithDivider(actionWidgets, div);
+    final actionList = intersperseWithDivider(actionWidgets, div);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -1265,8 +1277,8 @@ final actionList = intersperseWithDivider(actionWidgets, div);
           radius: 12,
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: [Row(),...actionList],
-          )
+            children: [Row(), ...actionList],
+          ),
         ),
       ],
     );
@@ -1429,7 +1441,7 @@ class ProfilePage extends StatelessWidget {
             ),
             InkWell(
               onTap: () async {
-                await launchUrl(Uri.parse("https://wa.me/+23470672246467"));
+                // await launchUrl(Uri.parse("https://wa.me/+23470672246467"));
               },
               child: AppContainerItem.icony(
                 HugeIcons.strokeRoundedLeftToRightListBullet,
@@ -1438,7 +1450,7 @@ class ProfilePage extends StatelessWidget {
             ),
             InkWell(
               onTap: () async {
-                await launchUrl(Uri.parse("https://wa.me/+23470672246467"));
+                // await launchUrl(Uri.parse("https://wa.me/+23470672246467"));
               },
               child: AppContainerItem.icony(
                 HugeIcons.strokeRoundedMail01,
@@ -2110,39 +2122,36 @@ class ScannerPage extends StatelessWidget {
     return SinglePageScaffold(
       title: "WayBill QR Scanner",
       child: Center(
-        child: Obx(() {
-          return dlv.value.id == 0
-              ? MobileScanner(
-                  onDetect: (result) {
-                    String? qrcode = result.barcodes.isEmpty
-                        ? null
-                        : result.barcodes.first.rawValue;
-                    if (qrcode == null || qrcode.isEmpty) {
-                      Ui.showError("No QR Code found");
-                      return;
-                    }
-                    final waybill = qrcode;
-                    dlv.value =
-                        (controller.appRepo.appService.currentUser.value.isAdmin
-                                ? controller.allCustomerDeliveries
-                                : controller.allDeliveries)
-                            .where((test) => test.waybill == waybill)
-                            .firstOrNull ??
-                        Delivery(createdAt: DateTime.now());
-                    if (dlv.value.id == 0) {
-                      Ui.showError("No Delivery Found for $waybill");
-                      return;
-                    }
-                    Ui.showInfo("Scanned Code: $qrcode");
-                  },
-                  fit: BoxFit.cover,
-                  controller: MobileScannerController(
-                    facing: CameraFacing.back,
-                    torchEnabled: false,
-                  ),
-                )
-              : WaybillDetailPage(dlv.value);
-        }),
+        child: MobileScanner(
+          onDetect: (result) {
+            String? qrcode = result.barcodes.isEmpty
+                ? null
+                : result.barcodes.first.rawValue;
+            if (qrcode == null || qrcode.isEmpty) {
+              Ui.showError("No QR Code found");
+              return;
+            }
+            final waybill = qrcode;
+            dlv.value =
+                (controller.appRepo.appService.currentUser.value.isAdmin
+                        ? controller.allCustomerDeliveries
+                        : controller.allDeliveries)
+                    .where((test) => test.waybill == waybill)
+                    .firstOrNull ??
+                Delivery(createdAt: DateTime.now());
+            if (dlv.value.id == 0) {
+              Ui.showError("No Delivery Found for $waybill");
+              return;
+            }
+            Ui.showInfo("Scanned Code: $qrcode");
+            Get.to(WaybillDetailPage(dlv.value));
+          },
+          fit: BoxFit.cover,
+          controller: MobileScannerController(
+            facing: CameraFacing.back,
+            torchEnabled: false,
+          ),
+        ),
       ),
     );
   }
