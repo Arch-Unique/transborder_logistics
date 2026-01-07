@@ -35,7 +35,6 @@ class ResourceHistory<T extends Slugger> {
       hasDrawer: hasDrawer,
     );
   }
-
 }
 
 class ResourceHistoryPage<T extends Slugger> extends StatefulWidget {
@@ -59,7 +58,8 @@ class ResourceHistoryPage<T extends Slugger> extends StatefulWidget {
   State<ResourceHistoryPage<T>> createState() => _ResourceHistoryPageState<T>();
 }
 
-class _ResourceHistoryPageState<T extends Slugger> extends State<ResourceHistoryPage<T>> {
+class _ResourceHistoryPageState<T extends Slugger>
+    extends State<ResourceHistoryPage<T>> {
   RxString curFilter = "All".obs;
   final tec = TextEditingController();
   RxList<T> allItems = <T>[].obs;
@@ -84,6 +84,11 @@ class _ResourceHistoryPageState<T extends Slugger> extends State<ResourceHistory
   Widget build(BuildContext context) {
     final body = Column(
       children: [
+        if (widget.onFilter == null && widget.filters.isEmpty)
+          Align(child: Padding(
+            padding: const EdgeInsets.only(top: 16,left: 16,bottom: 8),
+            child: AppText.bold("Ongoing Trips"),
+          ),alignment: Alignment.centerLeft,),
         CurvedContainer(
           border: Border.all(color: AppColors.borderColor),
           color: Color(0xfff7f7f7),
@@ -111,40 +116,41 @@ class _ResourceHistoryPageState<T extends Slugger> extends State<ResourceHistory
             prefix: HugeIcons.strokeRoundedSearch02,
           ),
         ),
-        Padding(
-          padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: widget.filters.map((e) {
-              return Obx(() {
-                return CurvedContainer(
-                  color: e == curFilter.value
-                      ? AppColors.primaryColor
-                      : AppColors.transparent,
-                  padding: EdgeInsets.symmetric(vertical: 10, horizontal: 14),
-                  radius: 8,
-                  onPressed: () {
-                    curFilter.value = e;
-                    if (e == "All") {
-                      allItems.value = List.from(widget.items);
-                      return;
-                    }
-                    if (widget.onFilter != null) {
-                      widget.onFilter!(allItems, e);
-                    }
-                  },
-                  child: AppText.medium(
-                    e,
-                    fontSize: 14,
+        if (widget.onFilter != null)
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: widget.filters.map((e) {
+                return Obx(() {
+                  return CurvedContainer(
                     color: e == curFilter.value
-                        ? AppColors.white
-                        : AppColors.lightTextColor,
-                  ),
-                );
-              });
-            }).toList(),
+                        ? AppColors.primaryColor
+                        : AppColors.transparent,
+                    padding: EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                    radius: 8,
+                    onPressed: () {
+                      curFilter.value = e;
+                      if (e == "All") {
+                        allItems.value = List.from(widget.items);
+                        return;
+                      }
+                      if (widget.onFilter != null) {
+                        widget.onFilter!(allItems, e);
+                      }
+                    },
+                    child: AppText.medium(
+                      e,
+                      fontSize: 14,
+                      color: e == curFilter.value
+                          ? AppColors.white
+                          : AppColors.lightTextColor,
+                    ),
+                  );
+                });
+              }).toList(),
+            ),
           ),
-        ),
         Padding(
           padding: const EdgeInsets.only(left: 16.0),
           child: Align(
@@ -209,6 +215,8 @@ class ResourceHistoryDesktopPage<T extends Slugger> extends StatefulWidget {
     this.filters = const ["All"],
     this.onFilter,
     this.onInit,
+    this.onAdd,
+    this.onEdit,
     super.key,
     this.hasDrawer = false,
   });
@@ -217,7 +225,8 @@ class ResourceHistoryDesktopPage<T extends Slugger> extends StatefulWidget {
   final List<T> items;
   final bool hasDrawer;
   final Function(RxList<T>, String)? onFilter;
-  final Function()? onInit;
+  final Function()? onInit, onAdd;
+  final Function(dynamic)? onEdit;
 
   @override
   State<ResourceHistoryDesktopPage<T>> createState() =>
@@ -273,8 +282,12 @@ class _ResourceHistoryDesktopPageState<T extends Slugger>
                     return controller.currentModelIndex.value != 0
                         ? ResourceHistoryItemDetail(
                             controller.currentModel.value.fields,
+                            rtitle: widget.title,
                           )
-                        : ResourceHistoryTable(allItems: allItems);
+                        : ResourceHistoryTable(
+                            allItems: allItems,
+                            rtitle: widget.title,
+                          );
                   });
                 },
               ),
@@ -334,7 +347,9 @@ class _ResourceHistoryDesktopPageState<T extends Slugger>
         ),
         Ui.boxWidth(12),
         CurvedContainer(
-          onPressed: () {},
+          onPressed: () async {
+            await controller.exportData();
+          },
           padding: EdgeInsets.symmetric(vertical: 10, horizontal: 24),
           border: Border.all(color: AppColors.borderColor),
           child: Row(
@@ -348,7 +363,11 @@ class _ResourceHistoryDesktopPageState<T extends Slugger>
         ),
         Ui.boxWidth(12),
         CurvedContainer(
-          onPressed: () {},
+          onPressed: () {
+            if (widget.onAdd != null) {
+              widget.onAdd!();
+            }
+          },
           padding: EdgeInsets.symmetric(vertical: 10, horizontal: 24),
           color: AppColors.primaryColor,
           child: Row(
@@ -398,7 +417,11 @@ class _ResourceHistoryDesktopPageState<T extends Slugger>
                 }),
                 Spacer(),
                 CurvedContainer(
-                  onPressed: () {},
+                  onPressed: () {
+                    if (widget.onEdit != null) {
+                      widget.onEdit!(controller.currentModel.value);
+                    }
+                  },
                   padding: EdgeInsets.symmetric(vertical: 10, horizontal: 24),
                   border: Border.all(color: AppColors.borderColor),
                   child: Row(
@@ -568,8 +591,9 @@ class ResourceHistoryFooter extends StatelessWidget {
 }
 
 class ResourceHistoryTable<T extends Slugger> extends StatelessWidget {
-  ResourceHistoryTable({this.allItems = const [], super.key});
+  ResourceHistoryTable({this.allItems = const [], this.rtitle = "", super.key});
   final List<T> allItems;
+  final String rtitle;
   List<T> pageRawItems = [];
   List<List<String>> items = [];
   RxInt curPage = 1.obs;
@@ -590,9 +614,21 @@ class ResourceHistoryTable<T extends Slugger> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     items = allItems.map((e) => (e as Slugger).tableValue).toList();
-    final List<String> title = allItems.isEmpty
+    List<String> title = allItems.isEmpty
         ? []
         : (allItems[0] as Slugger).tableTitle;
+    title[0] = title[0].toLowerCase() == "id" ? "$rtitle ID" : title[0];
+    if (rtitle == "Drivers") {
+      title[2] = "Status";
+      for (var b in items) {
+        b[2] =
+            Get.find<DashboardController>().allUnavailableDrivers
+                .map((driver) => driver.id.toString())
+                .contains(b[0])
+            ? "Busy"
+            : "Available";
+      }
+    }
 
     totalPage.value = (items.length / curPageSize.value).ceil();
     paginate();
@@ -624,13 +660,25 @@ class ResourceHistoryTable<T extends Slugger> extends StatelessWidget {
                   },
                   child: ResourceHistoryRowItem(
                     children: List.generate(pageItems[i].length, (j) {
-                      return AppText.thin(
-                        pageItems[i][j],
-                        fontSize: 12,
-                        color: AppColors.lightTextColor,
-                        alignment: TextAlign.center,
-                        maxlines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      return Padding(
+                        padding: EdgeInsetsGeometry.symmetric(horizontal: 4),
+                        child: Builder(
+                          builder: (c) {
+                            if (title[j] == "Status") {
+                              return rtitle == "Trips"
+                                  ? WaybillStatusChip(pageItems[i][j])
+                                  : DriverStatusChip(pageItems[i][j]);
+                            }
+                            return AppText.thin(
+                              pageItems[i][j].isEmpty ? "N/A" : pageItems[i][j],
+                              fontSize: 12,
+                              color: AppColors.lightTextColor,
+                              alignment: TextAlign.center,
+                              maxlines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            );
+                          },
+                        ),
                       );
                     }),
                   ),
@@ -672,8 +720,9 @@ class ResourceHistoryTable<T extends Slugger> extends StatelessWidget {
 }
 
 class ResourceHistoryItemDetail extends StatelessWidget {
-  const ResourceHistoryItemDetail(this.fields, {super.key});
+  const ResourceHistoryItemDetail(this.fields, {this.rtitle = "", super.key});
   final Map<String, String> fields;
+  final String rtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -716,18 +765,68 @@ class ResourceHistoryItemDetail extends StatelessWidget {
                       color: AppColors.lightTextColor,
                     ),
                     Ui.boxHeight(4),
-                    AppText.thin(
-                      fields.values.elementAt(i),
-                      fontSize: 14,
-                      maxlines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    if (![
+                      "inactive",
+                      "active",
+                      "new",
+                      "available"
+                          "completed",
+                      "track",
+                      "cancelled",
+                      "in progress",
+                    ].contains(fields.values.elementAt(i).toLowerCase()))
+                      AppText.thin(
+                        fields.values.elementAt(i).isEmpty
+                            ? "N/A"
+                            : fields.values.elementAt(i),
+                        fontSize: 14,
+                        maxlines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+
+                    if ([
+                      "inactive",
+                      "active",
+                      "new",
+                      "available"
+                          "completed",
+                      "track",
+                      "cancelled",
+                      "in progress",
+                    ].contains(fields.values.elementAt(i).toLowerCase()))
+                      SizedBox(
+                        width: 150,
+                        child: rtitle == "Trips"
+                            ? WaybillStatusChip(fields.values.elementAt(i))
+                            : DriverStatusChip(fields.values.elementAt(i)),
+                      ),
                   ],
                 ),
               );
             }),
           ),
         ),
+        if (rtitle == "Trips")
+          Align(
+            alignment: Alignment.center,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: SizedBox(
+                width: 200,
+                child: AppButton(
+                  onPressed: () {
+                    Get.to(
+                      WaybillDetailPage(
+                        Get.find<DashboardController>().currentModel.value
+                            as Delivery,
+                      ),
+                    );
+                  },
+                  text: "Share",
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }

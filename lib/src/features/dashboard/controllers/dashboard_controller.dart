@@ -121,6 +121,16 @@ class DashboardController extends GetxController {
         .toList();
   }
 
+  List<User> get allUnavailableDrivers {
+    return allDrivers
+          .where((e) => allUndeliveredDeliveries.any((a) => a.driverId == e.id))
+          .toList();
+  }
+
+  List<User> get allAvailableDrivers {
+    return allDrivers.where((test) => !allUnavailableDrivers.contains(test)).toList();
+  }
+
   Future<bool> getLocations() async {
     final c = await appRepo.getLocations();
     if (curLoc.value != "All" && curLoc.value.isNotEmpty) {
@@ -460,13 +470,10 @@ class DashboardController extends GetxController {
         v.value = List.from(allOperators);
       }
     } else if (title.toLowerCase() == "drivers") {
-      final f = allDrivers
-          .where((e) => allUndeliveredDeliveries.any((a) => a.driverId == e.id))
-          .toList(); //unavailble driers
       if (s == "Available") {
-        v.value = List.from(allDrivers.where((test) => !f.contains(test)));
+        v.value = List.from(allAvailableDrivers);
       } else if (s == "Busy") {
-        v.value = List.from(f);
+        v.value = List.from(allUnavailableDrivers);
       }
       // else if (s == "Inactive") {
       //   v.value = List.from(allDrivers);
@@ -496,8 +503,9 @@ class DashboardController extends GetxController {
       curResourceHistory.value.items = allDrivers;
     } else if (curResourceHistory.value.title == DashboardMode.location.name) {
       curResourceHistory.value.items = List.from(
-        States.states.map((e) {
-          return StateLocation(name: e, isActive: e == "Kano" || e == "Kaduna");
+        States.states.indexed.map((t) {
+          final (index, e) = t;
+          return StateLocation(id: index+1,name: e, isActive: e == "Kano" || e == "Kaduna");
         }),
       );
     } else if (curResourceHistory.value.title ==

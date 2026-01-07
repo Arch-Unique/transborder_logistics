@@ -295,10 +295,11 @@ class DriverStatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppChip(
       title,
-      bgColors: [Color(0xFFE6FBEC), Color(0xFFFFEBEA), Color(0xFFE9F5FF)],
-      titles: ["Available", "Inactive", "Busy"],
-      titleColors: [Color(0xFF00D743), Color(0xFFFF3B30), Color(0xFF229EFF)],
+      bgColors: [Color(0xFFE6FBEC),Color(0xFFE6FBEC), Color(0xFFFFEBEA), Color(0xFFE9F5FF)],
+      titles: ["Available","Active", "Inactive", "Busy"],
+      titleColors: [Color(0xFF00D743),Color(0xFF00D743), Color(0xFFFF3B30), Color(0xFF229EFF)],
       icons: [
+        HugeIcons.strokeRoundedCheckmarkCircle02,
         HugeIcons.strokeRoundedCheckmarkCircle02,
         HugeIcons.strokeRoundedCancelCircle,
         HugeIcons.strokeRoundedArrowLeftRight,
@@ -363,13 +364,15 @@ class AppChip extends StatelessWidget {
       color: bgColors[i],
       radius: 24,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AppIcon(icons[i], size: 16, color: titleColors[i]),
-          Ui.boxWidth(4),
-          AppText.medium(title, fontSize: 12, color: titleColors[i]),
-        ],
+      child: Center(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppIcon(icons[i], size: 16, color: titleColors[i]),
+            Ui.boxWidth(4),
+            AppText.medium(title, fontSize: 12, color: titleColors[i]),
+          ],
+        ),
       ),
     );
   }
@@ -578,9 +581,9 @@ class WaybillDetailPage extends StatelessWidget {
                               ],
                             ),
                           ),
-                          Ui.boxWidth(24),
+                          Spacer(),
                           SizedBox(
-                            width: Ui.width(context) / 3,
+                            width: 150,
                             height: 36,
                             child: Image.network(
                               "${AppUrls.baseURL}/upload/upload/${delivery.receiver.elementAtOrNull(j)![2]}",
@@ -641,375 +644,383 @@ class WaybillDetailPage extends StatelessWidget {
       title: "#${delivery.waybill}",
 
       child: SingleChildScrollView(
-        child: Column(
-          children: [
-            wbBody,
-            //items
-            if (delivery.items.isNotEmpty)
-              Padding(
-                padding: EdgeInsetsGeometry.only(
-                  top: 0,
-                  bottom: 12,
-                  left: 16,
-                  right: 16,
-                ),
-                child: AppContainer("ITEMS", [
-                  ...delivery.items.map(
-                    (e) => Row(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: Ui.width(context)/2
+            ),
+            child: Column(
+              children: [
+                wbBody,
+                //items
+                if (delivery.items.isNotEmpty)
+                  Padding(
+                    padding: EdgeInsetsGeometry.only(
+                      top: 0,
+                      bottom: 12,
+                      left: 16,
+                      right: 16,
+                    ),
+                    child: AppContainer("ITEMS", [
+                      ...delivery.items.map(
+                        (e) => Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            AppText.medium(e[0], fontSize: 12),
+                            AppText.thin(
+                              e[1],
+                              fontSize: 10,
+                              color: AppColors.lightTextColor,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ]),
+                  ),
+            
+                if (delivery.items.isNotEmpty)
+                  Padding(
+                    padding: EdgeInsetsGeometry.only(
+                      top: 0,
+                      bottom: 12,
+                      left: 16,
+                      right: 16,
+                    ),
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        AppText.medium(e[0], fontSize: 12),
                         AppText.thin(
-                          e[1],
+                          "TOTAL AMOUNT",
                           fontSize: 10,
                           color: AppColors.lightTextColor,
                         ),
+                        AppText.medium(delivery.amt.toCurrency(), fontSize: 10),
                       ],
                     ),
                   ),
-                ]),
-              ),
-
-            if (delivery.items.isNotEmpty)
-              Padding(
-                padding: EdgeInsetsGeometry.only(
-                  top: 0,
-                  bottom: 12,
-                  left: 16,
-                  right: 16,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    AppText.thin(
-                      "TOTAL AMOUNT",
-                      fontSize: 10,
-                      color: AppColors.lightTextColor,
-                    ),
-                    AppText.medium(delivery.amt.toCurrency(), fontSize: 10),
-                  ],
-                ),
-              ),
-
-            Ui.boxHeight(16),
-            if (appService.currentUser.value.role == "admin")
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (delivery.hasNotStarted && delivery.isNotDelivered)
-                    CircleIcon(
-                      HugeIcons.strokeRoundedEdit01,
-                      onTap: () {
-                        Get.bottomSheet(
-                          AddResource<Delivery>("Trips", obj: delivery),
-
-                          isScrollControlled: true,
-                        );
-                      },
-                    ),
-
-                  if (delivery.hasNotStarted && delivery.isNotDelivered)
-                    Ui.boxWidth(16),
-                  if (delivery.isNotDelivered &&
-                      !delivery.isCanceled &&
-                      Get.find<AppService>().currentUser.value.role == "admin")
-                    CircleIcon(
-                      HugeIcons.strokeRoundedDelete01,
-                      onTap: () {
-                        Get.bottomSheet(
-                          AppBottomSheet(
-                            "Cancel Trip",
-                            "Confirm",
-                            msg:
-                                "Are you sure you want to cancel this trip ?. This action is irreversible",
-                            onTap: () async {
-                              try {
-                                await Get.find<DashboardController>().appRepo
-                                    .cancelDelivery(
-                                      delivery.waybill,
-                                      delivery.vehicleId,
-                                      delivery.id,
-                                    );
-                                Get.back();
-                                await Get.find<DashboardController>().initApp();
-                                Get.find<DashboardController>()
-                                    .refreshResource();
-
-                                Get.back();
-                              } catch (e) {
-                                print(e);
-                              }
-                            },
-                          ),
-                        );
-                      },
-                    ),
-                  if (delivery.isNotDelivered &&
-                      !delivery.isCanceled &&
-                      Get.find<AppService>().currentUser.value.role == "admin")
-                    Ui.boxWidth(16),
-                  CircleIcon(
-                    HugeIcons.strokeRoundedDownload01,
-                    onTap: () async {
-                      try {
-                        Get.bottomSheet(
-                          Builder(
-                            builder: (context) {
-                              return SingleChildScrollView(
-                                child: Column(
-                                  children: [
-                                    SafeArea(
-                                      child: Padding(
-                                        padding: const EdgeInsets.only(
-                                          top: 56.0,
-                                        ),
-                                        child: CircleIcon(
-                                          HugeIcons
-                                              .strokeRoundedMultiplicationSign,
-                                          onTap: () {
-                                            Get.back();
-                                          },
-                                        ),
-                                      ),
-                                    ),
-                                    shareBody,
-                                    Ui.boxHeight(16),
-                                    CircleIcon(
-                                      HugeIcons.strokeRoundedShare08,
-                                      onTap: () async {
-                                        try {
-                                          final a = await wsController
-                                              .capturePng(pixelRatio: 6);
-                                          if (a != null) {
-                                            final b =
-                                                await UtilFunctions.saveToTempFile(
-                                                  a,
-                                                );
-
-                                            if (GetPlatform.isMobile) {
-                                              final x = XFile(b.path);
-
-                                              await SharePlus.instance.share(
-                                                ShareParams(
-                                                  title:
-                                                      "Share Waybill #${delivery.waybill}",
-                                                  previewThumbnail: x,
-                                                  files: [x],
-                                                ),
-                                              );
-                                            } else {
-                                              final x = await saveFileDesktop(
-                                                b.readAsBytesSync(),
-                                                "Share${DateTime.now()}.png",
-                                              );
-                                              if (x != null) {
-                                                Ui.showInfo(
-                                                  "Successfully Saved to $x",
-                                                );
-                                              }
-                                            }
-                                          }
-                                        } catch (e) {
-                                          print(e);
-                                        }
-                                      },
-                                    ),
-
-                                    SafeArea(child: Ui.boxHeight(8)),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                          backgroundColor: AppColors.white.withOpacity(0.5),
-                          isScrollControlled: true,
-                        );
-                        // final a = await wsController.capturePng(pixelRatio: 6);
-                        // if (a != null) {
-                        //   final b = await UtilFunctions.saveToTempFile(a);
-
-                        //   final x = XFile(b.path);
-
-                        //   await SharePlus.instance.share(
-                        //     ShareParams(
-                        //       title: "Share Waybill #${delivery.waybill}",
-                        //       previewThumbnail: x,
-                        //       files: [x],
-                        //     ),
-                        //   );
-                        // }
-                      } catch (e) {
-                        print(e);
-                      }
-                    },
-                  ),
-                ],
-              ),
-
-            if (appService.currentUser.value.role == "driver" &&
-                delivery.isNotDelivered)
-              SizedBox(
-                width: Ui.width(context) / 3,
-                child: AppButton(
-                  onPressed: () {
-                    if (delivery.hasNotStarted) {
-                      Get.bottomSheet(
-                        AppBottomSheet(
-                          "Confirm Start",
-                          "Confirm",
-                          msg: "Are you sure you want to start the trip",
-                          onTap: () async {
-                            final a = await Get.find<DashboardController>()
-                                .startDelivery(delivery.id);
-                            if (a) {
-                              Get.back();
-                              Get.back();
-                              await Get.find<DashboardController>()
-                                  .getCustomerDelivery();
-                              Ui.showInfo("Delivery Started Successfully");
-                            } else {
-                              Ui.showError("Failed to start delivery");
-                            }
+            
+                Ui.boxHeight(16),
+                if (appService.currentUser.value.role == "admin")
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (delivery.hasNotStarted && delivery.isNotDelivered)
+                        CircleIcon(
+                          HugeIcons.strokeRoundedEdit01,
+                          onTap: () {
+                            Get.bottomSheet(
+                              AddResource<Delivery>("Trips", obj: delivery),
+            
+                              isScrollControlled: true,
+                            );
                           },
                         ),
-                      );
-                    } else {
-                      try {
-                        List<TextEditingController> tecs = List.generate(
-                          3,
-                          (i) => TextEditingController(),
-                        );
-                        RxString img = "".obs;
-                        RxString curStop = "".obs;
-                        Rx<Uint8List> u8 = Uint8List(0).obs;
-                        int curStopIndex = 0;
-                        Get.bottomSheet(
-                          AppBottomSheet(
-                            "Confirm Delivery",
-                            "Confirm",
-                            onTap: () async {
-                              try {
-                                if (UtilFunctions.validateTecs(tecs)) {
-                                  if (u8.value.isEmpty &&
-                                      curStop.value.isEmpty) {
-                                    return Ui.showError(
-                                      "Signature and Stop must be filled",
-                                    );
-                                  }
-                                  final c = await UtilFunctions.saveToTempFile(
-                                    u8.value,
-                                  );
-                                  final a =
-                                      await Get.find<DashboardController>()
-                                          .stopDelivery(
-                                            delivery.id,
-                                            curStopIndex,
-                                            tecs[2].text,
-                                            tecs[0].text,
-                                            tecs[1].text,
-                                            c.path,
-                                          );
-                                  if (a) {
+            
+                      if (delivery.hasNotStarted && delivery.isNotDelivered)
+                        Ui.boxWidth(16),
+                      if (delivery.isNotDelivered &&
+                          !delivery.isCanceled &&
+                          Get.find<AppService>().currentUser.value.role == "admin")
+                        CircleIcon(
+                          HugeIcons.strokeRoundedDelete01,
+                          onTap: () {
+                            Get.bottomSheet(
+                              AppBottomSheet(
+                                "Cancel Trip",
+                                "Confirm",
+                                msg:
+                                    "Are you sure you want to cancel this trip ?. This action is irreversible",
+                                onTap: () async {
+                                  try {
+                                    await Get.find<DashboardController>().appRepo
+                                        .cancelDelivery(
+                                          delivery.waybill,
+                                          delivery.vehicleId,
+                                          delivery.id,
+                                        );
                                     Get.back();
-                                    await Get.find<DashboardController>()
-                                        .getCustomerDelivery();
-                                    Ui.showInfo("Delivery Ended Successfully");
-                                  } else {
-                                    Ui.showInfo("Delivery failed to end");
+                                    await Get.find<DashboardController>().initApp();
+                                    Get.find<DashboardController>()
+                                        .refreshResource();
+            
+                                    Get.back();
+                                  } catch (e) {
+                                    print(e);
                                   }
-                                } else {
-                                  Ui.showError(
-                                    "All Fields are mandatory to fill",
-                                  );
-                                }
-                              } catch (e) {
-                                print(e);
-                              }
-                            },
-                            actions: [
-                              CustomDropdown.city(
-                                hint: "Stop",
-                                label: "Select Stop",
-                                selectedValue: curStop.value,
-                                onChanged: (v) {
-                                  curStop.value = v ?? "";
-                                  curStopIndex = delivery.stops.indexOf(
-                                    curStop.value,
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                      if (delivery.isNotDelivered &&
+                          !delivery.isCanceled &&
+                          Get.find<AppService>().currentUser.value.role == "admin")
+                        Ui.boxWidth(16),
+                      CircleIcon(
+                        HugeIcons.strokeRoundedDownload01,
+                        onTap: () async {
+                          try {
+                            Get.bottomSheet(
+                              Builder(
+                                builder: (context) {
+                                  return SingleChildScrollView(
+                                    child: Column(
+                                      children: [
+                                        SafeArea(
+                                          child: Padding(
+                                            padding: const EdgeInsets.only(
+                                              top: 24,
+                                              bottom: 24
+                                            ),
+                                            child: CircleIcon(
+                                              HugeIcons
+                                                  .strokeRoundedMultiplicationSign,
+                                              onTap: () {
+                                                Get.back();
+                                              },
+                                            ),
+                                          ),
+                                        ),
+                                        shareBody,
+                                        Ui.boxHeight(16),
+                                        CircleIcon(
+                                          HugeIcons.strokeRoundedShare08,
+                                          onTap: () async {
+                                            try {
+                                              final a = await wsController
+                                                  .capturePng(pixelRatio: 6);
+                                              if (a != null) {
+                                                final b =
+                                                    await UtilFunctions.saveToTempFile(
+                                                      a,
+                                                    );
+            
+                                                if (GetPlatform.isMobile) {
+                                                  final x = XFile(b.path);
+            
+                                                  await SharePlus.instance.share(
+                                                    ShareParams(
+                                                      title:
+                                                          "Share Waybill #${delivery.waybill}",
+                                                      previewThumbnail: x,
+                                                      files: [x],
+                                                    ),
+                                                  );
+                                                } else {
+                                                  final x = await saveFileDesktop(
+                                                    b.readAsBytesSync(),
+                                                    "Share${DateTime.now()}.png",
+                                                  );
+                                                  if (x != null) {
+                                                    Ui.showInfo(
+                                                      "Successfully Saved to $x",
+                                                    );
+                                                  }
+                                                }
+                                              }
+                                            } catch (e) {
+                                              print(e);
+                                            }
+                                          },
+                                        ),
+            
+                                        SafeArea(child: Ui.boxHeight(8)),
+                                      ],
+                                    ),
                                   );
                                 },
-                                cities: delivery.undeliveredStops
-                                    .where((e) => e.isNotEmpty)
-                                    .toList(),
                               ),
-                              CustomTextField(
-                                "Add Name",
-                                tecs[0],
-                                label: "Name of receiver",
-                              ),
-                              CustomTextField(
-                                "Add Contact",
-                                tecs[1],
-                                label: "Contact",
-                              ),
-
-                              FieldValue(
-                                "Proof Image",
-                                child: InkWell(
-                                  onTap: () async {
-                                    // img.value="";
-                                    final path = await Get.bottomSheet(
-                                      ChooseCam(),
-                                    );
-                                    //upload image;
-                                    if (path != null) {
-                                      tecs[2].text = path;
-                                      img.value = path;
-                                    }
-                                  },
-                                  child: Obx(() {
-                                    if (img.value.isNotEmpty) {
-                                      return Image.file(
-                                        File(img.value),
-                                        height: 100,
-                                        fit: BoxFit.contain,
+                              backgroundColor: AppColors.white.withOpacity(0.5),
+                              isScrollControlled: true,
+                            );
+                            // final a = await wsController.capturePng(pixelRatio: 6);
+                            // if (a != null) {
+                            //   final b = await UtilFunctions.saveToTempFile(a);
+            
+                            //   final x = XFile(b.path);
+            
+                            //   await SharePlus.instance.share(
+                            //     ShareParams(
+                            //       title: "Share Waybill #${delivery.waybill}",
+                            //       previewThumbnail: x,
+                            //       files: [x],
+                            //     ),
+                            //   );
+                            // }
+                          } catch (e) {
+                            print(e);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+            
+                if (appService.currentUser.value.role == "driver" &&
+                    delivery.isNotDelivered)
+                  SizedBox(
+                    width: Ui.width(context) / 3,
+                    child: AppButton(
+                      onPressed: () {
+                        if (delivery.hasNotStarted) {
+                          Get.bottomSheet(
+                            AppBottomSheet(
+                              "Confirm Start",
+                              "Confirm",
+                              msg: "Are you sure you want to start the trip",
+                              onTap: () async {
+                                final a = await Get.find<DashboardController>()
+                                    .startDelivery(delivery.id);
+                                if (a) {
+                                  Get.back();
+                                  Get.back();
+                                  await Get.find<DashboardController>()
+                                      .getCustomerDelivery();
+                                  Ui.showInfo("Delivery Started Successfully");
+                                } else {
+                                  Ui.showError("Failed to start delivery");
+                                }
+                              },
+                            ),
+                          );
+                        } else {
+                          try {
+                            List<TextEditingController> tecs = List.generate(
+                              3,
+                              (i) => TextEditingController(),
+                            );
+                            RxString img = "".obs;
+                            RxString curStop = "".obs;
+                            Rx<Uint8List> u8 = Uint8List(0).obs;
+                            int curStopIndex = 0;
+                            Get.bottomSheet(
+                              AppBottomSheet(
+                                "Confirm Delivery",
+                                "Confirm",
+                                onTap: () async {
+                                  try {
+                                    if (UtilFunctions.validateTecs(tecs)) {
+                                      if (u8.value.isEmpty &&
+                                          curStop.value.isEmpty) {
+                                        return Ui.showError(
+                                          "Signature and Stop must be filled",
+                                        );
+                                      }
+                                      final c = await UtilFunctions.saveToTempFile(
+                                        u8.value,
+                                      );
+                                      final a =
+                                          await Get.find<DashboardController>()
+                                              .stopDelivery(
+                                                delivery.id,
+                                                curStopIndex,
+                                                tecs[2].text,
+                                                tecs[0].text,
+                                                tecs[1].text,
+                                                c.path,
+                                              );
+                                      if (a) {
+                                        Get.back();
+                                        await Get.find<DashboardController>()
+                                            .getCustomerDelivery();
+                                        Ui.showInfo("Delivery Ended Successfully");
+                                      } else {
+                                        Ui.showInfo("Delivery failed to end");
+                                      }
+                                    } else {
+                                      Ui.showError(
+                                        "All Fields are mandatory to fill",
                                       );
                                     }
-                                    return AppText.thin(
-                                      "Select image >",
-                                      color: AppColors.lightTextColor,
-                                      fontSize: 12,
-                                    );
-                                  }),
-                                ),
+                                  } catch (e) {
+                                    print(e);
+                                  }
+                                },
+                                actions: [
+                                  CustomDropdown.city(
+                                    hint: "Stop",
+                                    label: "Select Stop",
+                                    selectedValue: curStop.value,
+                                    onChanged: (v) {
+                                      curStop.value = v ?? "";
+                                      curStopIndex = delivery.stops.indexOf(
+                                        curStop.value,
+                                      );
+                                    },
+                                    cities: delivery.undeliveredStops
+                                        .where((e) => e.isNotEmpty)
+                                        .toList(),
+                                  ),
+                                  CustomTextField(
+                                    "Add Name",
+                                    tecs[0],
+                                    label: "Name of receiver",
+                                  ),
+                                  CustomTextField(
+                                    "Add Contact",
+                                    tecs[1],
+                                    label: "Contact",
+                                  ),
+            
+                                  FieldValue(
+                                    "Proof Image",
+                                    child: InkWell(
+                                      onTap: () async {
+                                        // img.value="";
+                                        final path = await Get.bottomSheet(
+                                          ChooseCam(),
+                                        );
+                                        //upload image;
+                                        if (path != null) {
+                                          tecs[2].text = path;
+                                          img.value = path;
+                                        }
+                                      },
+                                      child: Obx(() {
+                                        if (img.value.isNotEmpty) {
+                                          return Image.file(
+                                            File(img.value),
+                                            height: 100,
+                                            fit: BoxFit.contain,
+                                          );
+                                        }
+                                        return AppText.thin(
+                                          "Select image >",
+                                          color: AppColors.lightTextColor,
+                                          fontSize: 12,
+                                        );
+                                      }),
+                                    ),
+                                  ),
+                                  FieldValue(
+                                    "Signature",
+                                    child: Expanded(child: SignatureView(u8, "")),
+                                  ),
+                                  // Obx(() {
+                                  //   if (img.value.isNotEmpty) {
+                                  //     return Image.file(
+                                  //       File(img.value),
+                                  //       height: 100,
+                                  //       fit: BoxFit.contain,
+                                  //     );
+                                  //   }
+                                  //   return SizedBox();
+                                  // }),
+                                ],
                               ),
-                              FieldValue(
-                                "Signature",
-                                child: Expanded(child: SignatureView(u8, "")),
-                              ),
-                              // Obx(() {
-                              //   if (img.value.isNotEmpty) {
-                              //     return Image.file(
-                              //       File(img.value),
-                              //       height: 100,
-                              //       fit: BoxFit.contain,
-                              //     );
-                              //   }
-                              //   return SizedBox();
-                              // }),
-                            ],
-                          ),
-                          isScrollControlled: true,
-                        );
-                      } catch (e) {
-                        print(e);
-                      }
-                    }
-                  },
-                  text: delivery.hasNotStarted ? "Start Trip" : "End Trip",
-                ),
-              ),
-            Ui.boxHeight(24),
-          ],
+                              isScrollControlled: true,
+                            );
+                          } catch (e) {
+                            print(e);
+                          }
+                        }
+                      },
+                      text: delivery.hasNotStarted ? "Start Trip" : "End Trip",
+                    ),
+                  ),
+                Ui.boxHeight(24),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -1347,145 +1358,152 @@ class ProfilePage extends StatelessWidget {
     final tecs = List.generate(2, (i) => TextEditingController());
     return SingleChildScrollView(
       padding: EdgeInsets.all(16),
-      child: Column(
-        children: [
-          UserProfilePic(
-            url:
-                "${AppUrls.baseURL}/upload/upload/${appService.currentUser.value.image}",
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: 400
           ),
-          Ui.boxHeight(24),
-          AppContainer("ACCOUNT", [
-            AppContainerItem.text(
-              HugeIcons.strokeRoundedUser,
-              "Full Name",
-              appService.currentUser.value.name ?? "N/A",
-            ),
-            AppContainerItem.text(
-              HugeIcons.strokeRoundedMail01,
-              "Email",
-              appService.currentUser.value.email ?? "N/A",
-            ),
-            AppContainerItem.text(
-              HugeIcons.strokeRoundedUserEdit01,
-              "Account Type",
-              appService.currentUser.value.role.capitalize ?? "",
-            ),
-            AppContainerItem.text(
-              HugeIcons.strokeRoundedSmartPhone01,
-              "Contact",
-              appService.currentUser.value.phone ?? "N/A",
-            ),
-            // if (appService.currentUser.value.role == "driver")
-            //   AppContainerItem.text(
-            //     HugeIcons.strokeRoundedRegister,
-            //     "Truck Reg No",
-            //     appService.currentUser.value.truckno ?? "N/A",
-            //   ),
-            // AppContainerItem.text(HugeIcons.strokeRoundedMail01, "Email", appService.currentUser.value.email ?? "N/A"),
-          ]),
-          Ui.boxHeight(24),
-          AppContainer("CHANGE PIN", [
-            AppContainerItem(
-              HugeIcons.strokeRoundedLockPassword,
-              title: AppText.medium("Reset PIN", fontSize: 14),
-              desc: SizedBox(),
-              onTap: () async {
-                Get.bottomSheet(
-                  AppBottomSheet(
-                    "Reset PIN",
-                    "Reset",
-                    onTap: () async {
-                      if (tecs[0].text == tecs[1].text &&
-                          tecs[0].text.length == 4) {
-                        //change password
-                        final b = await Get.find<DashboardController>().appRepo
-                            .resetPassword(tecs[0].text);
-                        if (b) {
-                          Get.back();
-                          Ui.showInfo("PIn Successfully changed");
-                        }
-                      } else {
-                        Ui.showError("PIN does not match");
-                      }
-                    },
-                    actions: [
-                      CustomTextField(
-                        "****",
-                        tecs[0],
-                        varl: FPL.number,
-                        label: "New PIN",
+          child: Column(
+            children: [
+              UserProfilePic(
+                url:
+                    "${AppUrls.baseURL}/upload/upload/${appService.currentUser.value.image}",
+              ),
+              Ui.boxHeight(24),
+              AppContainer("ACCOUNT", [
+                AppContainerItem.text(
+                  HugeIcons.strokeRoundedUser,
+                  "Full Name",
+                  appService.currentUser.value.name ?? "N/A",
+                ),
+                AppContainerItem.text(
+                  HugeIcons.strokeRoundedMail01,
+                  "Email",
+                  appService.currentUser.value.email ?? "N/A",
+                ),
+                AppContainerItem.text(
+                  HugeIcons.strokeRoundedUserEdit01,
+                  "Account Type",
+                  appService.currentUser.value.role.capitalize ?? "",
+                ),
+                AppContainerItem.text(
+                  HugeIcons.strokeRoundedSmartPhone01,
+                  "Contact",
+                  appService.currentUser.value.phone ?? "N/A",
+                ),
+                // if (appService.currentUser.value.role == "driver")
+                //   AppContainerItem.text(
+                //     HugeIcons.strokeRoundedRegister,
+                //     "Truck Reg No",
+                //     appService.currentUser.value.truckno ?? "N/A",
+                //   ),
+                // AppContainerItem.text(HugeIcons.strokeRoundedMail01, "Email", appService.currentUser.value.email ?? "N/A"),
+              ]),
+              Ui.boxHeight(24),
+              AppContainer("CHANGE PIN", [
+                AppContainerItem(
+                  HugeIcons.strokeRoundedLockPassword,
+                  title: AppText.medium("Reset PIN", fontSize: 14),
+                  desc: SizedBox(),
+                  onTap: () async {
+                    Get.bottomSheet(
+                      AppBottomSheet(
+                        "Reset PIN",
+                        "Reset",
+                        onTap: () async {
+                          if (tecs[0].text == tecs[1].text &&
+                              tecs[0].text.length == 4) {
+                            //change password
+                            final b = await Get.find<DashboardController>().appRepo
+                                .resetPassword(tecs[0].text);
+                            if (b) {
+                              Get.back();
+                              Ui.showInfo("PIn Successfully changed");
+                            }
+                          } else {
+                            Ui.showError("PIN does not match");
+                          }
+                        },
+                        actions: [
+                          CustomTextField(
+                            "****",
+                            tecs[0],
+                            varl: FPL.number,
+                            label: "New PIN",
+                          ),
+                          CustomTextField(
+                            "****",
+                            tecs[1],
+                            varl: FPL.number,
+                            label: "Confirm PIN",
+                          ),
+                        ],
                       ),
-                      CustomTextField(
-                        "****",
-                        tecs[1],
-                        varl: FPL.number,
-                        label: "Confirm PIN",
-                      ),
-                    ],
+                      isScrollControlled: true,
+                    );
+                  },
+                ),
+              ]),
+              Ui.boxHeight(24),
+              AppContainer("ABOUT", [
+                InkWell(
+                  onTap: () async {
+                    await launchUrl(Uri.parse("https://wa.me/+23470672246467"));
+                  },
+                  child: AppContainerItem.icony(
+                    HugeIcons.strokeRoundedHelpCircle,
+                    "Help Center",
                   ),
-                  isScrollControlled: true,
-                );
-              },
-            ),
-          ]),
-          Ui.boxHeight(24),
-          AppContainer("ABOUT", [
-            InkWell(
-              onTap: () async {
-                await launchUrl(Uri.parse("https://wa.me/+23470672246467"));
-              },
-              child: AppContainerItem.icony(
-                HugeIcons.strokeRoundedHelpCircle,
-                "Help Center",
-              ),
-            ),
-            InkWell(
-              onTap: () async {
-                // await launchUrl(Uri.parse("https://wa.me/+23470672246467"));
-              },
-              child: AppContainerItem.icony(
-                HugeIcons.strokeRoundedLeftToRightListBullet,
-                "Terms Of Use",
-              ),
-            ),
-            InkWell(
-              onTap: () async {
-                // await launchUrl(Uri.parse("https://wa.me/+23470672246467"));
-              },
-              child: AppContainerItem.icony(
-                HugeIcons.strokeRoundedMail01,
-                "Privacy Policy",
-              ),
-            ),
-          ]),
-          Ui.boxHeight(24),
-          AppContainer("EXIT", [
-            AppContainerItem(
-              HugeIcons.strokeRoundedDoor01,
-              title: AppText.medium(
-                "Log Out",
-                color: AppColors.primaryColor,
-                fontSize: 14,
-              ),
-              desc: SizedBox(),
-              color: AppColors.primaryColor,
-              onTap: () async {
-                Get.bottomSheet(
-                  AppBottomSheet(
+                ),
+                InkWell(
+                  onTap: () async {
+                    // await launchUrl(Uri.parse("https://wa.me/+23470672246467"));
+                  },
+                  child: AppContainerItem.icony(
+                    HugeIcons.strokeRoundedLeftToRightListBullet,
+                    "Terms Of Use",
+                  ),
+                ),
+                InkWell(
+                  onTap: () async {
+                    // await launchUrl(Uri.parse("https://wa.me/+23470672246467"));
+                  },
+                  child: AppContainerItem.icony(
+                    HugeIcons.strokeRoundedMail01,
+                    "Privacy Policy",
+                  ),
+                ),
+              ]),
+              Ui.boxHeight(24),
+              AppContainer("EXIT", [
+                AppContainerItem(
+                  HugeIcons.strokeRoundedDoor01,
+                  title: AppText.medium(
                     "Log Out",
-                    "Confirm",
-                    msg: "Are you sure you want to log out ?",
-                    onTap: () async {
-                      await appService.logout();
-                      Get.offAllNamed(AppRoutes.auth);
-                    },
+                    color: AppColors.primaryColor,
+                    fontSize: 14,
                   ),
-                );
-              },
-            ),
-          ]),
-          Ui.boxHeight(72),
-        ],
+                  desc: SizedBox(),
+                  color: AppColors.primaryColor,
+                  onTap: () async {
+                    Get.bottomSheet(
+                      AppBottomSheet(
+                        "Log Out",
+                        "Confirm",
+                        msg: "Are you sure you want to log out ?",
+                        onTap: () async {
+                          await appService.logout();
+                          Get.offAllNamed(AppRoutes.auth);
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ]),
+              Ui.boxHeight(72),
+            ],
+          ),
+        ),
       ),
     );
   }

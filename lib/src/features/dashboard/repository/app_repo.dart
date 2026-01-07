@@ -417,6 +417,9 @@ class AppRepo extends GetxController {
     int? driverid,
   }) async {
     const uri = "${AppUrls.utilsURL}/vehicle";
+    if (image != null) {
+      image = await uploadPhoto(image);
+    }
 
     final res = await apiService.post(
       uri,
@@ -444,6 +447,9 @@ class AppRepo extends GetxController {
     int? driverid,
   }) async {
     final uri = "${AppUrls.utilsURL}/vehicle/$id";
+    if (image != null) {
+      image = await uploadPhoto(image);
+    }
 
     final res = await apiService.patch(
       uri,

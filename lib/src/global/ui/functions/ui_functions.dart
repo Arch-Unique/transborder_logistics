@@ -60,7 +60,7 @@ abstract class Ui {
         borderColor: Color(0xFF00d743),
         borderRadius: 12,
         padding: EdgeInsets.all(12),
-
+maxWidth: 500,
         snackPosition: SnackPosition.TOP,
         margin: EdgeInsets.all(16),
         animationDuration: Duration(milliseconds: 1500),
@@ -128,6 +128,7 @@ abstract class Ui {
         borderRadius: 12,
         padding: EdgeInsets.all(12),
 
+maxWidth: 500,
         snackPosition: SnackPosition.TOP,
         margin: EdgeInsets.all(16),
         animationDuration: Duration(milliseconds: 1500),

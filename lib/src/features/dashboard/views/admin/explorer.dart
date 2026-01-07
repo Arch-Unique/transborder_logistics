@@ -111,7 +111,6 @@ class _AdminExplorerState extends State<AdminExplorer> {
               ],
             ),
             body: Obx(() {
-              print("hello");
               if (controller.isLoading.value) {
                 return Center(child: CircularProgressIndicator());
               }
@@ -132,7 +131,20 @@ class _AdminExplorerState extends State<AdminExplorer> {
   }
 
   desktopVersion() {
+    Rx<dynamic> curObj = null.obs;
     return Scaffold(
+      drawer: Container(
+        width: 400,
+        height: Ui.height(context),
+        color: AppColors.white,
+        child: Obx(() {
+          return AddResource(
+            controller.curResourceHistory.value.title,
+            obj: curObj.value,
+          );
+        }),
+      ),
+      key: gkey,
       body: Row(
         children: [
           SizedBox(width: Ui.width(context) / 5, child: AppDrawer()),
@@ -149,6 +161,14 @@ class _AdminExplorerState extends State<AdminExplorer> {
                       filters: controller.curResourceHistory.value.filters,
                       onFilter: controller.curResourceHistory.value.onFilter,
                       hasDrawer: false,
+                      onAdd: () {
+                        curObj = null.obs;
+                        gkey.currentState?.openDrawer();
+                      },
+                      onEdit: (v) {
+                        curObj = (v as Slugger).obs;
+                        gkey.currentState?.openDrawer();
+                      },
                     );
             }),
           ),

@@ -68,8 +68,10 @@ class AppDrawer extends StatelessWidget {
                             controller.currentModel = StateLocation().obs;
                             rh = ResourceHistory<StateLocation>(
                               items: List.from(
-                                States.states.map((e) {
+                                States.states.indexed.map((t) {
+                                  final (index, e) = t;
                                   return StateLocation(
+                                    id: index + 1,
                                     name: e,
                                     isActive: e == "Kano" || e == "Kaduna",
                                   );

@@ -20,11 +20,13 @@ import 'src/src_barrel.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  if (GetPlatform.isMobile) {
   await fcmFunctions.initApp();
   await fcmFunctions.iosWebPermission();
   Get.put(DashboardController());
   fcmFunctions.listenToNotif(message);
   print("Handling a background message: ${message.messageId}");
+}
 }
 
 void main() async {
