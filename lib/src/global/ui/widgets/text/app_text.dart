@@ -129,7 +129,7 @@ class AppText extends StatelessWidget {
   ///color: #FFFFFF
   static AppText button(
     String text, {
-    Color color = AppColors.white,
+    Color? color,
     double fontSize = 16,
     TextAlign? alignment,
     TextDecoration? decoration,
@@ -140,7 +140,7 @@ class AppText extends StatelessWidget {
         weight: FontWeight.w500,
         decoration: decoration,
         alignment: alignment,
-        color: color,
+        color: color ?? AppColors.white,
       );
 
   @override

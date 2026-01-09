@@ -144,10 +144,21 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
                 Expanded(
                   flex: 1,
-                  child: Image.asset(
-                    Assets.onb,
-                    height: Ui.height(context),
-                    fit: BoxFit.cover,
+                  child: Stack(
+                    alignment: AlignmentDirectional.center,
+                    children: [
+                      Image.asset(
+                        Assets.onb,
+                        height: Ui.height(context),
+                        width: Ui.width( context)/3,
+                        fit: BoxFit.cover,
+                      ),
+                      Image.asset(
+                        Assets.truck,
+                        width: Ui.width( context)/3,
+                        fit: BoxFit.cover,
+                      ),
+                    ],
                   ),
                 ),
               ],

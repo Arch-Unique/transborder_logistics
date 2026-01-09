@@ -57,6 +57,30 @@ abstract class UtilFunctions {
     return "${a.toCurrency()} - ${b.toCurrency()}";
   }
 
+  static bool isFile(String str) {
+  if (str.isEmpty) {
+    return false;
+  }
+  
+  // Unix-like (Linux, Android, iOS, macOS)
+  if (str.startsWith('/')) {
+    return true;
+  }
+  
+  // Windows drive letter (C:\ or C:/)
+  if (RegExp(r'^[a-zA-Z]:[\\\/]').hasMatch(str)) {
+    return true;
+  }
+  
+  // Windows UNC path (\\server\ or //server/)
+  if (RegExp(r'^[\\\/]{2}').hasMatch(str)) {
+    return true;
+  }
+  
+  return false;
+}
+
+
   static String formatPhone(String phone) {
     switch (phone[0]) {
       case '0':

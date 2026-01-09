@@ -14,15 +14,26 @@ class AppService extends GetxService {
   Rx<User> currentUser = User().obs;
   RxBool hasOpenedOnboarding = false.obs;
   RxBool isLoggedIn = false.obs;
+  RxBool isDarkMode = false.obs;
   final apiService = Get.find<DioApiService>();
   final prefService = Get.find<MyPrefService>();
 
   Future<void> initUserConfig() async {
-    await _hasOpened();
-    await _setLoginStatus();
-    if (isLoggedIn.value) {
-      await _setCurrentUser();
+    try {
+      await _hasOpened();
+      await _setLoginStatus();
+      if (isLoggedIn.value) {
+        await _setCurrentUser();
+      }
+      isDarkMode.value = prefService.get(MyPrefs.mpDarkMode) ?? false;
+    } catch (e) {
+      isLoggedIn.value = false;
     }
+  }
+
+  toggleDarkMode() async {
+    isDarkMode.value = !isDarkMode.value;
+    await prefService.save(MyPrefs.mpDarkMode, isDarkMode.value);
   }
 
   Future<void> loginUser(String jwt, String refreshJwt) async {

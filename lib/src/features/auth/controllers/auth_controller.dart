@@ -25,10 +25,11 @@ class AuthController {
         await _onLogin();
 
         Get.offAllNamed(AppRoutes.dashboard);
+        clearTextControllers();
       } catch (e) {
         Ui.showError(e.toString());
       }
-      clearTextControllers();
+      
     } else {
       errorText.value = ss.first.errorText ?? "Please fill all fields";
     }

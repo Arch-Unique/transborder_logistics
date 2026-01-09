@@ -8,10 +8,11 @@ AppBar backAppBar(
     {String? title,
     Widget? titleWidget,
     Widget? leading,
-    Color color = AppColors.textColor,
+    Color? color,
     Color bgColor = AppColors.transparent,
     bool hasBack = true,
     List<Widget>? trailing}) {
+      color = color ?? AppColors.textColor;
   return AppBar(
       toolbarHeight: 72,
       backgroundColor: bgColor,
@@ -32,7 +33,7 @@ AppBar backAppBar(
                   },
                   icon: AppIcon(
                     HugeIcons.strokeRoundedArrowLeft02,
-                    color: color,
+                    color: color!,
                   ));
             })
           : leading ??SizedBox());

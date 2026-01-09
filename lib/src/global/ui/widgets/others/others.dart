@@ -103,7 +103,7 @@ class UniversalImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return url.startsWith("/")
+    return UtilFunctions.isFile(url)
         ? Image.file(
             File(url),
             height: height,
@@ -657,13 +657,16 @@ Widget badgeBox(
   bool shdShow = true,
 }) {
   return Stack(
+    clipBehavior: Clip.none,
     children: [
       child,
       shdShow
           ? Positioned.fill(
+            right: -4,
+            top: -4,
               child: Ui.align(
                 align: a,
-                child: GestureDetector(onTap: onTap, child: badge()),
+                child: InkWell(onTap: onTap, child: badge(icon: Icons.close)),
               ),
             )
           : SizedBox(),
@@ -673,7 +676,7 @@ Widget badgeBox(
 
 Widget badge({
   Color color = AppColors.primaryColor,
-  double size = 50,
+  double size = 24,
   IconData? icon,
 }) {
   return Container(
@@ -703,7 +706,7 @@ class _ChooseCamState extends State<ChooseCam> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(16),
@@ -938,7 +941,7 @@ class UserProfilePic extends StatelessWidget {
                       );
                     },
                     errorWidget: (_, __, ___) {
-                      return const Center(
+                      return Center(
                         child: AppIcon(
                           HugeIcons.strokeRoundedUser,
                           size: 90,
@@ -956,41 +959,43 @@ class UserProfilePic extends StatelessWidget {
 }
 
 class SvgIcon extends StatelessWidget {
-  const SvgIcon(
+  SvgIcon(
     this.asset, {
     this.size = 24,
-    this.color = AppColors.textColor,
+    this.color,
     super.key,
   });
   final String asset;
-  final Color color;
+  Color? color;
   final double size;
 
   @override
   Widget build(BuildContext context) {
+    color = color ?? AppColors.textColor;
     return SvgPicture.asset(
       asset,
       height: size,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+      colorFilter: ColorFilter.mode(color!, BlendMode.srcIn),
     );
   }
 }
 
 class AppIcon extends StatelessWidget {
-  const AppIcon(
+  AppIcon(
     this.asset, {
     this.size = 24,
-    this.color = AppColors.lightTextColor,
+    this.color,
     this.fit,
     super.key,
   });
   final dynamic asset;
-  final Color color;
+  Color? color;
   final double size;
   final BoxFit? fit;
 
   @override
   Widget build(BuildContext context) {
+    color = color ?? AppColors.lightTextColor;
     return asset is String
         ? asset.endsWith(".svg")
               ? SvgIcon(asset, size: size, color: color)

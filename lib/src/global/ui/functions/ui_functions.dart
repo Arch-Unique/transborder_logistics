@@ -48,7 +48,7 @@ abstract class Ui {
   static BorderRadius bottomRadius(double radius) =>
       BorderRadius.vertical(bottom: Radius.circular(radius));
 
-  static BorderSide simpleBorderSide({Color color = AppColors.grey}) =>
+  static BorderSide simpleBorderSide({Color color = const Color(0xFF9E9E9E)}) =>
       BorderSide(color: color, width: 1);
 
   static showInfo(String message, {String title = "Info"}) {
@@ -246,7 +246,7 @@ maxWidth: 500,
   ///decoration for text fields without a border
   static InputDecoration denseInputDecoration({
     EdgeInsetsGeometry? contentPadding,
-    Color fillColor = AppColors.grey,
+    Color fillColor = const Color(0xFF9E9E9E),
   }) => InputDecoration(
     border: Ui.denseOutlinedInputBorder(),
     contentPadding: contentPadding,
@@ -267,7 +267,7 @@ maxWidth: 500,
         borderSide: const BorderSide(color: Colors.transparent, width: 0),
       );
 
-  static TextStyle simpleInputStyle() => const TextStyle(
+  static TextStyle simpleInputStyle() => TextStyle(
     color: AppColors.black,
     fontSize: 15,
     fontWeight: FontWeight.w500,

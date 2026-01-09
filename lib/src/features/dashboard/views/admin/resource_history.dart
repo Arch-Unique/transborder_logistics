@@ -85,10 +85,13 @@ class _ResourceHistoryPageState<T extends Slugger>
     final body = Column(
       children: [
         if (widget.onFilter == null && widget.filters.isEmpty)
-          Align(child: Padding(
-            padding: const EdgeInsets.only(top: 16,left: 16,bottom: 8),
-            child: AppText.bold("Ongoing Trips"),
-          ),alignment: Alignment.centerLeft,),
+          Align(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 16, left: 16, bottom: 8),
+              child: AppText.bold("Ongoing Trips"),
+            ),
+            alignment: Alignment.centerLeft,
+          ),
         CurvedContainer(
           border: Border.all(color: AppColors.borderColor),
           color: Color(0xfff7f7f7),
@@ -217,6 +220,7 @@ class ResourceHistoryDesktopPage<T extends Slugger> extends StatefulWidget {
     this.onInit,
     this.onAdd,
     this.onEdit,
+    this.onDelete,
     super.key,
     this.hasDrawer = false,
   });
@@ -227,6 +231,7 @@ class ResourceHistoryDesktopPage<T extends Slugger> extends StatefulWidget {
   final Function(RxList<T>, String)? onFilter;
   final Function()? onInit, onAdd;
   final Function(dynamic)? onEdit;
+  final Function(dynamic)? onDelete;
 
   @override
   State<ResourceHistoryDesktopPage<T>> createState() =>
@@ -243,6 +248,21 @@ class _ResourceHistoryDesktopPageState<T extends Slugger>
   @override
   void initState() {
     allItems.value = List.from(widget.items);
+    controller.curFilters.listen((v) {
+      if (v.isEmpty) {
+        curFilter.value = "All";
+        allItems.value = List.from(widget.items);
+      } else {
+        allItems.value = widget.items.where((test) {
+          final tg = test as Slugger;
+          return v.every(
+            (test) => test.any(
+              (test2) => tg.slug.toLowerCase().contains(test2.toLowerCase()),
+            ),
+          );
+        }).toList();
+      }
+    });
     super.initState();
   }
 
@@ -251,6 +271,7 @@ class _ResourceHistoryDesktopPageState<T extends Slugger>
     if (oldWidget.title != widget.title || oldWidget.items != widget.items) {
       allItems.value = List.from(widget.items);
       curFilter.value = "All";
+      controller.curFilters.value = [];
       tec.clear();
     }
     super.didUpdateWidget(oldWidget);
@@ -266,7 +287,7 @@ class _ResourceHistoryDesktopPageState<T extends Slugger>
           //App Header
           AppDivider(),
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 40),
+            padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
             child: detailHeader(),
           ),
           AppDivider(),
@@ -331,24 +352,46 @@ class _ResourceHistoryDesktopPageState<T extends Slugger>
             prefix: HugeIcons.strokeRoundedSearch02,
           ),
         ),
-        Ui.boxWidth(12),
-        CurvedContainer(
-          onPressed: () {},
-          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 24),
-          border: Border.all(color: AppColors.borderColor),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AppIcon(HugeIcons.strokeRoundedFilterHorizontal, size: 16),
-              Ui.boxWidth(8),
-              AppText.medium("Filter", fontSize: 14),
-            ],
-          ),
-        ),
+        if (widget.title != "Location")
+          Obx(() {
+            return badgeBox(
+              CurvedContainer(
+                onPressed: () {
+                  if (widget.items.isEmpty) {
+                    return;
+                  }
+
+                  Get.bottomSheet(
+                    FilterResource(widget.title, obj: widget.items),
+                    isScrollControlled: true,
+                  );
+                },
+                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 24),
+                border: Border.all(color: AppColors.borderColor),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AppIcon(HugeIcons.strokeRoundedFilterHorizontal, size: 16),
+                    Ui.boxWidth(8),
+                    AppText.medium("Filter", fontSize: 14),
+                  ],
+                ),
+              ),
+              onTap: () {
+                curFilter.value = "All";
+                allItems.value = List.from(widget.items);
+
+                controller.curFilters.value = [];
+                return;
+              },
+              a: Alignment.topRight,
+              shdShow: controller.curFilters.isNotEmpty,
+            );
+          }),
         Ui.boxWidth(12),
         CurvedContainer(
           onPressed: () async {
-            await controller.exportData();
+            await controller.exportData(items: List.from(allItems));
           },
           padding: EdgeInsets.symmetric(vertical: 10, horizontal: 24),
           border: Border.all(color: AppColors.borderColor),
@@ -362,6 +405,7 @@ class _ResourceHistoryDesktopPageState<T extends Slugger>
           ),
         ),
         Ui.boxWidth(12),
+        if (widget.title != "Location")
         CurvedContainer(
           onPressed: () {
             if (widget.onAdd != null) {
@@ -435,8 +479,13 @@ class _ResourceHistoryDesktopPageState<T extends Slugger>
                 ),
 
                 Ui.boxWidth(12),
+                if(controller.appRepo.appService.currentUser.value.isSuperAdmin)
                 CurvedContainer(
-                  onPressed: () {},
+                  onPressed: () {
+                    if (widget.onDelete != null) {
+                      widget.onDelete!(controller.currentModel.value);
+                    }
+                  },
                   padding: EdgeInsets.symmetric(vertical: 10, horizontal: 24),
                   color: AppColors.primaryColor,
                   child: Row(
@@ -617,6 +666,10 @@ class ResourceHistoryTable<T extends Slugger> extends StatelessWidget {
     List<String> title = allItems.isEmpty
         ? []
         : (allItems[0] as Slugger).tableTitle;
+    if (title.isEmpty) {
+      return Center(child: AppText.thin("No Record Found !!!"));
+    }
+
     title[0] = title[0].toLowerCase() == "id" ? "$rtitle ID" : title[0];
     if (rtitle == "Drivers") {
       title[2] = "Status";

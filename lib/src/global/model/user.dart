@@ -32,6 +32,7 @@ class User implements Slugger {
   });
 
   bool get isAdmin => role == "admin" || role == "operator";
+  bool get isSuperAdmin => role == "admin";
   bool get isStaff => role == "admin" || role == "user";
 
   @override
@@ -132,7 +133,7 @@ class Location implements Slugger {
   }
 
   @override
-  String get slug => desc;
+  String get slug => "$desc,${isActive ? "Active" : "Inactive"}";
 
   @override
   String get rawId => "#$id";
@@ -254,7 +255,7 @@ class Vehicle implements Slugger {
   }
 
   @override
-  String get slug => desc;
+  String get slug => "$desc,${isActive ? "Active" : "Inactive"},${driver ?? "N/A"}";
 }
 
 class Delivery implements Slugger {
@@ -351,7 +352,7 @@ class Delivery implements Slugger {
 
   @override
   String get slug =>
-      "$waybill,$driver,$owner,$pickup,${stops.toString()},$truckno,${items.toString()}";
+      "$waybill,$driver,$owner,$pickup,${stops.toString()},$truckno,${items.toString()},$status";
 
   Delivery({
     this.id = 0,

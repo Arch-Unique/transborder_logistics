@@ -29,105 +29,108 @@ class _AdminExplorerState extends State<AdminExplorer> {
 
   @override
   Widget build(BuildContext context) {
-    return Ui.isBigScreen(context)
-        ? desktopVersion()
-        : Scaffold(
-            key: gkey,
-            drawer: AppDrawer(),
-            appBar: backAppBar(
-              titleWidget: Obx(() {
-                return AppText.medium(
-                  controller.curResourceHistory.value.title,
-                  fontSize: 16,
-                  color: AppColors.textColor,
-                );
-              }),
-              hasBack: false,
-              leading: InkWell(
-                onTap: () {
-                  //open drawer
-                  gkey.currentState?.openDrawer();
-                },
-                child: Padding(
-                  padding: EdgeInsets.only(left: 8.0, right: 8),
-                  child: AppIcon(
-                    HugeIcons.strokeRoundedMenu02,
-                    color: AppColors.darkTextColor,
+    return Obx(() {
+      print(controller.appRepo.appService.isDarkMode.value);
+      return Ui.isBigScreen(context)
+          ? desktopVersion()
+          : Scaffold(
+              key: gkey,
+              drawer: AppDrawer(),
+              appBar: backAppBar(
+                titleWidget: Obx(() {
+                  return AppText.medium(
+                    controller.curResourceHistory.value.title,
+                    fontSize: 16,
+                    color: AppColors.textColor,
+                  );
+                }),
+                hasBack: false,
+                leading: InkWell(
+                  onTap: () {
+                    //open drawer
+                    gkey.currentState?.openDrawer();
+                  },
+                  child: Padding(
+                    padding: EdgeInsets.only(left: 8.0, right: 8),
+                    child: AppIcon(
+                      HugeIcons.strokeRoundedMenu02,
+                      color: AppColors.darkTextColor,
+                    ),
                   ),
                 ),
-              ),
-              trailing: [
-                Obx(() {
-                  return controller.curResourceHistory.value.title ==
-                              "Dashboard" ||
-                          controller.curResourceHistory.value.title ==
-                              "Location"
-                      ? SizedBox()
-                      : InkWell(
-                          onTap: () async {
-                            await controller.exportData();
-                          },
-                          child: Padding(
-                            padding: EdgeInsets.only(left: 8.0, right: 16),
-                            child: AppIcon(
-                              HugeIcons.strokeRoundedDownload01,
-                              color: AppColors.primaryColor,
-                            ),
-                          ),
-                        );
-                }),
-                Obx(() {
-                  return controller.curResourceHistory.value.title ==
-                              "Dashboard" ||
-                          controller.curResourceHistory.value.title ==
-                              "Location"
-                      ? InkWell(
-                          child: Padding(
-                            padding: const EdgeInsets.only(right: 16),
-                            child: AppIcon(HugeIcons.strokeRoundedQrCode),
-                          ),
-                          onTap: () {
-                            Get.to(ScannerPage());
-                          },
-                        )
-                      : InkWell(
-                          onTap: () {
-                            Get.bottomSheet(
-                              AddResource(
-                                controller.curResourceHistory.value.title,
+                trailing: [
+                  Obx(() {
+                    return controller.curResourceHistory.value.title ==
+                                "Dashboard" ||
+                            controller.curResourceHistory.value.title ==
+                                "Location"
+                        ? SizedBox()
+                        : InkWell(
+                            onTap: () async {
+                              await controller.exportData();
+                            },
+                            child: Padding(
+                              padding: EdgeInsets.only(left: 8.0, right: 16),
+                              child: AppIcon(
+                                HugeIcons.strokeRoundedDownload01,
+                                color: AppColors.primaryColor,
                               ),
-                              isScrollControlled: true,
-                            );
-                          },
-                          child: Padding(
-                            padding: EdgeInsets.only(left: 8.0, right: 16),
-                            child: AppIcon(
-                              HugeIcons.strokeRoundedAddCircle,
-                              color: AppColors.primaryColor,
                             ),
-                          ),
-                        );
-                }),
-              ],
-            ),
-            body: Obx(() {
-              if (controller.isLoading.value) {
-                return Center(child: CircularProgressIndicator());
-              }
-              final title = controller.curResourceHistory.value.title;
+                          );
+                  }),
+                  Obx(() {
+                    return controller.curResourceHistory.value.title ==
+                                "Dashboard" ||
+                            controller.curResourceHistory.value.title ==
+                                "Location"
+                        ? InkWell(
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 16),
+                              child: AppIcon(HugeIcons.strokeRoundedQrCode),
+                            ),
+                            onTap: () {
+                              Get.to(ScannerPage());
+                            },
+                          )
+                        : InkWell(
+                            onTap: () {
+                              Get.bottomSheet(
+                                AddResource(
+                                  controller.curResourceHistory.value.title,
+                                ),
+                                isScrollControlled: true,
+                              );
+                            },
+                            child: Padding(
+                              padding: EdgeInsets.only(left: 8.0, right: 16),
+                              child: AppIcon(
+                                HugeIcons.strokeRoundedAddCircle,
+                                color: AppColors.primaryColor,
+                              ),
+                            ),
+                          );
+                  }),
+                ],
+              ),
+              body: Obx(() {
+                if (controller.isLoading.value) {
+                  return Center(child: CircularProgressIndicator());
+                }
+                final title = controller.curResourceHistory.value.title;
 
-              return title == "Dashboard"
-                  ? DashboardScreen()
-                  : ResourceHistoryPage(
-                      title,
-                      controller.curResourceHistory.value.items,
-                      filters: controller.curResourceHistory.value.filters,
-                      onFilter: controller.curResourceHistory.value.onFilter,
-                      hasDrawer: true,
-                      key: ValueKey(title),
-                    );
-            }),
-          );
+                return title == "Dashboard"
+                    ? DashboardScreen()
+                    : ResourceHistoryPage(
+                        title,
+                        controller.curResourceHistory.value.items,
+                        filters: controller.curResourceHistory.value.filters,
+                        onFilter: controller.curResourceHistory.value.onFilter,
+                        hasDrawer: true,
+                        key: ValueKey(title),
+                      );
+              }),
+            );
+    });
   }
 
   desktopVersion() {
@@ -168,6 +171,74 @@ class _AdminExplorerState extends State<AdminExplorer> {
                       onEdit: (v) {
                         curObj = (v as Slugger).obs;
                         gkey.currentState?.openDrawer();
+                      },
+                      onDelete: (v) {
+                        curObj = (v as Slugger).obs;
+                        Get.bottomSheet(
+                          AppBottomSheet(
+                            "Delete Record",
+                            "Delete",
+                            onTap: () async {
+                              try {
+                                bool success = false;
+                                if (controller.curResourceHistory.value.title ==
+                                    "Vehicles") {
+                                  success = await controller.deleteVehicle(
+                                    (v as Vehicle).id,
+                                  );
+                                } else if (controller
+                                        .curResourceHistory
+                                        .value
+                                        .title ==
+                                    "Trips") {
+                                  success = await controller.deleteDelivery(
+                                    (v as Delivery).id,
+                                  );
+                                } else if (controller
+                                            .curResourceHistory
+                                            .value
+                                            .title ==
+                                        "Users" ||
+                                    controller.curResourceHistory.value.title ==
+                                        "Drivers") {
+                                  success = await controller.deleteUser(
+                                    (v as User).id,
+                                  );
+                                } else if (controller
+                                            .curResourceHistory
+                                            .value
+                                            .title ==
+                                        "Facilities" ||
+                                    controller.curResourceHistory.value.title ==
+                                        "Loading Points") {
+                                  success = await controller.deleteLocation(
+                                    (v as Location).id,
+                                  );
+                                }
+                                if (success) {
+                                  Ui.showInfo("Record deleted successfully");
+                                  await controller.initApp();
+                                  controller.refreshResource();
+
+                                  Get.back();
+                                  controller.currentModelIndex.value = 0;
+                                } else {
+                                  Ui.showError("Failed to delete record");
+                                }
+                              } catch (e) {
+                                Ui.showError(e.toString());
+                              }
+                            },
+                            actions: [
+                              AppText.thin(
+                                "Are you sure you want to delete this record ? \nThis action is irreversible.",
+                                fontSize: 14,
+                                alignment: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                          isScrollControlled: true,
+                        );
                       },
                     );
             }),

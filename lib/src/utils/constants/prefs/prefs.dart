@@ -16,6 +16,7 @@ class MyPrefs {
   static const String mpCustomerLoc = "mpCustomerLoc";
   static const String mpCustomerName = "mpCustomerName";
     static const String mpPhone = "mpLoggedInPhone";
+  static const String mpDarkMode = "mpDarkMode";
 
   // static void listenToStorageChanges(String k, void Function(dynamic) v) {
   //   _prefs.listenKey(k, (j) {

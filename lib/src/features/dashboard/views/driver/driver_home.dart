@@ -47,6 +47,7 @@ class _DriverHomePageState extends State<DriverHomePage> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      print(controller.appRepo.appService.isDarkMode.value);
       if (controller.undeliveredDeliveries.isEmpty) {
         return Center(
           child: AppText.thin("No deliveries assigned yet", fontSize: 13),

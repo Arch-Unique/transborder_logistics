@@ -13,6 +13,7 @@ import 'package:transborder_logistics/src/features/dashboard/controllers/dashboa
 // import 'package:firebase_core/firebase_core.dart';
 // import 'firebase_options.dart';
 
+import 'src/global/services/app_service.dart';
 import 'src/global/services/dependencies.dart';
 import 'src/global/views/pages.dart';
 import 'src/src_barrel.dart';
@@ -66,28 +67,38 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
-      builder: (context, widget) {
-        Widget error = const Text('...there was an error...');
-        if (widget is Scaffold || widget is Navigator) {
-          error = Scaffold(
-            body: Center(child: error),
-          );
-        }
-
-        ErrorWidget.builder = (errorDetails) => error;
-        if (widget != null) {
-          return widget;
-        }
-        throw FlutterError('...widget is null...');
-      },
-      initialRoute: AppRoutes.home,
-      title: 'Transborder Logistics',
-      getPages: AppPages.getPages,
-      theme: ThemeData(
-          scaffoldBackgroundColor: AppColors.primaryColorBackground,
-          fontFamily: Assets.appFontFamily,
-          primarySwatch: AppColors.primaryColor),
+    final controller = Get.find<AppService>();
+    
+    return Obx(
+       () {
+        print(controller.isDarkMode.value);
+        return GetMaterialApp(
+          builder: (context, widget) {
+            Widget error = const Text('...there was an error...');
+            if (widget is Scaffold || widget is Navigator) {
+              error = Scaffold(
+                body: Center(child: error),
+              );
+            }
+        
+            ErrorWidget.builder = (errorDetails) => error;
+            if (widget != null) {
+              return widget;
+            }
+            throw FlutterError('...widget is null...');
+          },
+          initialRoute: AppRoutes.home,
+          title: 'Transborder Logistics',
+          getPages: AppPages.getPages,
+          theme: ThemeData(
+              scaffoldBackgroundColor: AppColors.primaryColorBackground,
+              fontFamily: Assets.appFontFamily,
+              primarySwatch: AppColors.primaryColor,
+              brightness:
+                  controller.isDarkMode.value ? Brightness.dark : Brightness.light,
+              ),
+        );
+      }
     );
   }
 }

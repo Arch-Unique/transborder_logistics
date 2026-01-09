@@ -149,7 +149,7 @@ class AppRepo extends GetxController {
         "role": role,
         "email": email,
         "truckno": truckno,
-        if (image != null) "image": image
+        if (image != null || (image?.isEmpty ?? false)) "image": image
       },
     );
     return res.statusCode!.isSuccess();
@@ -175,7 +175,7 @@ class AppRepo extends GetxController {
         "role": role,
         "truckno": truckno,
         "email": email,
-        if (image != null) "image": image
+        if (image != null || (image?.isEmpty ?? false)) "image": image
       },
     );
     return res.statusCode!.isSuccess();
@@ -417,7 +417,7 @@ class AppRepo extends GetxController {
     int? driverid,
   }) async {
     const uri = "${AppUrls.utilsURL}/vehicle";
-    if (image != null) {
+    if (image != null && image.isNotEmpty) {
       image = await uploadPhoto(image);
     }
 
@@ -429,7 +429,7 @@ class AppRepo extends GetxController {
         "type": type,
         "isactive": isActive,
 
-        if (image != null) "image": image,
+        if (image != null || (image?.isEmpty ?? false)) "image": image,
         if (driver != null) "driver": driver,
         if (driverid != null) "driverid": driverid,
       },
@@ -447,7 +447,7 @@ class AppRepo extends GetxController {
     int? driverid,
   }) async {
     final uri = "${AppUrls.utilsURL}/vehicle/$id";
-    if (image != null) {
+    if (image != null && image.isNotEmpty && UtilFunctions.isFile(image)) {
       image = await uploadPhoto(image);
     }
 
@@ -459,9 +459,11 @@ class AppRepo extends GetxController {
         "type": type,
         "isactive": isActive,
 
-        if (image != null) "image": image,
-        if (driver != null) "driver": driver,
-        if (driverid != null) "driverid": driverid,
+        if (image != null || (image?.isEmpty ?? false)) "image": image,
+        // if (driver != null) 
+        "driver": driver,
+        // if (driverid != null) 
+        "driverid": driverid,
       },
     );
     return res.statusCode!.isSuccess();

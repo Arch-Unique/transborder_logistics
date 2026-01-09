@@ -9,11 +9,12 @@ class CustomDropdown<T> extends StatelessWidget {
   final T? value;
   final List<DropdownMenuItem<T>> items;
   final Function(T?) onChanged;
-  final Color iconColor;
+  Color? iconColor;
   final double fontSize;
   final FontWeight fontWeight;
   final bool hasBottomPadding;
   final bool isEnabled;
+  final bool isMultiSelect;
   Rx<T?> selectedValue = Rx<T?>(null);
 
   CustomDropdown({
@@ -23,11 +24,12 @@ class CustomDropdown<T> extends StatelessWidget {
     required this.onChanged,
     this.value,
     this.label = "",
-    this.iconColor = AppColors.textColor,
+    this.iconColor,
     this.fontSize = 14,
     this.fontWeight = FontWeight.w300,
     this.hasBottomPadding = true,
     this.isEnabled = true,
+    this.isMultiSelect = false,
   });
 
   String _getItemText(DropdownMenuItem<T> item) {
@@ -35,6 +37,28 @@ class CustomDropdown<T> extends StatelessWidget {
       return (item.child as Text).data ?? '';
     }
     return item.value.toString();
+  }
+
+  bool _isListType() {
+    return value is List || value is RxList;
+  }
+
+  String _getDisplayText() {
+    if (selectedValue.value == null) return "";
+    
+    if (_isListType()) {
+      final list = selectedValue.value is RxList ? (selectedValue.value as RxList).toList() : selectedValue.value as List;
+      
+      if (list.isEmpty) return "";
+      
+      return list.join(", ");
+    }
+    
+    final selectedItem = items.firstWhere(
+      (item) => item.value == value,
+      orElse: () => items.first,
+    );
+    return _getItemText(selectedItem);
   }
 
   void _showSearchBottomSheet(BuildContext context) {
@@ -56,6 +80,7 @@ class CustomDropdown<T> extends StatelessWidget {
         fontSize: fontSize,
         fontWeight: fontWeight,
         getItemText: _getItemText,
+        isMultiSelect: _isListType() || isMultiSelect,
       ),
     );
   }
@@ -63,8 +88,10 @@ class CustomDropdown<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final borderColor = AppColors.borderColor;
-    final useBottomSheet = items.length > 10;
+    final useBottomSheet = items.length > 10 || _isListType() || isMultiSelect;
+    iconColor = iconColor ?? borderColor;
     selectedValue.value = value;
+    
     return SizedBox(
       width: Ui.width(context) - 32,
       child: Row(
@@ -88,21 +115,13 @@ class CustomDropdown<T> extends StatelessWidget {
                             child: Obx(() {
                               print(selectedValue.value);
                               return Text(
-                                selectedValue.value == null
-                                    ? ""
-                                    : _getItemText(
-                                        items.firstWhere(
-                                          (item) =>
-                                              item.value == selectedValue.value,
-                                        ),
-                                      ),
+                                _getDisplayText(),
                                 textAlign: TextAlign.right,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   fontSize: fontSize,
                                   fontWeight: fontWeight,
-
                                   color: AppColors.textColor,
                                 ),
                               );
@@ -110,7 +129,7 @@ class CustomDropdown<T> extends StatelessWidget {
                           ),
                           AppIcon(
                             Icons.keyboard_arrow_down_rounded,
-                            color: iconColor,
+                            color: iconColor!,
                             size: 16,
                           ),
                         ],
@@ -120,20 +139,17 @@ class CustomDropdown<T> extends StatelessWidget {
                 : DropdownButtonFormField<T>(
                     value: value,
                     isExpanded: true,
-
                     isDense: true,
                     icon: AppIcon(
                       Icons.keyboard_arrow_down_rounded,
-                      color: iconColor,
+                      color: iconColor!,
                       size: 16,
                     ),
                     alignment: AlignmentDirectional.centerEnd,
                     iconSize: 16,
-                    
                     decoration: InputDecoration(
                       fillColor: AppColors.transparent,
                       filled: false,
-
                       enabledBorder: InputBorder.none,
                       focusedBorder: InputBorder.none,
                       border: InputBorder.none,
@@ -141,17 +157,9 @@ class CustomDropdown<T> extends StatelessWidget {
                         vertical: 0.0,
                         horizontal: 100,
                       ),
-                      // hintText: hint,
-                      // hintMaxLines: 1,
                       isDense: true,
                       isCollapsed: true,
-                      // hintStyle: TextStyle(
-                      //   fontSize: fontSize,
-                      //   fontWeight: FontWeight.w400,
-                      //   color: borderColor,
-                      // ),
                     ),
-
                     style: TextStyle(
                       fontSize: fontSize,
                       fontWeight: fontWeight,
@@ -176,7 +184,6 @@ class CustomDropdown<T> extends StatelessWidget {
     String label = "Number of questions",
     bool hasBottomPadding = true,
   }) {
-    // Generate days from 1 to 10 (can be adjusted as needed)
     final List<int> days = List.generate(10, (index) => index + 1);
 
     return CustomDropdown<int>(
@@ -191,13 +198,11 @@ class CustomDropdown<T> extends StatelessWidget {
     );
   }
 
-  // Factory constructor for number of days dropdown
   static CustomDropdown<int> rows({
     required String hint,
     required int? selectedValue,
     required Function(int?) onChanged,
   }) {
-    // Generate days from 1 to 30 (can be adjusted as needed)
     final List<int> days = [10, 20, 50, 100];
 
     return CustomDropdown<int>(
@@ -217,7 +222,6 @@ class CustomDropdown<T> extends StatelessWidget {
     required Function(int?) onChanged,
     bool hasBottomPadding = true,
   }) {
-    // Generate days from 1 to 30 (can be adjusted as needed)
     final List<int> days = List.generate(12, (index) => index + 1);
 
     return CustomDropdown<int>(
@@ -240,7 +244,6 @@ class CustomDropdown<T> extends StatelessWidget {
     required Function(int?) onChanged,
     bool hasBottomPadding = true,
   }) {
-    // Generate days from 1 to 30 (can be adjusted as needed)
     final List<int> days = List.generate(50, (index) => index + 2025);
 
     return CustomDropdown<int>(
@@ -254,7 +257,6 @@ class CustomDropdown<T> extends StatelessWidget {
     );
   }
 
-  // Factory constructor for city dropdown
   static CustomDropdown<String> city({
     required String hint,
     required String? selectedValue,
@@ -265,9 +267,9 @@ class CustomDropdown<T> extends StatelessWidget {
   }) {
     return CustomDropdown<String>(
       hint: hint,
-      value: (selectedValue?.isEmpty ?? true) || !cities.contains(
-        selectedValue
-      ) ? null : selectedValue,
+      value: (selectedValue?.isEmpty ?? true) || !cities.contains(selectedValue)
+          ? null
+          : selectedValue,
       label: label,
       hasBottomPadding: hasBottomPadding,
       items: cities.map((day) {
@@ -281,13 +283,35 @@ class CustomDropdown<T> extends StatelessWidget {
     );
   }
 
-  // Factory constructor for phone country code dropdown
+  static CustomDropdown<dynamic> cities({
+    required String hint,
+    required List<String>? selectedValue,
+    required Function(dynamic) onChanged,
+    required List<String> cities,
+    String label = "Number of Days",
+    bool hasBottomPadding = true,
+  }) {
+    return CustomDropdown<dynamic>(
+      hint: hint,
+      value: selectedValue,
+      label: label,
+      hasBottomPadding: hasBottomPadding,
+      items: cities.map((day) {
+        return DropdownMenuItem<String>(
+          value: day,
+          alignment: AlignmentDirectional.centerEnd,
+          child: Text(day.toString(), textAlign: TextAlign.right),
+        );
+      }).toList(),
+      onChanged: onChanged,
+    );
+  }
+
   static CustomDropdown<String> phoneCountryCode({
     required String? selectedValue,
     required Function(String?) onChanged,
     bool hasBottomPadding = true,
   }) {
-    // You can add more country codes as needed
     final countryCodes = [
       {'name': 'United States', 'code': '+1', 'flag': '🇺🇸'},
       {'name': 'Nigeria', 'code': '+234', 'flag': '🇳🇬'},
@@ -326,6 +350,7 @@ class _SearchBottomSheet<T> extends StatefulWidget {
   final double fontSize;
   final FontWeight fontWeight;
   final String Function(DropdownMenuItem<T>) getItemText;
+  final bool isMultiSelect;
 
   const _SearchBottomSheet({
     required this.items,
@@ -335,6 +360,7 @@ class _SearchBottomSheet<T> extends StatefulWidget {
     required this.fontSize,
     required this.fontWeight,
     required this.getItemText,
+    this.isMultiSelect = false,
   });
 
   @override
@@ -344,11 +370,22 @@ class _SearchBottomSheet<T> extends StatefulWidget {
 class _SearchBottomSheetState<T> extends State<_SearchBottomSheet<T>> {
   late List<DropdownMenuItem<T>> filteredItems;
   final TextEditingController searchController = TextEditingController();
+  late List<T> selectedValues;
 
   @override
   void initState() {
     super.initState();
     filteredItems = widget.items;
+    
+    if (widget.isMultiSelect) {
+      if (widget.value is RxList) {
+        selectedValues = List<T>.from((widget.value as RxList).toList());
+      } else if (widget.value is List) {
+        selectedValues = List<T>.from(widget.value as List);
+      } else {
+        selectedValues = [];
+      }
+    }
   }
 
   void _filterItems(String query) {
@@ -362,6 +399,30 @@ class _SearchBottomSheetState<T> extends State<_SearchBottomSheet<T>> {
         }).toList();
       }
     });
+  }
+
+  void _toggleSelection(T value) {
+    setState(() {
+      if (selectedValues.contains(value)) {
+        selectedValues.remove(value);
+      } else {
+        selectedValues.add(value);
+      }
+    });
+  }
+
+  bool _isSelected(T value) {
+    if (widget.isMultiSelect) {
+      return selectedValues.contains(value);
+    }
+    return widget.value == value;
+  }
+
+  void _applySelection() {
+    if (widget.isMultiSelect) {
+      widget.onChanged(selectedValues as T);
+    }
+    Navigator.pop(context);
   }
 
   @override
@@ -448,6 +509,21 @@ class _SearchBottomSheetState<T> extends State<_SearchBottomSheet<T>> {
               ),
             ),
           ),
+          // Selected count for multiselect
+          if (widget.isMultiSelect && selectedValues.isNotEmpty)
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '${selectedValues.length} selected',
+                  style: TextStyle(
+                    fontSize: widget.fontSize - 2,
+                    color: AppColors.borderColor,
+                  ),
+                ),
+              ),
+            ),
           // Items list
           Expanded(
             child: filteredItems.isEmpty
@@ -464,12 +540,16 @@ class _SearchBottomSheetState<T> extends State<_SearchBottomSheet<T>> {
                     itemCount: filteredItems.length,
                     itemBuilder: (context, index) {
                       final item = filteredItems[index];
-                      final isSelected = item.value == widget.value;
+                      final isSelected = _isSelected(item.value as T);
 
                       return InkWell(
                         onTap: () {
-                          widget.onChanged(item.value);
-                          Navigator.pop(context);
+                          if (widget.isMultiSelect) {
+                            _toggleSelection(item.value as T);
+                          } else {
+                            widget.onChanged(item.value);
+                            Navigator.pop(context);
+                          }
                         },
                         child: Container(
                           padding: EdgeInsets.symmetric(
@@ -483,6 +563,31 @@ class _SearchBottomSheetState<T> extends State<_SearchBottomSheet<T>> {
                           ),
                           child: Row(
                             children: [
+                              if (widget.isMultiSelect)
+                                Container(
+                                  margin: EdgeInsets.only(right: 12),
+                                  width: 20,
+                                  height: 20,
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? AppColors.textColor
+                                          : AppColors.borderColor,
+                                      width: 2,
+                                    ),
+                                    borderRadius: BorderRadius.circular(4),
+                                    color: isSelected
+                                        ? AppColors.textColor
+                                        : Colors.transparent,
+                                  ),
+                                  child: isSelected
+                                      ? Icon(
+                                          Icons.check,
+                                          color: AppColors.white,
+                                          size: 14,
+                                        )
+                                      : null,
+                                ),
                               Expanded(
                                 child: Text(
                                   widget.getItemText(item),
@@ -495,7 +600,7 @@ class _SearchBottomSheetState<T> extends State<_SearchBottomSheet<T>> {
                                   ),
                                 ),
                               ),
-                              if (isSelected)
+                              if (!widget.isMultiSelect && isSelected)
                                 Icon(
                                   Icons.check,
                                   color: AppColors.textColor,
@@ -508,6 +613,37 @@ class _SearchBottomSheetState<T> extends State<_SearchBottomSheet<T>> {
                     },
                   ),
           ),
+          // Apply button for multiselect
+          if (widget.isMultiSelect)
+            Container(
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(color: AppColors.borderColor, width: 1),
+                ),
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _applySelection,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.textColor,
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(48),
+                    ),
+                  ),
+                  child: Text(
+                    'Apply',
+                    style: TextStyle(
+                      fontSize: widget.fontSize,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

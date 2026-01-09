@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:icons_plus/icons_plus.dart';
 import 'package:transborder_logistics/src/features/dashboard/controllers/dashboard_controller.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/admin/explorer.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/admin/resource_history.dart';
@@ -33,6 +34,9 @@ class AppDrawer extends StatelessWidget {
               child: Image.asset(Assets.fulllogo, width: 150),
             ),
             Ui.boxHeight(24),
+            Align(alignment: Alignment.center, child: ToogleDarkModeWidget()),
+            Ui.boxHeight(24),
+
             AppContainer(
               "",
               DashboardMode.values
@@ -170,6 +174,37 @@ class AppDrawer extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class ToogleDarkModeWidget extends StatelessWidget {
+  const ToogleDarkModeWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = Get.find<AppService>();
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        
+        AppIcon(Iconsax.sun_1_bold),
+        Ui.boxWidth(8),
+        Obx(
+           () {
+            return Switch(
+              activeTrackColor: AppColors.primaryColor,
+              activeThumbColor: AppColors.white,
+              value: controller.isDarkMode.value,
+              onChanged: (v) async {
+                await controller.toggleDarkMode();
+              },
+            );
+          }
+        ),
+        Ui.boxWidth(16),
+        AppIcon(Iconsax.moon_bold,),
+      ],
     );
   }
 }

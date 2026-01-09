@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -295,9 +296,19 @@ class DriverStatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppChip(
       title,
-      bgColors: [Color(0xFFE6FBEC),Color(0xFFE6FBEC), Color(0xFFFFEBEA), Color(0xFFE9F5FF)],
-      titles: ["Available","Active", "Inactive", "Busy"],
-      titleColors: [Color(0xFF00D743),Color(0xFF00D743), Color(0xFFFF3B30), Color(0xFF229EFF)],
+      bgColors: [
+        Color(0xFFE6FBEC),
+        Color(0xFFE6FBEC),
+        Color(0xFFFFEBEA),
+        Color(0xFFE9F5FF),
+      ],
+      titles: ["Available", "Active", "Inactive", "Busy"],
+      titleColors: [
+        Color(0xFF00D743),
+        Color(0xFF00D743),
+        Color(0xFFFF3B30),
+        Color(0xFF229EFF),
+      ],
       icons: [
         HugeIcons.strokeRoundedCheckmarkCircle02,
         HugeIcons.strokeRoundedCheckmarkCircle02,
@@ -421,7 +432,11 @@ class WaybillDetailPage extends StatelessWidget {
               ],
             ),
           ),
-          QrImageView(data: delivery.waybill, size: 100),
+          QrImageView(
+            data: delivery.waybill,
+            size: 100,
+            foregroundColor: AppColors.black,
+          ),
           Ui.align(
             align: Alignment.centerRight,
             child: SizedBox(width: Ui.width(context) - 88, child: AppDivider()),
@@ -646,9 +661,7 @@ class WaybillDetailPage extends StatelessWidget {
       child: SingleChildScrollView(
         child: Center(
           child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: Ui.width(context)/2
-            ),
+            constraints: BoxConstraints(maxWidth: Ui.isBigScreen(context) ? Ui.width(context) / 2 : (Ui.width(context)-16)),
             child: Column(
               children: [
                 wbBody,
@@ -677,7 +690,7 @@ class WaybillDetailPage extends StatelessWidget {
                       ),
                     ]),
                   ),
-            
+
                 if (delivery.items.isNotEmpty)
                   Padding(
                     padding: EdgeInsetsGeometry.only(
@@ -698,7 +711,7 @@ class WaybillDetailPage extends StatelessWidget {
                       ],
                     ),
                   ),
-            
+
                 Ui.boxHeight(16),
                 if (appService.currentUser.value.role == "admin")
                   Row(
@@ -710,17 +723,18 @@ class WaybillDetailPage extends StatelessWidget {
                           onTap: () {
                             Get.bottomSheet(
                               AddResource<Delivery>("Trips", obj: delivery),
-            
+
                               isScrollControlled: true,
                             );
                           },
                         ),
-            
+
                       if (delivery.hasNotStarted && delivery.isNotDelivered)
                         Ui.boxWidth(16),
                       if (delivery.isNotDelivered &&
                           !delivery.isCanceled &&
-                          Get.find<AppService>().currentUser.value.role == "admin")
+                          Get.find<AppService>().currentUser.value.role ==
+                              "admin")
                         CircleIcon(
                           HugeIcons.strokeRoundedDelete01,
                           onTap: () {
@@ -732,17 +746,19 @@ class WaybillDetailPage extends StatelessWidget {
                                     "Are you sure you want to cancel this trip ?. This action is irreversible",
                                 onTap: () async {
                                   try {
-                                    await Get.find<DashboardController>().appRepo
+                                    await Get.find<DashboardController>()
+                                        .appRepo
                                         .cancelDelivery(
                                           delivery.waybill,
                                           delivery.vehicleId,
                                           delivery.id,
                                         );
                                     Get.back();
-                                    await Get.find<DashboardController>().initApp();
+                                    await Get.find<DashboardController>()
+                                        .initApp();
                                     Get.find<DashboardController>()
                                         .refreshResource();
-            
+
                                     Get.back();
                                   } catch (e) {
                                     print(e);
@@ -754,7 +770,8 @@ class WaybillDetailPage extends StatelessWidget {
                         ),
                       if (delivery.isNotDelivered &&
                           !delivery.isCanceled &&
-                          Get.find<AppService>().currentUser.value.role == "admin")
+                          Get.find<AppService>().currentUser.value.role ==
+                              "admin")
                         Ui.boxWidth(16),
                       CircleIcon(
                         HugeIcons.strokeRoundedDownload01,
@@ -770,7 +787,7 @@ class WaybillDetailPage extends StatelessWidget {
                                           child: Padding(
                                             padding: const EdgeInsets.only(
                                               top: 24,
-                                              bottom: 24
+                                              bottom: 24,
                                             ),
                                             child: CircleIcon(
                                               HugeIcons
@@ -794,10 +811,10 @@ class WaybillDetailPage extends StatelessWidget {
                                                     await UtilFunctions.saveToTempFile(
                                                       a,
                                                     );
-            
+
                                                 if (GetPlatform.isMobile) {
                                                   final x = XFile(b.path);
-            
+
                                                   await SharePlus.instance.share(
                                                     ShareParams(
                                                       title:
@@ -823,7 +840,7 @@ class WaybillDetailPage extends StatelessWidget {
                                             }
                                           },
                                         ),
-            
+
                                         SafeArea(child: Ui.boxHeight(8)),
                                       ],
                                     ),
@@ -836,9 +853,9 @@ class WaybillDetailPage extends StatelessWidget {
                             // final a = await wsController.capturePng(pixelRatio: 6);
                             // if (a != null) {
                             //   final b = await UtilFunctions.saveToTempFile(a);
-            
+
                             //   final x = XFile(b.path);
-            
+
                             //   await SharePlus.instance.share(
                             //     ShareParams(
                             //       title: "Share Waybill #${delivery.waybill}",
@@ -854,7 +871,7 @@ class WaybillDetailPage extends StatelessWidget {
                       ),
                     ],
                   ),
-            
+
                 if (appService.currentUser.value.role == "driver" &&
                     delivery.isNotDelivered)
                   SizedBox(
@@ -905,9 +922,10 @@ class WaybillDetailPage extends StatelessWidget {
                                           "Signature and Stop must be filled",
                                         );
                                       }
-                                      final c = await UtilFunctions.saveToTempFile(
-                                        u8.value,
-                                      );
+                                      final c =
+                                          await UtilFunctions.saveToTempFile(
+                                            u8.value,
+                                          );
                                       final a =
                                           await Get.find<DashboardController>()
                                               .stopDelivery(
@@ -922,7 +940,9 @@ class WaybillDetailPage extends StatelessWidget {
                                         Get.back();
                                         await Get.find<DashboardController>()
                                             .getCustomerDelivery();
-                                        Ui.showInfo("Delivery Ended Successfully");
+                                        Ui.showInfo(
+                                          "Delivery Ended Successfully",
+                                        );
                                       } else {
                                         Ui.showInfo("Delivery failed to end");
                                       }
@@ -960,7 +980,7 @@ class WaybillDetailPage extends StatelessWidget {
                                     tecs[1],
                                     label: "Contact",
                                   ),
-            
+
                                   FieldValue(
                                     "Proof Image",
                                     child: InkWell(
@@ -993,7 +1013,9 @@ class WaybillDetailPage extends StatelessWidget {
                                   ),
                                   FieldValue(
                                     "Signature",
-                                    child: Expanded(child: SignatureView(u8, "")),
+                                    child: Expanded(
+                                      child: SignatureView(u8, ""),
+                                    ),
                                   ),
                                   // Obx(() {
                                   //   if (img.value.isNotEmpty) {
@@ -1166,23 +1188,24 @@ class _SignatureViewState extends State<SignatureView> {
 }
 
 class CircleIcon extends StatelessWidget {
-  const CircleIcon(
+  CircleIcon(
     this.icon, {
     this.onTap,
     this.radius = 20,
     this.size = 24,
     this.bg = AppColors.primaryColor,
-    this.ic = AppColors.white,
+    this.ic,
     super.key,
   });
   final dynamic icon;
   final VoidCallback? onTap;
   final double? radius;
   final double? size;
-  final Color? bg, ic;
+  Color? bg, ic;
 
   @override
   Widget build(BuildContext context) {
+    ic = ic ?? AppColors.white;
     return InkWell(
       onTap: onTap,
       child: CircleAvatar(
@@ -1360,9 +1383,7 @@ class ProfilePage extends StatelessWidget {
       padding: EdgeInsets.all(16),
       child: Center(
         child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: 400
-          ),
+          constraints: BoxConstraints(maxWidth: 400),
           child: Column(
             children: [
               UserProfilePic(
@@ -1414,7 +1435,8 @@ class ProfilePage extends StatelessWidget {
                           if (tecs[0].text == tecs[1].text &&
                               tecs[0].text.length == 4) {
                             //change password
-                            final b = await Get.find<DashboardController>().appRepo
+                            final b = await Get.find<DashboardController>()
+                                .appRepo
                                 .resetPassword(tecs[0].text);
                             if (b) {
                               Get.back();
@@ -1596,7 +1618,9 @@ class AddResource<T> extends StatelessWidget {
       10,
       (i) => TextEditingController(),
     );
-    RxString locState = "Kano".obs;
+    RxString locState =
+        (controller.curLoc.value == "All" ? "Kano" : controller.curLoc.value)
+            .obs;
 
     if (obj != null) {
       if (title.toLowerCase() == "users" || title.toLowerCase() == "drivers") {
@@ -1671,7 +1695,7 @@ class AddResource<T> extends StatelessWidget {
                         .firstWhere((d) => d.name == tecs[2].text)
                         .id,
                     controller.allVehicles
-                        .firstWhere((v) => v.slug == tecs[3].text)
+                        .firstWhere((v) => v.desc == tecs[3].text)
                         .id,
                     tecs[0].text,
                     tecs[3].text,
@@ -1687,7 +1711,7 @@ class AddResource<T> extends StatelessWidget {
                         .firstWhere((d) => d.name == tecs[2].text)
                         .id,
                     controller.allVehicles
-                        .firstWhere((v) => v.slug == tecs[3].text)
+                        .firstWhere((v) => v.desc == tecs[3].text)
                         .id,
                     tecs[0].text,
                     tecs[3].text,
@@ -1809,22 +1833,36 @@ class AddResource<T> extends StatelessWidget {
             controller.refreshResource();
 
             Get.back();
+            controller.currentModelIndex.value = 0;
           } catch (e) {
             Ui.showError(e.toString());
           }
         },
         actions: [
           //TRIP
-          if (title.toLowerCase() == "trips")
+          if (title.toLowerCase() == "trips") ...[
+            if (controller.curLoc.value == "All")
+              CustomDropdown.city(
+                cities: ["Kano", "Kaduna"],
+                hint: "Add State",
+                label: "State",
+                selectedValue: "Kano",
+                onChanged: (v) {
+                  controller.generateWayBill(v == "Kano").then((v) {
+          tecs[4].text = v;
+        });
+                },
+              ),
             CustomTextField(
               "Waybill",
               tecs[4],
               label: "Waybill",
               readOnly: true,
             ),
+          ],
           if (title.toLowerCase() == "trips")
             CustomDropdown.city(
-              cities: controller.allLoadingPoints.map((e) => e.slug).toList(),
+              cities: controller.allLoadingPoints.map((e) => e.desc).toList(),
               hint: "Add Loading Point",
               label: "Loading Point",
               selectedValue: tecs[0].text,
@@ -1844,7 +1882,7 @@ class AddResource<T> extends StatelessWidget {
                       Expanded(
                         child: CustomDropdown.city(
                           cities: controller.allFacilities
-                              .map((e) => e.slug)
+                              .map((e) => e.desc)
                               .toList(),
                           hint: "Add Facility",
                           label: "Facility ${i + 1}",
@@ -1897,7 +1935,7 @@ class AddResource<T> extends StatelessWidget {
                 tecs[3].text =
                     controller.allVehicles
                         .firstWhereOrNull((test) => test.driver == v)
-                        ?.slug ??
+                        ?.desc ??
                     tecs[3].text;
               },
             ),
@@ -1905,7 +1943,7 @@ class AddResource<T> extends StatelessWidget {
             CustomDropdown.city(
               cities: controller.allVehicles
                   .where((test) => test.isActive)
-                  .map((e) => e.slug)
+                  .map((e) => e.desc)
                   .toList(),
               hint: "Add Vehicle",
               label: "Vehicle",
@@ -1929,13 +1967,14 @@ class AddResource<T> extends StatelessWidget {
             InkWell(
               onTap: () async {
                 final f = await Get.bottomSheet<String>(ChooseCam());
-                image.value = f ?? "";
+                print(f);
+                image.value = f ?? image.value;
               },
               child: Obx(() {
                 return UserProfilePic(
                   url: image.value.isEmpty
                       ? ""
-                      : image.value.startsWith("/")
+                      : UtilFunctions.isFile(image.value)
                       ? image.value
                       : "${AppUrls.baseURL}/upload/upload/${image.value}",
                 );
@@ -1961,7 +2000,7 @@ class AddResource<T> extends StatelessWidget {
             ),
           if (title.toLowerCase() == "users")
             CustomDropdown.city(
-              cities: ["Kano", "Kaduna"],
+              cities: ["All", "Kano", "Kaduna"],
               hint: "Add location",
               label: "Location",
               selectedValue: tecs[4].text,
@@ -2069,7 +2108,16 @@ class AddResource<T> extends StatelessWidget {
             ),
           if (title.toLowerCase() == "vehicles")
             CustomDropdown.city(
-              cities: controller.allDrivers.map((e) => e.name ?? "").toList(),
+              cities:
+                  controller.allDrivers
+                      .where(
+                        (e) => controller.allVehicles
+                            .where((v) => v.driver == e.name)
+                            .isEmpty,
+                      )
+                      .map((e) => e.name ?? "")
+                      .toList()
+                    ..insert(0, ""),
               hint: "Add Driver",
               label: "Assign Driver",
               selectedValue: curDriver.value.name,
@@ -2124,6 +2172,209 @@ class AddResource<T> extends StatelessWidget {
           //       tecs[3].text = v ?? "";
           //     },
           //   ),
+        ],
+      ),
+    );
+  }
+}
+
+class FilterResource<T> extends StatelessWidget {
+  const FilterResource(this.title, {this.obj = const [], super.key});
+  final String title;
+  final List<T> obj;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = Get.find<DashboardController>();
+    final tecs = List.generate(6, (i) => <String>[]);
+
+    return SingleChildScrollView(
+      child: AppBottomSheet(
+        "Filter $title",
+        "Apply",
+        onTap: () async {
+          try {
+            tecs.removeWhere((element) => element.isEmpty);
+            controller.curFilters.value = tecs;
+
+            Get.back();
+          } catch (e) {
+            Ui.showError(e.toString());
+          }
+        },
+        actions: [
+          //TRIP
+          if (title.toLowerCase() == "trips") ...[
+            CustomDropdown.cities(
+              cities: (obj as List<Delivery>)
+                  .map((e) => e.pickup ?? "")
+                  .toSet()
+                  .toList(),
+              hint: "Select Pickup",
+              label: "Pickup",
+              selectedValue: tecs[0],
+              onChanged: (v) {
+                tecs[0] = (v as List).map((e) => e.toString()).toList();
+              },
+            ),
+            CustomDropdown.cities(
+              cities: (obj as List<Delivery>)
+                  .map((e) => e.stops)
+                  .expand((x) => x)
+                  .toSet()
+                  .toList(),
+              hint: "Select Stops",
+              label: "Stops",
+              selectedValue: tecs[1],
+              onChanged: (v) {
+                tecs[1] = (v as List).map((e) => e.toString()).toList();
+              },
+            ),
+            CustomDropdown.cities(
+              cities: (obj as List<Delivery>)
+                  .map((e) => e.owner ?? '')
+                  .toSet()
+                  .toList(),
+              hint: "Select Creator",
+              label: "Creator",
+              selectedValue: tecs[2],
+              onChanged: (v) {
+                tecs[2] = (v as List).map((e) => e.toString()).toList();
+              },
+            ),
+            CustomDropdown.cities(
+              cities: (obj as List<Delivery>)
+                  .map((e) => e.driver ?? '')
+                  .toSet()
+                  .toList(),
+              hint: "Select Driver",
+              label: "Driver",
+              selectedValue: tecs[3],
+              onChanged: (v) {
+                tecs[3] = (v as List).map((e) => e.toString()).toList();
+              },
+            ),
+            CustomDropdown.cities(
+              cities: (obj as List<Delivery>)
+                  .map((e) => e.status)
+                  .toSet()
+                  .toList(),
+              hint: "Select Status",
+              label: "Status",
+              selectedValue: tecs[4],
+              onChanged: (v) {
+                tecs[4] = (v as List).map((e) => e.toString()).toList();
+              },
+            ),
+          ],
+
+          //USER
+          if (title.toLowerCase() == "users" ||
+              title.toLowerCase() == "drivers") ...[
+            CustomDropdown.cities(
+              cities: (obj as List<User>)
+                  .map((e) => e.location ?? "")
+                  .toSet()
+                  .toList(),
+              hint: "Select Location",
+              label: "Location",
+              selectedValue: tecs[0],
+              onChanged: (v) {
+                tecs[0] = (v as List).map((e) => e.toString()).toList();
+              },
+            ),
+            if (title.toLowerCase() == "users")
+              CustomDropdown.cities(
+                cities: (obj as List<User>).map((e) => e.role).toSet().toList(),
+                hint: "Select Role",
+                label: "Role",
+                selectedValue: tecs[1],
+                onChanged: (v) {
+                  tecs[1] = (v as List).map((e) => e.toString()).toList();
+                },
+              ),
+          ],
+
+          //VEHICLE
+          if (title.toLowerCase() == "vehicles") ...[
+            CustomDropdown.cities(
+              cities: (obj as List<Vehicle>)
+                  .map((e) => e.type ?? "")
+                  .toSet()
+                  .toList(),
+              hint: "Select Vehicle Type",
+              label: "Vehicle Type",
+              selectedValue: tecs[0],
+              onChanged: (v) {
+                tecs[0] = (v as List).map((e) => e.toString()).toList();
+              },
+            ),
+            CustomDropdown.cities(
+              cities: (obj as List<Vehicle>)
+                  .map((e) => e.driver ?? "")
+                  .toSet()
+                  .toList(),
+              hint: "Select Driver",
+              label: "Driver",
+              selectedValue: tecs[1],
+              onChanged: (v) {
+                tecs[1] = (v as List).map((e) => e.toString()).toList();
+              },
+            ),
+            CustomDropdown.cities(
+              cities: (obj as List<Vehicle>)
+                  .map((e) => e.isActive ? "Active" : "Inactive")
+                  .toSet()
+                  .toList(),
+              hint: "Select Status",
+              label: "Status",
+              selectedValue: tecs[2],
+              onChanged: (v) {
+                tecs[2] = (v as List).map((e) => e.toString()).toList();
+              },
+            ),
+          ],
+
+          //loading point and facilities
+          if (title.toLowerCase() == "facilities" ||
+              title.toLowerCase() == "loading points") ...[
+            CustomDropdown.cities(
+              cities: (obj as List<Location>)
+                  .map((e) => e.lga ?? "")
+                  .toSet()
+                  .toList(),
+              hint: "Select LGA",
+              label: "LGA",
+              selectedValue: tecs[0],
+              onChanged: (v) {
+                tecs[0] = (v as List).map((e) => e.toString()).toList();
+              },
+            ),
+            CustomDropdown.cities(
+              cities: (obj as List<Location>)
+                  .map((e) => e.state ?? "")
+                  .toSet()
+                  .toList(),
+              hint: "Select State",
+              label: "State",
+              selectedValue: tecs[1],
+              onChanged: (v) {
+                tecs[1] = (v as List).map((e) => e.toString()).toList();
+              },
+            ),
+            CustomDropdown.cities(
+              cities: (obj as List<Location>)
+                  .map((e) => e.isActive ? "Active" : "Inactive")
+                  .toSet()
+                  .toList(),
+              hint: "Select Status",
+              label: "Status",
+              selectedValue: tecs[2],
+              onChanged: (v) {
+                tecs[2] = (v as List).map((e) => e.toString()).toList();
+              },
+            ),
+          ],
         ],
       ),
     );

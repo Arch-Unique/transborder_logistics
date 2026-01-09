@@ -24,7 +24,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Ui.width(context) > 500
+    return Obx((){
+      print(controller.appRepo.appService.isDarkMode.value);
+      return Ui.width(context) > 500
         ? desktopVersion()
         : RefreshScrollView(
             onExtend: () async {},
@@ -83,7 +85,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
           );
-  }
+  
+    });
+    }
 
   Widget desktopVersion() {
     return CurvedContainer(
@@ -125,7 +129,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               dashboardItem(
                 DashboardItem.trips,
                 controller.allCustomerDeliveries.length,
-                20,
+                0,
               ),
               dashboardItem(
                 DashboardItem.users,
@@ -135,7 +139,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               dashboardItem(
                 DashboardItem.drivers,
                 controller.allDrivers.length,
-                -10,
+                0,
               ),
               dashboardItem(
                 DashboardItem.location,

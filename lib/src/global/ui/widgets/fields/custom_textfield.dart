@@ -9,7 +9,7 @@ class CustomTextField extends StatelessWidget {
   final String hint, label;
   final TextEditingController controller;
   final FPL varl;
-  final Color col, iconColor, bcol;
+  Color? col, iconColor, bcol;
   final VoidCallback? onTap, customOnChanged;
   final TextInputAction tia;
   final dynamic suffix, prefix;
@@ -19,7 +19,7 @@ class CustomTextField extends StatelessWidget {
   final bool readOnly, shdValidate;
   final TextAlign textAlign;
   final String? oldPass;
-  const CustomTextField(
+  CustomTextField(
     this.hint,
     this.controller, {
     this.varl = FPL.text,
@@ -27,9 +27,9 @@ class CustomTextField extends StatelessWidget {
     this.fs = 12,
     this.hasBottomPadding = true,
     this.fw = FontWeight.w300,
-    this.col = AppColors.textColor,
-    this.iconColor = AppColors.lightTextColor,
-    this.bcol = AppColors.textFieldColor,
+    this.col,
+    this.iconColor,
+    this.bcol,
     this.tia = TextInputAction.next,
     this.oldPass,
     this.onTap,
@@ -51,6 +51,9 @@ class CustomTextField extends StatelessWidget {
     //     suffix != null ? AppColors.disabledColor : AppColors.primaryColor;
     Color borderCol = AppColors.darkTextColor;
     // bool hasTouched = false;
+        col = col ?? AppColors.textColor;
+    iconColor = iconColor?? AppColors.lightTextColor;
+    bcol = bcol?? AppColors.textFieldColor;
 
     return StatefulBuilder(
       builder: (context, setState) {
@@ -69,7 +72,7 @@ class CustomTextField extends StatelessWidget {
                             // hasTouched
                             //     ? AppColors.textColor
                             //     :
-                            iconColor,
+                            iconColor!,
                       ),
                     )
                   : SizedBox(),
@@ -182,7 +185,7 @@ class CustomTextField extends StatelessWidget {
                             // hasTouched
                             //     ? AppColors.textColor
                             //     :
-                            iconColor,
+                            iconColor!,
                       ),
                     )
                   : varl == FPL.password
@@ -219,7 +222,8 @@ class CustomTextField extends StatelessWidget {
     return !(s.isEmpty || s.contains(RegExp(r'[^\w.]')) || s.length < 8);
   }
 
-  InputBorder customBorder({Color color = AppColors.textColor}) {
+  InputBorder customBorder({Color? color}) {
+    color = color ?? AppColors.textColor;
     // return OutlineInputBorder(
     //   borderSide: BorderSide(color: color),
     //   borderRadius: BorderRadius.circular(8),

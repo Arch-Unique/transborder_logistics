@@ -37,6 +37,8 @@ class DashboardController extends GetxController {
 
   RxInt curMode = 0.obs;
   Rx<Slugger> currentModel = User().obs;
+  RxList<List<String>> curFilters =
+      <List<String>>[].obs;
   RxInt currentModelIndex = 0.obs;
   final appRepo = Get.find<AppRepo>();
   final isLoading = false.obs;
@@ -287,7 +289,7 @@ class DashboardController extends GetxController {
     String? truckno,
     String? image,
   }) async {
-    if (image != null) {
+    if (image != null && image.isNotEmpty) {
       image = await uploadImage(image);
     }
     return await appRepo.addUser(
@@ -319,7 +321,7 @@ class DashboardController extends GetxController {
     String? truckno,
     String? image,
   }) async {
-    if (image != null) {
+    if (image != null && image.isNotEmpty && UtilFunctions.isFile(image)) {
       image = await uploadImage(image);
     }
     return await appRepo.editUser(
@@ -384,6 +386,10 @@ class DashboardController extends GetxController {
     return await appRepo.deleteDelivery(id);
   }
 
+  Future<bool> deleteVehicle(int id) async {
+    return await appRepo.deleteVehicle(id);
+  }
+
   Future<String> generateWayBill(bool isKano) async {
     final lastId = await appRepo.getLastDeliveryID();
     final sd = DateFormat("MM/yy").format(DateTime.now());
@@ -395,9 +401,9 @@ class DashboardController extends GetxController {
     await initApp();
   }
 
-  Future exportData() async {
+  Future exportData({List<Slugger>? items}) async {
     try {
-      List<Slugger> allItems = curResourceHistory.value.items;
+      List<Slugger> allItems = items ?? curResourceHistory.value.items;
       final a = allItems[0];
       final f = await generateExcelReport(
         reportTitle:

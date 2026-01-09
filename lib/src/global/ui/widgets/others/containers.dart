@@ -12,13 +12,13 @@ class CurvedContainer extends StatefulWidget {
   final double radius;
   final double? width, height;
   final String? image;
-  final Color color;
+  Color? color;
   final Border? border;
   final BorderRadius? borderRadius;
   final bool shouldClip;
   final VoidCallback? onPressed;
   final EdgeInsets? margin, padding;
-  const CurvedContainer({
+  CurvedContainer({
     this.child,
     this.radius = 32,
     this.height,
@@ -30,7 +30,7 @@ class CurvedContainer extends StatefulWidget {
     this.borderRadius,
     this.image,
     this.shouldClip = true,
-    this.color = AppColors.white,
+    this.color,
     super.key,
   });
 
@@ -78,6 +78,7 @@ class _CurvedContainerState extends State<CurvedContainer>
 
   @override
   Widget build(BuildContext context) {
+
     return InkWell(
       
       onTapDown: widget.onPressed == null ? null : _handleTapDown,
@@ -108,7 +109,7 @@ class _CurvedContainerState extends State<CurvedContainer>
           decoration: BoxDecoration(
             borderRadius:
                 widget.borderRadius ?? Ui.circularRadius(widget.radius),
-            color: widget.color,
+            color: widget.color ?? AppColors.white,
             border: widget.border,
             image: widget.image == null
                 ? null
@@ -211,21 +212,22 @@ class CurvedImage extends StatelessWidget {
 
 class SvgIconButton extends StatelessWidget {
   final double size;
-  final Color color;
+  Color? color;
   final String url;
   final VoidCallback onTap;
   final double padding;
-  const SvgIconButton(
+  SvgIconButton(
     this.url,
     this.onTap, {
     this.size = 24,
-    this.color = AppColors.white,
+    this.color,
     this.padding = 8,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
+    color = color ?? AppColors.white;
     return InkResponse(
       onTap: onTap,
       radius: (size + 16) / 2,
