@@ -47,5 +47,11 @@
 		<true/>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<key>NSCameraUsageDescription</key>
+		<string>Used to get camera images</string>
+		<key>NSMicrophoneUsageDescription</key>
+		<string>Used to capture audio for image picker plugin</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>Used to get file images</string>
 	</dict>
 </plist>
