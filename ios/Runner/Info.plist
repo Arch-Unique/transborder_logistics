@@ -48,7 +48,7 @@
 		<key>UIStatusBarHidden</key>
 		<false/>
 		<key>NSCameraUsageDescription</key>
-		<string>Used to get camera images</string>
+		<string>The app needs access to the camera to take photos and videos of personal profile image</string>
 		<key>NSMicrophoneUsageDescription</key>
 		<string>Used to capture audio for image picker plugin</string>
 		<key>NSPhotoLibraryUsageDescription</key>

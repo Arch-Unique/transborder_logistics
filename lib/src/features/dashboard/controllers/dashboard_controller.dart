@@ -285,7 +285,7 @@ class DashboardController extends GetxController {
     String email,
     String phone,
     String role,
-    String address, {
+    String address, String category,{
     String? truckno,
     String? image,
   }) async {
@@ -298,6 +298,7 @@ class DashboardController extends GetxController {
       phone,
       role,
       email,
+      category,
       truckno: truckno,
       image: image,
     );
@@ -317,6 +318,7 @@ class DashboardController extends GetxController {
     String phone,
     String role,
     String address,
+    String category,
     int id, {
     String? truckno,
     String? image,
@@ -331,6 +333,7 @@ class DashboardController extends GetxController {
       role,
       id,
       email,
+      category,
       truckno: truckno,
       image: image,
     );
@@ -343,8 +346,21 @@ class DashboardController extends GetxController {
     String lga,
     String type,
     String code,
+    String address,
+    String phone,
+    double lat,double lng
   ) async {
-    return await appRepo.addLocation(name, state, lga, type, code);
+    return await appRepo.addLocation({
+        "name": name,
+        "state": state,
+        "lga": lga,
+        "type": type,
+        "code": code,
+        "address": address,
+        "phone": phone,
+        "lat": lat,
+        "lng": lng,
+      },);
   }
 
   Future<bool> editLocation(
@@ -353,9 +369,22 @@ class DashboardController extends GetxController {
     String lga,
     String type,
     String code,
+    String address,
+    String phone,
+    double lat,double lng,
     int id,
   ) async {
-    return await appRepo.updateLocation(name, state, lga, type, code, id);
+    return await appRepo.updateLocation({
+        "name": name,
+        "state": state,
+        "lga": lga,
+        "type": type,
+        "code": code,
+        "address": address,
+        "phone": phone,
+        "lat": lat,
+        "lng": lng,
+      }, id);
   }
 
   Future<bool> deleteLocation(int id) async {
@@ -370,6 +399,7 @@ class DashboardController extends GetxController {
     String pickup,
     String truckno,
     String invoiceno,
+    String commodityType,String deliveryType
   ) async {
     return await appRepo.addDelivery(
       waybill,
@@ -379,6 +409,8 @@ class DashboardController extends GetxController {
       pickup,
       truckno,
       invoiceno,
+      commodityType,
+      deliveryType
     );
   }
 

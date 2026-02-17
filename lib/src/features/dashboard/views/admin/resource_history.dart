@@ -406,31 +406,31 @@ class _ResourceHistoryDesktopPageState<T extends Slugger>
         ),
         Ui.boxWidth(12),
         if (widget.title != "Location")
-        CurvedContainer(
-          onPressed: () {
-            if (widget.onAdd != null) {
-              widget.onAdd!();
-            }
-          },
-          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 24),
-          color: AppColors.primaryColor,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AppIcon(
-                HugeIcons.strokeRoundedAdd01,
-                size: 16,
-                color: AppColors.white,
-              ),
-              Ui.boxWidth(8),
-              AppText.medium(
-                "Add ${widget.title}",
-                fontSize: 14,
-                color: AppColors.white,
-              ),
-            ],
+          CurvedContainer(
+            onPressed: () {
+              if (widget.onAdd != null) {
+                widget.onAdd!();
+              }
+            },
+            padding: EdgeInsets.symmetric(vertical: 10, horizontal: 24),
+            color: AppColors.primaryColor,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AppIcon(
+                  HugeIcons.strokeRoundedAdd01,
+                  size: 16,
+                  color: AppColors.white,
+                ),
+                Ui.boxWidth(8),
+                AppText.medium(
+                  "Add ${widget.title}",
+                  fontSize: 14,
+                  color: AppColors.white,
+                ),
+              ],
+            ),
           ),
-        ),
       ],
     );
   }
@@ -479,32 +479,37 @@ class _ResourceHistoryDesktopPageState<T extends Slugger>
                 ),
 
                 Ui.boxWidth(12),
-                if(controller.appRepo.appService.currentUser.value.isSuperAdmin)
-                CurvedContainer(
-                  onPressed: () {
-                    if (widget.onDelete != null) {
-                      widget.onDelete!(controller.currentModel.value);
-                    }
-                  },
-                  padding: EdgeInsets.symmetric(vertical: 10, horizontal: 24),
-                  color: AppColors.primaryColor,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      AppIcon(
-                        HugeIcons.strokeRoundedDelete02,
-                        size: 16,
-                        color: AppColors.white,
-                      ),
-                      Ui.boxWidth(8),
-                      AppText.medium(
-                        "Delete",
-                        fontSize: 14,
-                        color: AppColors.white,
-                      ),
-                    ],
+                if (controller
+                    .appRepo
+                    .appService
+                    .currentUser
+                    .value
+                    .isSuperAdmin)
+                  CurvedContainer(
+                    onPressed: () {
+                      if (widget.onDelete != null) {
+                        widget.onDelete!(controller.currentModel.value);
+                      }
+                    },
+                    padding: EdgeInsets.symmetric(vertical: 10, horizontal: 24),
+                    color: AppColors.primaryColor,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        AppIcon(
+                          HugeIcons.strokeRoundedDelete02,
+                          size: 16,
+                          color: AppColors.white,
+                        ),
+                        Ui.boxWidth(8),
+                        AppText.medium(
+                          "Delete",
+                          fontSize: 14,
+                          color: AppColors.white,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
               ],
             );
     });

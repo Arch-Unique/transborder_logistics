@@ -661,7 +661,11 @@ class WaybillDetailPage extends StatelessWidget {
       child: SingleChildScrollView(
         child: Center(
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: Ui.isBigScreen(context) ? Ui.width(context) / 2 : (Ui.width(context)-16)),
+            constraints: BoxConstraints(
+              maxWidth: Ui.isBigScreen(context)
+                  ? Ui.width(context) / 2
+                  : (Ui.width(context) - 16),
+            ),
             child: Column(
               children: [
                 wbBody,
@@ -1613,6 +1617,8 @@ class AddResource<T> extends StatelessWidget {
     RxList<String> facilities = <String>[].obs;
     Rx<User> curDriver = User().obs;
     RxBool isActive = false.obs;
+    RxBool driverVehicle = false.obs;
+    RxString loc = "Kano".obs;
     RxString image = "".obs;
     final List<TextEditingController> tecs = List.generate(
       10,
@@ -1631,6 +1637,7 @@ class AddResource<T> extends StatelessWidget {
         tecs[3].text = user.role;
         image.value = user.image ?? "";
         tecs[4].text = user.location ?? "Kano";
+        tecs[5].text = user.category;
       }
 
       if (title.toLowerCase() == "facilities" ||
@@ -1642,6 +1649,10 @@ class AddResource<T> extends StatelessWidget {
         tecs[3].text = user.state ?? "Kano";
         locState.value = tecs[3].text;
         tecs[4].text = user.code ?? "";
+        tecs[5].text = user.address ?? "";
+        tecs[6].text = user.phone ?? "";
+        tecs[7].text = user.lat?.toString() ?? "";
+        tecs[8].text = user.lng?.toString() ?? "";
       }
 
       if (title.toLowerCase() == "vehicles") {
@@ -1650,6 +1661,7 @@ class AddResource<T> extends StatelessWidget {
         tecs[1].text = vehicle.regno ?? "";
         tecs[2].text = vehicle.type ?? "";
         tecs[3].text = vehicle.driver ?? "";
+        tecs[4].text = vehicle.category ?? "";
         isActive.value = vehicle.isActive;
 
         image.value = vehicle.image ?? "";
@@ -1668,6 +1680,8 @@ class AddResource<T> extends StatelessWidget {
         tecs[3].text = delivery.truckno ?? "";
         tecs[4].text = delivery.waybill;
         tecs[1].text = delivery.invoiceno ?? "";
+        tecs[5].text = delivery.commodityType ?? "Drug Revolving Fund (DRF)";
+        tecs[6].text = delivery.deliveryType ?? "Last Mile Delivery (LMD)";
       }
     } else {
       if (title.toLowerCase() == "trips") {
@@ -1700,6 +1714,8 @@ class AddResource<T> extends StatelessWidget {
                     tecs[0].text,
                     tecs[3].text,
                     tecs[1].text,
+                    tecs[5].text,
+                    tecs[6].text,
                   );
                 } else {
                   //edit trip
@@ -1716,6 +1732,8 @@ class AddResource<T> extends StatelessWidget {
                     tecs[0].text,
                     tecs[3].text,
                     tecs[1].text,
+                    tecs[5].text,
+                    tecs[6].text,
                     trip.id,
                   );
                 }
@@ -1737,6 +1755,7 @@ class AddResource<T> extends StatelessWidget {
                     tecs[2].text,
                     tecs[3].text,
                     tecs[4].text,
+                    tecs[5].text,
                     image: image.value,
                   );
                 } else {
@@ -1748,6 +1767,7 @@ class AddResource<T> extends StatelessWidget {
                     tecs[2].text,
                     tecs[3].text,
                     tecs[4].text,
+                    tecs[5].text,
                     user.id,
                     image: image.value,
                   );
@@ -1770,6 +1790,10 @@ class AddResource<T> extends StatelessWidget {
                     tecs[1].text,
                     tecs[2].text,
                     tecs[4].text,
+                    tecs[5].text,
+                    tecs[6].text,
+                    double.tryParse(tecs[7].text) ?? 0,
+                    double.tryParse(tecs[8].text) ?? 0,
                   );
                 } else {
                   //edit user
@@ -1780,6 +1804,10 @@ class AddResource<T> extends StatelessWidget {
                     tecs[1].text,
                     tecs[2].text,
                     tecs[4].text,
+                    tecs[5].text,
+                    tecs[6].text,
+                    double.tryParse(tecs[7].text) ?? 0,
+                    double.tryParse(tecs[8].text) ?? 0,
                     user.id,
                   );
                 }
@@ -1797,6 +1825,7 @@ class AddResource<T> extends StatelessWidget {
                     tecs[1].text,
                     tecs[2].text,
                     isActive.value,
+                    tecs[4].text,
                     driver: (curDriver.value.name?.isEmpty ?? true)
                         ? null
                         : curDriver.value.name,
@@ -1813,6 +1842,7 @@ class AddResource<T> extends StatelessWidget {
                     tecs[1].text,
                     tecs[2].text,
                     isActive.value,
+                    tecs[4].text,
                     vehicle.id,
                     driver: (curDriver.value.name?.isEmpty ?? true)
                         ? null
@@ -1848,9 +1878,10 @@ class AddResource<T> extends StatelessWidget {
                 label: "State",
                 selectedValue: "Kano",
                 onChanged: (v) {
+                  loc.value = v ?? "Kano";
                   controller.generateWayBill(v == "Kano").then((v) {
-          tecs[4].text = v;
-        });
+                    tecs[4].text = v;
+                  });
                 },
               ),
             CustomTextField(
@@ -1859,18 +1890,44 @@ class AddResource<T> extends StatelessWidget {
               label: "Waybill",
               readOnly: true,
             ),
-          ],
-          if (title.toLowerCase() == "trips")
-            CustomDropdown.city(
-              cities: controller.allLoadingPoints.map((e) => e.desc).toList(),
-              hint: "Add Loading Point",
-              label: "Loading Point",
-              selectedValue: tecs[0].text,
-              onChanged: (v) {
-                tecs[0].text = v ?? "";
-              },
+            Obx(
+               () {
+                if(loc.value != "Kano"){
+                  return SizedBox();
+                }
+                return CustomDropdown.city(
+                    cities: ["Drug Revolving Fund (DRF)", "Basic Health Care Provision Fund (BHCPF)","Kano State Contributory Health Management Agency (KSCHMA)","Maternal & Child Health Care (MNCH)","Family Planning (FP)","IMPACT Project"],
+                    hint: "Add Commodity Type",
+                    label: "Commodity Type",
+                    selectedValue: tecs[5].text.isEmpty ? "Drug Revolving Fund (DRF)" : tecs[5].text,
+                    onChanged: (v) {
+                      tecs[5].text = v ?? "Drug Revolving Fund (DRF)";
+                    },
+                  );
+              }
             ),
-          if (title.toLowerCase() == "trips")
+            CustomDropdown.city(
+                cities: ["Last Mile Delivery (LMD)", "Proxy Delivery"],
+                hint: "Add Delivery Type",
+                label: "Delivery Type",
+                selectedValue: tecs[6].text.isEmpty ? "Last Mile Delivery (LMD)" : tecs[6].text,
+                onChanged: (v) {
+                  tecs[6].text = v ?? "Last Mile Delivery (LMD)";
+                },
+              ),
+            Obx(
+               () {
+                return CustomDropdown.city(
+                  cities: controller.allLoadingPoints.where((e) => e.state == loc.value).map((e) => e.desc).toList(),
+                  hint: "Add Loading Point",
+                  label: "Loading Point",
+                  selectedValue: tecs[0].text,
+                  onChanged: (v) {
+                    tecs[0].text = v ?? "";
+                  },
+                );
+              }
+            ),
             Obx(() {
               final gf = List.generate(facilities.length, (i) {
                 return Padding(
@@ -1924,42 +1981,47 @@ class AddResource<T> extends StatelessWidget {
               return Column(children: gf);
             }),
 
-          if (title.toLowerCase() == "trips")
-            CustomDropdown.city(
-              cities: controller.allDrivers.map((e) => e.name ?? "").toList(),
-              hint: "Add Driver",
-              label: "Driver",
-              selectedValue: tecs[2].text,
-              onChanged: (v) {
-                tecs[2].text = v ?? "";
-                tecs[3].text =
-                    controller.allVehicles
-                        .firstWhereOrNull((test) => test.driver == v)
-                        ?.desc ??
-                    tecs[3].text;
-              },
-            ),
-          if (title.toLowerCase() == "trips")
-            CustomDropdown.city(
-              cities: controller.allVehicles
-                  .where((test) => test.isActive)
-                  .map((e) => e.desc)
-                  .toList(),
-              hint: "Add Vehicle",
-              label: "Vehicle",
-              selectedValue: tecs[3].text,
-              onChanged: (v) {
-                tecs[3].text = v ?? "";
-                tecs[2].text =
-                    controller.allVehicles
-                        .firstWhereOrNull((test) => test.name == v)
-                        ?.driver ??
-                    tecs[2].text;
-              },
-            ),
-          if (title.toLowerCase() == "trips")
+            Obx(() {
+              print(driverVehicle.value);
+              return CustomDropdown.city(
+                cities: controller.allDrivers.map((e) => e.name ?? "").toList(),
+                hint: "Add Driver",
+                label: "Driver",
+                selectedValue: tecs[2].text,
+                onChanged: (v) {
+                  tecs[2].text = v ?? "";
+                  tecs[3].text =
+                      controller.allVehicles
+                          .firstWhereOrNull((test) => test.driver == v)
+                          ?.desc ??
+                      tecs[3].text;
+                  driverVehicle.value = !driverVehicle.value;
+                },
+              );
+            }),
+            Obx(() {
+              print(driverVehicle.value);
+              return CustomDropdown.city(
+                cities: controller.allVehicles
+                    .where((test) => test.isActive)
+                    .map((e) => e.desc)
+                    .toList(),
+                hint: "Add Vehicle",
+                label: "Vehicle",
+                selectedValue: tecs[3].text,
+                onChanged: (v) {
+                  tecs[3].text = v ?? "";
+                  tecs[2].text =
+                      controller.allVehicles
+                          .firstWhereOrNull((test) => test.name == v)
+                          ?.driver ??
+                      tecs[2].text;
+                  driverVehicle.value = !driverVehicle.value;
+                },
+              );
+            }),
             CustomTextField("Add Invoice No", tecs[1], label: "Invoice No"),
-
+          ],
           //USER OR VEHICLE
           if (title.toLowerCase() == "users" ||
               title.toLowerCase() == "drivers" ||
@@ -1983,12 +2045,11 @@ class AddResource<T> extends StatelessWidget {
 
           //USER
           if (title.toLowerCase() == "users")
+          ...[
+
             CustomTextField("Add user", tecs[0], label: "Name"),
-          if (title.toLowerCase() == "users")
             CustomTextField("Add email", tecs[1], label: "Email"),
-          if (title.toLowerCase() == "users")
             CustomTextField("Add phone", tecs[2], label: "Phone"),
-          if (title.toLowerCase() == "users")
             CustomDropdown.city(
               cities: ["driver", "admin", "operator"],
               hint: "Add account type",
@@ -1998,7 +2059,6 @@ class AddResource<T> extends StatelessWidget {
                 tecs[3].text = v ?? "";
               },
             ),
-          if (title.toLowerCase() == "users")
             CustomDropdown.city(
               cities: ["All", "Kano", "Kaduna"],
               hint: "Add location",
@@ -2008,15 +2068,23 @@ class AddResource<T> extends StatelessWidget {
                 tecs[4].text = v ?? "";
               },
             ),
+            ],
 
           //DRIVER
           if (title.toLowerCase() == "drivers")
+          ...[
             CustomTextField("Add name", tecs[0], label: "Name"),
-          if (title.toLowerCase() == "drivers")
             CustomTextField("Add email", tecs[1], label: "Email"),
-          if (title.toLowerCase() == "drivers")
             CustomTextField("Add phone", tecs[2], label: "Phone"),
-          if (title.toLowerCase() == "drivers")
+            CustomDropdown.city(
+              cities: ["TBL", "Commercial"],
+              hint: "Category",
+              label: "Category",
+              selectedValue: tecs[5].text,
+              onChanged: (v) {
+                tecs[5].text = v ?? "";
+              },
+            ),
             CustomDropdown.city(
               cities: ["Kano", "Kaduna"],
               hint: "Add location",
@@ -2026,14 +2094,10 @@ class AddResource<T> extends StatelessWidget {
                 tecs[4].text = v ?? "";
               },
             ),
+          ],
 
           //Location
-          if (title.toLowerCase() == "facilities" ||
-              title.toLowerCase() == "loading points")
-            CustomTextField("Add name", tecs[0], label: "Name"),
-          if (title.toLowerCase() == "facilities" ||
-              title.toLowerCase() == "loading points")
-            CustomTextField("Add Facility Code", tecs[4], label: "Code"),
+            
           if (title.toLowerCase() == "facilities")
             CustomDropdown.city(
               cities: ["Hospital", "Clinic", "Loading Point"],
@@ -2046,6 +2110,9 @@ class AddResource<T> extends StatelessWidget {
             ),
           if (title.toLowerCase() == "facilities" ||
               title.toLowerCase() == "loading points")
+              ...[
+                CustomTextField("Add name", tecs[0], label: "Name"),
+            CustomTextField("Add Facility Code", tecs[4], label: "Code"),
             CustomDropdown.city(
               cities: ["Kano", "Kaduna"],
               hint: "Add State",
@@ -2067,8 +2134,6 @@ class AddResource<T> extends StatelessWidget {
                         as List<String>)[0];
               },
             ),
-          if (title.toLowerCase() == "facilities" ||
-              title.toLowerCase() == "loading points")
             Obx(() {
               return CustomDropdown.city(
                 cities:
@@ -2090,13 +2155,17 @@ class AddResource<T> extends StatelessWidget {
                 },
               );
             }),
-
+            CustomTextField("1 John Street", tecs[5], label: "Address"),
+            CustomTextField("+2347012345678", tecs[6], label: "Phone Number", varl:  FPL.phone,),
+            CustomTextField("6.33333", tecs[7], label: "Latitude",varl: FPL.number,),
+            CustomTextField("3.6666", tecs[8], label: "Longitude", varl: FPL.number),
+        ],
           //VEHICLE
           if (title.toLowerCase() == "vehicles")
+          ...[
+                     
             CustomTextField("Vehicle Name", tecs[0], label: "Make & Model"),
-          if (title.toLowerCase() == "vehicles")
             CustomTextField("Reg Number", tecs[1], label: "Plate number"),
-          if (title.toLowerCase() == "vehicles")
             CustomDropdown.city(
               cities: ["Bus", "Truck", "Pickup"],
               hint: "Vehicle Type",
@@ -2106,31 +2175,56 @@ class AddResource<T> extends StatelessWidget {
                 tecs[2].text = v ?? "";
               },
             ),
-          if (title.toLowerCase() == "vehicles")
             CustomDropdown.city(
-              cities:
-                  controller.allDrivers
-                      .where(
-                        (e) => controller.allVehicles
-                            .where((v) => v.driver == e.name)
-                            .isEmpty,
-                      )
-                      .map((e) => e.name ?? "")
-                      .toList()
-                    ..insert(0, ""),
-              hint: "Add Driver",
-              label: "Assign Driver",
-              selectedValue: curDriver.value.name,
+              cities: ["TBL", "Commercial"],
+              hint: "Category",
+              label: "Category",
+              selectedValue: tecs[4].text,
               onChanged: (v) {
-                curDriver.value = v == null
-                    ? User()
-                    : controller.allDrivers.firstWhereOrNull(
-                            (e) => e.name == v,
-                          ) ??
-                          User();
+                tecs[4].text = v ?? "";
               },
             ),
-          if (title.toLowerCase() == "vehicles")
+            Obx(() {
+              print(driverVehicle.value);
+              return CustomDropdown.city(
+                cities:
+                    controller.allDrivers
+                        // .where(
+                        //   (e) => !controller.allVehicles.any(
+                        //     (v) => v.driver == e.name,
+                        //   ),
+                        // )
+                        .map((e) => e.name ?? "")
+                        .toList()
+                      ..insert(0, ""),
+                hint: "Add Driver",
+                label: "Assign Driver",
+                selectedValue: tecs[3].text,
+                onChanged: (v) {
+                  if (v != null && v.isNotEmpty) {
+                    final assignedVehicle = controller.allVehicles
+                        .firstWhereOrNull((va) => va.driver == v);
+                    if (assignedVehicle != null) {
+                      Ui.showError(
+                        "Driver already assigned to ${assignedVehicle.desc}",
+                      );
+                      tecs[3].text = curDriver.value.name ?? "";
+                      driverVehicle.value = !driverVehicle.value;
+                      return;
+                    }
+                  }
+                  tecs[3].text = v ?? curDriver.value.name ?? "";
+                  curDriver.value = v == null
+                      ? User()
+                      : controller.allDrivers.firstWhereOrNull(
+                              (e) => e.name == v,
+                            ) ??
+                            User();
+
+                      driverVehicle.value = !driverVehicle.value;
+                },
+              );
+            }),
             Row(
               children: [
                 AppText.medium("Enabled", fontSize: 14),
@@ -2146,7 +2240,7 @@ class AddResource<T> extends StatelessWidget {
                 }),
               ],
             ),
-
+        ],
           //Location
           // if (title.toLowerCase() == "loading points")
           //   CustomTextField("Add name", tecs[0], label: "Name"),

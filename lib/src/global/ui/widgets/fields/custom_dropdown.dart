@@ -55,7 +55,7 @@ class CustomDropdown<T> extends StatelessWidget {
     }
     
     final selectedItem = items.firstWhere(
-      (item) => item.value == value,
+      (item) => item.value == selectedValue.value,
       orElse: () => items.first,
     );
     return _getItemText(selectedItem);

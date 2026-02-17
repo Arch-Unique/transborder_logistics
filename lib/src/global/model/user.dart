@@ -18,7 +18,7 @@ class User implements Slugger {
   String? phone;
   String? email;
   String? name, location, truckno, image;
-  String role;
+  String role,category;
 
   User({
     this.id = 0,
@@ -29,6 +29,7 @@ class User implements Slugger {
     this.truckno,
     this.image,
     this.role = "",
+    this.category="",
   });
 
   bool get isAdmin => role == "admin" || role == "operator";
@@ -56,7 +57,7 @@ class User implements Slugger {
   ];
 
   @override
-  String get slug => "$name,$phone,$email,$location,$truckno,$role";
+  String get slug => "$name,$phone,$email,$location,$truckno,$role,$category";
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
@@ -65,6 +66,7 @@ class User implements Slugger {
       role: json["role"],
       image: json["image"],
       location: json["address"],
+      category: json["category"],
       name: json["fullname"],
       email: json["email"],
       truckno: json["truckno"],
@@ -83,6 +85,7 @@ class User implements Slugger {
       "Phone": phone ?? "",
       "Email": email ?? "",
       "Location": location ?? "",
+  "Category": category,
     };
   }
 }
@@ -94,6 +97,8 @@ class Location implements Slugger {
   String? state, code;
   String? facilityType;
   bool isActive;
+  String? address, phone;
+  double? lat, lng;
 
   Location({
     this.id = 0,
@@ -102,13 +107,24 @@ class Location implements Slugger {
     this.state = "",
     this.code = "",
     this.facilityType = "",
+    this.address,
+    this.phone,
+    this.lat,
+    this.lng,
     this.isActive = true,
   });
 
   String get desc => "$name, $lga, $state";
 
   @override
-  List<String> get tableTitle => ["Id","Name", "Code", "Status", "LGA", "State"];
+  List<String> get tableTitle => [
+    "Id",
+    "Name",
+    "Code",
+    "Status",
+    "LGA",
+    "State",
+  ];
 
   @override
   List<String> get tableValue => [
@@ -129,6 +145,10 @@ class Location implements Slugger {
       code: json["code"],
       isActive: json["isactive"],
       facilityType: json["type"] ?? "Hospital",
+      address: json["address"],
+      phone: json["phone"],
+      lat: json["lat"] != null ? double.tryParse(json["lat"].toString()) : 0,
+      lng: json["lng"] != null ? double.tryParse(json["lng"].toString()) : 0,
     );
   }
 
@@ -148,22 +168,30 @@ class Location implements Slugger {
       "Status": isActive ? "Active" : "Inactive",
       "Facility Type": facilityType ?? "",
       "Code": code ?? "",
-      
+      "Address": address ?? "",
+      "Phone": phone ?? "",
+      "Coordinates":
+          "${lat != null ? lat.toString() : ""},${lng != null ? lng.toString() : ""}",
     };
   }
 }
 
 class StateLocation implements Slugger {
   int id;
-  String? name;
+  String? name, code;
   bool? isActive;
 
-  StateLocation({this.id = 0, this.name = "", this.isActive = false});
+  StateLocation({
+    this.id = 0,
+    this.name = "",
+    this.code = "",
+    this.isActive = false,
+  });
 
-  String get desc => "$name, $isActive";
+  String get desc => "$name, $code, $isActive";
 
   @override
-  List<String> get tableTitle => ["Id","Name", "Status"];
+  List<String> get tableTitle => ["Id", "Name", "Status"];
 
   @override
   List<String> get tableValue => [
@@ -179,6 +207,7 @@ class StateLocation implements Slugger {
     return StateLocation(
       id: json["id"],
       name: json["name"],
+      code: json["code"],
       isActive: json["isactive"] ?? false,
     );
   }
@@ -189,6 +218,7 @@ class StateLocation implements Slugger {
       "Id": id.toString(),
       "Status": (isActive ?? false) ? "Active" : "Inactive",
       "Name": name ?? "",
+      "Code": code ?? "",
     };
   }
 
@@ -199,7 +229,7 @@ class StateLocation implements Slugger {
 class Vehicle implements Slugger {
   int id;
   String? name, regno, type;
-  String? image, driver;
+  String? image, driver, category;
   bool isActive;
 
   Vehicle({
@@ -209,13 +239,21 @@ class Vehicle implements Slugger {
     this.type = "",
     this.image = "",
     this.driver = "",
+    this.category = "",
     this.isActive = true,
   });
 
   String get desc => "$name $regno $type";
 
   @override
-  List<String> get tableTitle => ["Id","Make & Model", "Truck No", "Type","Status", "Driver"];
+  List<String> get tableTitle => [
+    "Id",
+    "Make & Model",
+    "Truck No",
+    "Type",
+    "Status",
+    "Driver",
+  ];
 
   @override
   List<String> get tableValue => [
@@ -223,7 +261,7 @@ class Vehicle implements Slugger {
     name ?? "",
     regno ?? "",
     type ?? "",
-    isActive ? "Active": "Inactive",
+    isActive ? "Active" : "Inactive",
     driver ?? "N/A",
   ];
 
@@ -236,9 +274,10 @@ class Vehicle implements Slugger {
       "Id": id.toString(),
       "Make & Model": name ?? "",
       "Plate No": regno ?? "",
-      "Type": type ?? "","Status": isActive ? "Active" : "Inactive",
+      "Type": type ?? "",
+      "Status": isActive ? "Active" : "Inactive",
+      "Category": category ?? "N/A",
       "Assigned Driver": driver ?? "N/A",
-      
     };
   }
 
@@ -250,12 +289,14 @@ class Vehicle implements Slugger {
       type: json["type"],
       image: json["image"],
       isActive: json["isactive"],
+      category: json["category"],
       driver: json["driver"],
     );
   }
 
   @override
-  String get slug => "$desc,${isActive ? "Active" : "Inactive"},${driver ?? "N/A"}";
+  String get slug =>
+      "$desc,${isActive ? "Active" : "Inactive"},${driver ?? "N/A"},$category";
 }
 
 class Delivery implements Slugger {
@@ -272,6 +313,7 @@ class Delivery implements Slugger {
   double amt;
   bool isCanceled;
   String? pickup, pickupName, pickupContact, pickupSignature, invoiceno;
+  String? commodityType, deliveryType;
 
   static const nv = [null, "", "[]", [], "null"];
 
@@ -339,7 +381,6 @@ class Delivery implements Slugger {
 
   @override
   List<String> get tableValue {
-    
     return [
       waybill,
       pickup ?? "",
@@ -352,7 +393,7 @@ class Delivery implements Slugger {
 
   @override
   String get slug =>
-      "$waybill,$driver,$owner,$pickup,${stops.toString()},$truckno,${items.toString()},$status";
+      "$waybill,$driver,$owner,$pickup,${stops.toString()},$truckno,${items.toString()},$status,$commodityType,$deliveryType";
 
   Delivery({
     this.id = 0,
@@ -376,6 +417,8 @@ class Delivery implements Slugger {
     this.pickupName = "",
     this.pickupContact = "",
     this.pickupSignature = "",
+    this.commodityType,
+    this.deliveryType,
     required this.createdAt,
   });
 
@@ -396,6 +439,9 @@ class Delivery implements Slugger {
       invoiceno: json["invoiceno"],
       amt: json["amount"] ?? 0,
       truckno: json["truckno"] ?? "",
+      commodityType: json["commoditytype"],
+      deliveryType: json["deliverytype"],
+      
       picture: json["picture"] == null
           ? []
           : (jsonDecode(json["picture"]) as List<dynamic>?)
@@ -463,15 +509,18 @@ class Delivery implements Slugger {
       "Driver": driver ?? "",
       "Truckno": truckno ?? "",
       "Pickup": pickup ?? "",
-      "Stops": stopsJoined,"Created At": created,"Status": status,
+      "Stops": stopsJoined,
+      "Created At": created,
+      "Status": status,
       "Start Date": start,
       "Stops Dates": stopsDatesJoined,
-      
+
       "End Date": isDelivered
           ? (formattedStopsDate.isNotEmpty ? formattedStopsDate.last ?? "" : "")
           : "",
       "Pictures": picturesJoined,
-      
+      "Commodity Type": commodityType ?? "",
+      "Delivery Type": deliveryType ?? ""
     };
   }
 }

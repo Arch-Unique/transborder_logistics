@@ -136,7 +136,8 @@ class AppRepo extends GetxController {
     String location,
     String phone,
     String role,
-    String email, {
+    String email,
+    String category, {
     String? truckno,String? image
   }) async {
     const uri = "${AppUrls.profileURL}/user";
@@ -149,6 +150,7 @@ class AppRepo extends GetxController {
         "role": role,
         "email": email,
         "truckno": truckno,
+        "category": category,
         if (image != null || (image?.isEmpty ?? false)) "image": image
       },
     );
@@ -161,7 +163,7 @@ class AppRepo extends GetxController {
     String phone,
     String role,
     int id,
-    String email, {
+    String email,String category, {
     String? truckno,String? image
   }) async {
     final uri = "${AppUrls.profileURL}/user/$id";
@@ -175,6 +177,7 @@ class AppRepo extends GetxController {
         "role": role,
         "truckno": truckno,
         "email": email,
+        "category": category,
         if (image != null || (image?.isEmpty ?? false)) "image": image
       },
     );
@@ -238,46 +241,27 @@ class AppRepo extends GetxController {
   }
 
   Future<bool> addLocation(
-    String name,
-    String state,
-    String lga,
-    String type,
-    String code,
+    Map<String, dynamic> data,
   ) async {
     const uri = "${AppUrls.utilsURL}/location";
 
     final res = await apiService.post(
       uri,
-      data: {
-        "name": name,
-        "state": state,
-        "lga": lga,
-        "type": type,
-        "code": code,
-      },
+      data: data
     );
     return res.statusCode!.isSuccess();
   }
 
   Future<bool> updateLocation(
-    String name,
-    String state,
-    String lga,
-    String type,
-    String code,
+    
+    Map<String, dynamic> data,
     int id,
   ) async {
     final uri = "${AppUrls.utilsURL}/location/$id";
 
     final res = await apiService.patch(
       uri,
-      data: {
-        "name": name,
-        "state": state,
-        "lga": lga,
-        "type": type,
-        "code": code,
-      },
+      data: data
     );
     return res.statusCode!.isSuccess();
   }
@@ -310,6 +294,8 @@ class AppRepo extends GetxController {
     String pickup,
     String truckno,
     String invoiceno,
+    String commodityType,
+    String deliveryType,
   ) async {
     const uri = "${AppUrls.deliveryURL}/deliveries";
 
@@ -324,6 +310,8 @@ class AppRepo extends GetxController {
         "pickup": pickup,
         "truckno": truckno,
         "invoiceno": invoiceno,
+        "commoditytype": commodityType,
+        "deliverytype": deliveryType,
       },
     );
     return res.statusCode!.isSuccess();
@@ -337,6 +325,8 @@ class AppRepo extends GetxController {
     String pickup,
     String truckno,
     String invoiceno,
+    String commodityType,
+    String deliveryType,
     int id,
   ) async {
     final uri = "${AppUrls.deliveryURL}/deliveries/admin/$id";
@@ -352,6 +342,8 @@ class AppRepo extends GetxController {
         "pickup": pickup,
         "truckno": truckno,
         "invoiceno": invoiceno,
+        "commoditytype": commodityType,
+        "deliverytype": deliveryType,
       },
     );
     return res.statusCode!.isSuccess();
@@ -412,7 +404,7 @@ class AppRepo extends GetxController {
     String name,
     String regno,
     String type,
-    bool isActive, {
+    bool isActive, String category,{
     String? driver,String?  image,
     int? driverid,
   }) async {
@@ -428,7 +420,7 @@ class AppRepo extends GetxController {
         "regno": regno,
         "type": type,
         "isactive": isActive,
-
+"category": category,
         if (image != null || (image?.isEmpty ?? false)) "image": image,
         if (driver != null) "driver": driver,
         if (driverid != null) "driverid": driverid,
@@ -442,6 +434,7 @@ class AppRepo extends GetxController {
     String regno,
     String type,
     bool isActive,
+    String category,
     int id, {
     String? driver,String?  image,
     int? driverid,
@@ -458,6 +451,7 @@ class AppRepo extends GetxController {
         "regno": regno,
         "type": type,
         "isactive": isActive,
+"category": category,
 
         if (image != null || (image?.isEmpty ?? false)) "image": image,
         // if (driver != null) 
