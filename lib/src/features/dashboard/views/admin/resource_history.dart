@@ -10,6 +10,7 @@ import 'package:transborder_logistics/src/global/ui/ui_barrel.dart';
 import 'package:transborder_logistics/src/global/ui/widgets/fields/custom_dropdown.dart';
 import 'package:transborder_logistics/src/global/ui/widgets/fields/custom_textfield.dart';
 import 'package:transborder_logistics/src/global/ui/widgets/others/containers.dart';
+import 'package:transborder_logistics/src/features/dashboard/models/var_data.dart';
 
 class ResourceHistory<T extends Slugger> {
   String title;
@@ -190,6 +191,9 @@ class _ResourceHistoryPageState<T extends Slugger>
                 }
                 if (allItems[i].runtimeType == Vehicle) {
                   return VehicleInfo(allItems[i] as Vehicle);
+                }
+                if (allItems[i].runtimeType == VarRecord) {
+                  return VarRecordInfo(allItems[i] as VarRecord);
                 }
                 return SizedBox();
               },

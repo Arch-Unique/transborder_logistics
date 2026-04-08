@@ -11,6 +11,8 @@ import 'package:share_plus/share_plus.dart';
 import 'package:syncfusion_flutter_signaturepad/signaturepad.dart';
 import 'package:transborder_logistics/src/features/auth/controllers/excel.dart';
 import 'package:transborder_logistics/src/features/dashboard/controllers/dashboard_controller.dart';
+import 'package:transborder_logistics/src/features/dashboard/controllers/var_controller.dart';
+import 'package:transborder_logistics/src/features/dashboard/views/driver/var_form_screen.dart';
 import 'package:transborder_logistics/src/global/services/barrel.dart';
 import 'package:transborder_logistics/src/global/ui/ui_barrel.dart';
 import 'package:transborder_logistics/src/global/ui/widgets/fields/custom_dropdown.dart';
@@ -23,6 +25,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:widgets_to_image/widgets_to_image.dart';
 
 import '../../../global/model/barrel.dart';
+import 'package:transborder_logistics/src/features/dashboard/models/var_data.dart';
 
 class DeliveryInfo extends StatelessWidget {
   const DeliveryInfo(this.delivery, {super.key});
@@ -282,6 +285,62 @@ class StateInfo extends StatelessWidget {
           Expanded(child: AppText.medium(sloc.name ?? "N/A", fontSize: 12)),
           Ui.boxWidth(24),
           DriverStatusChip(sloc.isActive! ? "Available" : "Inactive"),
+        ],
+      ),
+    );
+  }
+}
+
+class VarRecordInfo extends StatelessWidget {
+  const VarRecordInfo(this.record, {super.key});
+  final VarRecord record;
+
+  @override
+  Widget build(BuildContext context) {
+    final received = record.signOff.receivedBy.isNotEmpty;
+    return CurvedContainer(
+      border: Border.all(color: AppColors.borderColor),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(12),
+      radius: 12,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: AppText.medium(
+                  record.joborderno.isEmpty ? '—' : record.joborderno,
+                  fontSize: 13,
+                ),
+              ),
+              AppChip(received ? 'Completed' : 'New'),
+            ],
+          ),
+          const SizedBox(height: 4),
+          AppText.thin(
+            record.dateofarrival.isEmpty ? '—' : record.dateofarrival,
+            fontSize: 11,
+            color: AppColors.lightTextColor,
+          ),
+          if (record.driverName.isNotEmpty || record.driverid != 0)
+            AppText.thin(
+              record.driverName.isNotEmpty
+                  ? record.driverName
+                  : '#${record.driverid}',
+              fontSize: 11,
+              color: AppColors.lightTextColor,
+            ),
+          if (record.originName.isNotEmpty || record.destinationName.isNotEmpty)
+            AppText.thin(
+              '${record.originName.isNotEmpty ? record.originName : '#${record.originid}'}'
+              ' → '
+              '${record.destinationName.isNotEmpty ? record.destinationName : '#${record.destinationid}'}',
+              fontSize: 11,
+              color: AppColors.lightTextColor,
+              maxlines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
         ],
       ),
     );
@@ -941,12 +1000,40 @@ class WaybillDetailPage extends StatelessWidget {
                                                 c.path,
                                               );
                                       if (a) {
+                                        // Dismiss the confirmation bottom sheet
                                         Get.back();
-                                        await Get.find<DashboardController>()
-                                            .getCustomerDelivery();
+                                        // Refresh delivery list
+                                        final dash = Get.find<DashboardController>();
+                                        await dash.getCustomerDelivery();
                                         Ui.showInfo(
                                           "Delivery Ended Successfully",
                                         );
+                                        // If all stops are now delivered,
+                                        // open the VAR form popup automatically.
+                                        final refreshed = dash.allDeliveries
+                                            .firstWhereOrNull(
+                                              (d) => d.id == delivery.id,
+                                            );
+                                        final isFullyDelivered =
+                                            refreshed?.isDelivered ?? delivery.isDelivered;
+                                        if (isFullyDelivered) {
+                                          final appSvc = Get.find<AppService>();
+                                          Get.find<VarController>()
+                                              .initFromDelivery(
+                                                refreshed ?? delivery,
+                                                appSvc.currentUser.value.id,
+                                              );
+                                          // Small delay so the success snack
+                                          // is visible before the popup opens.
+                                          await Future.delayed(
+                                            const Duration(milliseconds: 600),
+                                          );
+                                          Get.bottomSheet(
+                                            VarPopupForm(),
+                                            isScrollControlled: true,
+                                            backgroundColor: Colors.transparent,
+                                          );
+                                        }
                                       } else {
                                         Ui.showInfo("Delivery failed to end");
                                       }
@@ -1043,7 +1130,75 @@ class WaybillDetailPage extends StatelessWidget {
                       text: delivery.hasNotStarted ? "Start Trip" : "End Trip",
                     ),
                   ),
+                Ui.boxHeight(12),
+
+                // ── VAR button: shown to drivers when no VAR has been
+                // submitted for this delivery yet. ─────────────────────────
+                if (appService.currentUser.value.role == 'driver' &&
+                    delivery.isDelivered)
+                  Obx(() {
+                    final varCtrl = Get.find<VarController>();
+                    // Ensure the list is fresh each time the page is shown
+                    if (varCtrl.allVars.isEmpty && !varCtrl.isFetchingVars.value) {
+                      varCtrl.fetchVars();
+                    }
+                    final hasVar = varCtrl.allVars
+                        .any((v) => v.deliveryid == delivery.id);
+                    if (hasVar) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: CurvedContainer(
+                          radius: 8,
+                          color: AppColors.primaryColor.withOpacity(0.08),
+                          border: Border.all(
+                            color: AppColors.primaryColor.withOpacity(0.25),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 10),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              AppIcon(
+                                HugeIcons.strokeRoundedCheckmarkCircle02,
+                                size: 16,
+                                color: AppColors.primaryColor,
+                              ),
+                              Ui.boxWidth(8),
+                              AppText.medium(
+                                'VAR Already Submitted',
+                                fontSize: 12,
+                                color: AppColors.primaryColor,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: AppButton(
+                          onPressed: () {
+                            final appSvc = Get.find<AppService>();
+                            varCtrl.initFromDelivery(
+                              delivery,
+                              appSvc.currentUser.value.id,
+                            );
+                            Get.bottomSheet(
+                              VarPopupForm(),
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                            );
+                          },
+                          text: 'Submit VAR',
+                        ),
+                      ),
+                    );
+                  }),
+
                 Ui.boxHeight(24),
+
               ],
             ),
           ),

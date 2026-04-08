@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:transborder_logistics/src/features/dashboard/controllers/dashboard_controller.dart';
+import 'package:transborder_logistics/src/features/dashboard/controllers/var_controller.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/admin/resource_history.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/shared.dart';
+import 'package:transborder_logistics/src/features/dashboard/views/driver/var_form_screen.dart';
+import 'package:transborder_logistics/src/features/dashboard/views/driver/var_list_screen.dart';
+import 'package:transborder_logistics/src/global/services/barrel.dart';
 import 'package:transborder_logistics/src/global/ui/widgets/others/containers.dart';
 import 'package:transborder_logistics/src/src_barrel.dart';
 
@@ -215,6 +219,43 @@ class DriverExplorer extends StatelessWidget {
                   },
                 ),
               );
+            },
+          ),
+          // InkWell(
+          //   child: Padding(
+          //     padding: const EdgeInsets.only(right: 16),
+          //     child: AppIcon(HugeIcons.strokeRoundedDocumentCode),
+          //   ),
+          //   onTap: () {
+          //     // Find this driver's active (in-progress) delivery
+          //     final appSvc = Get.find<AppService>();
+          //     final dashCtrl = Get.find<DashboardController>();
+          //     final driverId = appSvc.currentUser.value.id;
+          //     final active = dashCtrl.allDeliveries.firstWhereOrNull(
+          //       (d) => d.driverId == driverId && d.isNotDelivered,
+          //     );
+          //     if (active == null) {
+          //       Ui.showError(
+          //         'No active trip found. Submit a VAR from the End Trip button.',
+          //         title: 'No Active Trip',
+          //       );
+          //       return;
+          //     }
+          //     Get.find<VarController>().initFromDelivery(active, driverId);
+          //     Get.bottomSheet(
+          //       VarPopupForm(),
+          //       isScrollControlled: true,
+          //       backgroundColor: Colors.transparent,
+          //     );
+          //   },
+          // ),
+          InkWell(
+            child: Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: AppIcon(HugeIcons.strokeRoundedLeftToRightListBullet),
+            ),
+            onTap: () {
+              Get.to(() => const VarListScreen());
             },
           ),
         ],

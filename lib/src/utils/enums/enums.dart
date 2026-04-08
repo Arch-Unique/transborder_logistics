@@ -66,7 +66,8 @@ enum DashboardMode {
   vehicles("Vehicles",HugeIcons.strokeRoundedCar01,["All"]),
   facilities("Facilities",HugeIcons.strokeRoundedBuilding05,["All"]),
   pickups("Loading Points",HugeIcons.strokeRoundedShippingLoading,["All"]),
-  location("Location",HugeIcons.strokeRoundedLocation05,["All"]);
+  location("Location",HugeIcons.strokeRoundedLocation05,["All"]),
+  varRecords("VAR Records",HugeIcons.strokeRoundedDocumentCode,["All"]);
   
 
   final String name;

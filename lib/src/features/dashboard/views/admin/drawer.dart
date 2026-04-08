@@ -10,6 +10,7 @@ import 'package:transborder_logistics/src/global/model/user.dart';
 import 'package:transborder_logistics/src/global/ui/widgets/others/containers.dart';
 import 'package:transborder_logistics/src/src_barrel.dart';
 import 'package:transborder_logistics/src/utils/constants/string/facilities.dart';
+import 'package:transborder_logistics/src/features/dashboard/models/var_data.dart';
 
 import '../../../../global/services/barrel.dart';
 import '../../../../global/ui/ui_barrel.dart';
@@ -96,6 +97,11 @@ class AppDrawer extends StatelessWidget {
                             controller.currentModel = Vehicle().obs;
                             rh = ResourceHistory<Vehicle>(
                               items: controller.allVehicles,
+                            );
+                          } else if (e == DashboardMode.varRecords) {
+                            controller.currentModel = VarRecord().obs;
+                            rh = ResourceHistory<VarRecord>(
+                              items: controller.allVarRecords,
                             );
                           } else {
                             rh = ResourceHistory(items: []);

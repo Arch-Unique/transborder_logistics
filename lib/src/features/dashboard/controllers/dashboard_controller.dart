@@ -6,9 +6,11 @@ import 'package:transborder_logistics/src/features/dashboard/views/admin/resourc
 import 'package:transborder_logistics/src/global/model/user.dart';
 import 'package:transborder_logistics/src/global/ui/functions/ui_functions.dart';
 import 'package:transborder_logistics/src/src_barrel.dart';
+import 'package:transborder_logistics/src/global/services/barrel.dart';
 import 'package:transborder_logistics/src/utils/constants/string/facilities.dart';
 
 import '../repository/app_repo.dart';
+import '../models/var_data.dart';
 
 class DashboardController extends GetxController {
   RxList<User> allCustomers = <User>[].obs;
@@ -22,6 +24,7 @@ class DashboardController extends GetxController {
   RxList<Delivery> allCustomerDeliveries = <Delivery>[].obs;
   Rx<Delivery> currentDelivery = Delivery(createdAt: DateTime.now()).obs;
   RxString curLoc = "All".obs;
+  RxList<VarRecord> allVarRecords = <VarRecord>[].obs;
 
   RxInt curPaginatorPage = 1.obs;
   RxInt curPaginatorTotal = 1.obs;
@@ -75,6 +78,7 @@ class DashboardController extends GetxController {
       await getAllCustomers();
       await getLocations();
       await getVehicles();
+      await getAllVarRecords();
       isLoading.value = false;
     } catch (e) {
       // TODO
@@ -148,6 +152,59 @@ class DashboardController extends GetxController {
     allVehicles.value = c;
     if (c.isEmpty) return true;
     return true;
+  }
+
+  Future<void> getAllVarRecords() async {
+    try {
+      final apiService = Get.find<DioApiService>();
+      final res = await apiService.get(AppUrls.varURL);
+      if (res.statusCode != null &&
+          res.statusCode! >= 200 &&
+          res.statusCode! < 300) {
+        final raw = res.data;
+        final list = (raw is List
+            ? raw
+            : raw is Map && raw['data'] is List
+                ? raw['data'] as List
+                : <dynamic>[]);
+        // Resolve display names using already-loaded lists
+        allVarRecords.value = list.map((e) {
+          final rec = VarRecord.fromJson(Map<String, dynamic>.from(e as Map));
+          final driver =
+              allDrivers.firstWhereOrNull((u) => u.id == rec.driverid);
+          final vehicle =
+              allVehicles.firstWhereOrNull((v) => v.id == rec.vehicleid);
+          final origin =
+              allLocation.firstWhereOrNull((l) => l.id == rec.originid);
+          final dest =
+              allLocation.firstWhereOrNull((l) => l.id == rec.destinationid);
+          return VarRecord(
+            id: rec.id,
+            deliveryid: rec.deliveryid,
+            driverid: rec.driverid,
+            vehicleid: rec.vehicleid,
+            originid: rec.originid,
+            destinationid: rec.destinationid,
+            joborderno: rec.joborderno,
+            dateofarrival: rec.dateofarrival,
+            temperaturerange: rec.temperaturerange,
+            commodityDetails: rec.commodityDetails,
+            temperatureMonitoring: rec.temperatureMonitoring,
+            reverseLogistics: rec.reverseLogistics,
+            signOff: rec.signOff,
+            createdAt: rec.createdAt,
+            driverName: driver?.name ?? '',
+            vehicleName: vehicle != null
+                ? '${vehicle.name ?? ''} (${vehicle.regno ?? ''})'
+                : '',
+            originName: origin?.desc ?? '',
+            destinationName: dest?.desc ?? '',
+          );
+        }).toList();
+      }
+    } catch (e) {
+      print('VAR fetch error: $e');
+    }
   }
 
   Future<bool> getCustomerDelivery() async {
@@ -553,6 +610,8 @@ class DashboardController extends GetxController {
       curResourceHistory.value.items = allLoadingPoints;
     } else if (curResourceHistory.value.title == DashboardMode.vehicles.name) {
       curResourceHistory.value.items = allVehicles;
+    } else if (curResourceHistory.value.title == DashboardMode.varRecords.name) {
+      curResourceHistory.value.items = allVarRecords;
     } else {
       curResourceHistory.value.items = [];
     }

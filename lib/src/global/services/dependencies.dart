@@ -1,5 +1,6 @@
 import 'package:transborder_logistics/src/features/auth/controllers/auth_controller.dart';
 import 'package:transborder_logistics/src/features/dashboard/controllers/dashboard_controller.dart';
+import 'package:transborder_logistics/src/features/dashboard/controllers/var_controller.dart';
 import 'package:transborder_logistics/src/global/controller/connection_controller.dart';
 import 'package:transborder_logistics/src/global/services/barrel.dart';
 import 'package:get/get.dart';
@@ -27,5 +28,6 @@ class AppDependency {
     //controllers
     Get.put(AuthController());
     Get.put(DashboardController());
+    Get.put(VarController());
   }
 }

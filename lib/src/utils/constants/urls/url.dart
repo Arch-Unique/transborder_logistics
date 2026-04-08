@@ -6,4 +6,5 @@ abstract class AppUrls {
   static const profileURL = "/profile";
   static const deliveryURL = "/delivery";
   static const utilsURL = "/utils";
+  static const varURL = "/api/var";
 }
