@@ -37,7 +37,7 @@ abstract class Ui {
     return width(context) < 330;
   }
 
-    static bool isBigScreen(BuildContext context) {
+  static bool isBigScreen(BuildContext context) {
     return width(context) > 800;
   }
 
@@ -60,7 +60,7 @@ abstract class Ui {
         borderColor: Color(0xFF00d743),
         borderRadius: 12,
         padding: EdgeInsets.all(12),
-maxWidth: 500,
+        maxWidth: 500,
         snackPosition: SnackPosition.TOP,
         margin: EdgeInsets.all(16),
         animationDuration: Duration(milliseconds: 1500),
@@ -119,7 +119,7 @@ maxWidth: 500,
     // ));
   }
 
-  static showError(String message,{String title="Error"}) {
+  static showError(String message, {String title = "Error"}) {
     Get.closeAllSnackbars();
     Get.showSnackbar(
       GetSnackBar(
@@ -128,7 +128,7 @@ maxWidth: 500,
         borderRadius: 12,
         padding: EdgeInsets.all(12),
 
-maxWidth: 500,
+        maxWidth: 500,
         snackPosition: SnackPosition.TOP,
         margin: EdgeInsets.all(16),
         animationDuration: Duration(milliseconds: 1500),
@@ -177,7 +177,7 @@ maxWidth: 500,
           children: [
             CircleAvatar(
               radius: 44,
-              backgroundColor: AppColors.textColor.withOpacity(0.12),
+              backgroundColor: AppColors.textColor..withValues(alpha: 0.12),
               child: Center(
                 child: CircleAvatar(
                   radius: 28,

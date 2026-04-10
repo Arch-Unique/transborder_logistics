@@ -10,6 +10,8 @@ import 'package:transborder_logistics/src/global/model/user.dart';
 import 'package:transborder_logistics/src/global/ui/ui_barrel.dart';
 import 'package:transborder_logistics/src/src_barrel.dart';
 
+import '../../controllers/var_controller.dart';
+
 class AdminExplorer extends StatefulWidget {
   const AdminExplorer({super.key});
 
@@ -94,9 +96,14 @@ class _AdminExplorerState extends State<AdminExplorer> {
                           )
                         : InkWell(
                             onTap: () {
+                              final rTitle =
+                                  controller.curResourceHistory.value.title;
+                                  if(rTitle == "VAR Records"){
+                                    Get.find<VarController>().reset();
+                                  }
                               Get.bottomSheet(
                                 AddResource(
-                                  controller.curResourceHistory.value.title,
+                                  rTitle,
                                 ),
                                 isScrollControlled: true,
                               );

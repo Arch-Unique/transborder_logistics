@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:transborder_logistics/src/features/dashboard/controllers/dashboard_controller.dart';
 import 'package:transborder_logistics/src/features/dashboard/models/var_data.dart';
-import 'package:transborder_logistics/src/features/dashboard/views/driver/var_review_screen.dart';
 import 'package:transborder_logistics/src/global/model/user.dart';
 import 'package:transborder_logistics/src/global/services/barrel.dart';
 import 'package:transborder_logistics/src/global/ui/ui_barrel.dart';
 import 'package:transborder_logistics/src/src_barrel.dart';
+
+import '../repository/app_repo.dart';
 
 class VarController extends GetxController {
   // ── Integer ID selections (from dropdowns) ────────────────────────────────
@@ -16,10 +17,12 @@ class VarController extends GetxController {
   RxInt selectedOriginId = 0.obs;
   RxInt selectedDestinationId = 0.obs;
 
-  /// The delivery passed to [initFromDelivery]. The banner reads driver name,
-  /// truck no., pickup, and stops directly from here instead of doing ID
-  /// lookups in the dashboard lists (which may not be loaded in driver mode).
-  Rx<Delivery?> activeDelivery = Rx<Delivery?>(null);
+
+  // ── Trip-specific fields ──────────────────────────────────────────────────
+  RxString pickup = ''.obs;
+  RxList<String> stops = <String>[].obs;
+  RxString commodityType = 'Drug Revolving Fund (DRF)'.obs;
+  final truckNo = TextEditingController();
 
   // ── Text fields ───────────────────────────────────────────────────────────
   final jobOrderNo = TextEditingController();
@@ -97,56 +100,135 @@ class VarController extends GetxController {
     }
   }
 
-  // ── Init from active trip ─────────────────────────────────────────────────
-  /// Call this before showing the VAR popup. Populates all trip-context fields
-  /// from the delivery that just ended so the driver doesn't re-enter them.
-  void initFromDelivery(Delivery delivery, int driverId) {
+
+  // ── Population helpers ──────────────────────────────────────────────────
+  void populateFromTrip(Delivery d) {
     reset();
-    activeDelivery.value = delivery;
-    selectedDeliveryId.value = delivery.id;
-    selectedDriverId.value = driverId;
-    selectedVehicleId.value = delivery.vehicleId;
+    selectedDeliveryId.value = d.id;
+    
+    pickup.value = d.pickup ?? '';
+    stops.value = List.from(d.stops);
+    commodityType.value = d.commodityType ?? '';
+    truckNo.text = d.truckno ?? '';
 
-    // Resolve origin/destination IDs by matching pickup & last stop names
-    // against the location master list (case-insensitive).
-    final locations = Get.find<DashboardController>().allLocation;
-
-    int resolveByName(String? name) {
-      if (name == null || name.isEmpty) return 0;
-      final lower = name.trim().toLowerCase();
-      return locations
-              .firstWhereOrNull((l) => l.desc.toLowerCase() == lower)
-              ?.id ??
-          0;
+    final dashCtrl = Get.find<DashboardController>();
+    if (d.driver != null) {
+      final driver = dashCtrl.allDrivers.firstWhereOrNull((e) => e.name == d.driver);
+      if (driver != null) selectedDriverId.value = driver.id;
+    }
+    if (d.truckno != null) {
+      final vehicle = dashCtrl.allVehicles.firstWhereOrNull((e) => e.desc == d.truckno);
+      if (vehicle != null) selectedVehicleId.value = vehicle.id;
     }
 
-    selectedOriginId.value = resolveByName(delivery.pickup);
-    selectedDestinationId.value = delivery.stops.isNotEmpty
-        ? resolveByName(delivery.stops.last)
-        : 0;
+    final loc = dashCtrl.allLoadingPoints.firstWhereOrNull(
+                (e) => e.desc == d.pickup,
+              );
+    selectedOriginId.value = loc?.id ?? 0;
 
-    final now = DateTime.now();
-    dateOfArrival.text =
-        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final loc2 = dashCtrl.allFacilities.firstWhereOrNull(
+                (e) => e.desc == d.stops.last,
+               );
+    selectedDestinationId.value = loc2?.id ?? 0;
   }
 
-  // ── Navigation ────────────────────────────────────────────────────────────
-  void goToReview() {
-    if (selectedDeliveryId.value == 0 ||
-        dateOfArrival.text.trim().isEmpty ||
-        commodityRows.isEmpty ||
-        tempRows.isEmpty) {
-      Ui.showError(
-        'Please fill in the date of arrival and add at least one commodity and temperature record.',
-        title: 'Incomplete Form',
-      );
-      return;
+  void populateFromVar(VarRecord v) {
+    reset();
+    selectedDeliveryId.value = v.deliveryid;
+    selectedDriverId.value = v.driverid;
+    selectedVehicleId.value = v.vehicleid;
+    selectedOriginId.value = v.originid;
+    selectedDestinationId.value = v.destinationid;
+    jobOrderNo.text = v.joborderno;
+    dateOfArrival.text = v.dateofarrival;
+    temperatureRange.value = v.temperaturerange.isNotEmpty ? v.temperaturerange : '+2\u00b0C to +8\u00b0C';
+
+    dispatchedBy.text = v.signOff.dispatchedBy;
+    deliveredBy.text = v.signOff.deliveredBy;
+    receivedBy.text = v.signOff.receivedBy;
+
+    if (v.commodityDetails.isNotEmpty) {
+      commodityRows.clear();
+      for (final req in v.commodityDetails) {
+        final row = List.generate(6, (_) => TextEditingController());
+        row[0].text = req.vaccine;
+        row[1].text = req.batchNo;
+        row[2].text = req.expiryDate;
+        row[3].text = req.qtyDispatched;
+        row[4].text = req.qtyReceived;
+        row[5].text = req.vvmStatus;
+        commodityRows.add(row);
+      }
     }
-    Get.to(() => VarReviewScreen());
+
+    if (v.temperatureMonitoring.isNotEmpty) {
+      tempRows.clear();
+      for (final req in v.temperatureMonitoring) {
+        final row = List.generate(3, (_) => TextEditingController());
+        row[0].text = req.monitoringPoint;
+        row[1].text = req.temperatureCelsius;
+        row[2].text = req.dateTime;
+        tempRows.add(row);
+      }
+    }
+
+    if (v.reverseLogistics.isNotEmpty) {
+      reverseRows.clear();
+      showReverseLogistics.value = true;
+      for (final req in v.reverseLogistics) {
+        final row = List.generate(4, (_) => TextEditingController());
+        row[0].text = req.item;
+        row[1].text = req.quantity;
+        row[2].text = req.condition;
+        row[3].text = req.destination;
+        reverseRows.add(row);
+      }
+    }
+
+    final dashCtrl = Get.find<DashboardController>();
+
+    // Resolve origin display name from ID
+    if (v.originid != 0) {
+      final originLoc = dashCtrl.allLoadingPoints.firstWhereOrNull(
+        (e) => e.id == v.originid,
+      ) ?? dashCtrl.allLocation.firstWhereOrNull((e) => e.id == v.originid);
+      if (originLoc != null) {
+        pickup.value = originLoc.desc;
+      } else if (v.originName.isNotEmpty) {
+        pickup.value = v.originName;
+      }
+    }
+
+    // Resolve destination display name from ID and set as stops[0]
+    if (v.destinationid != 0) {
+      final destLoc = dashCtrl.allFacilities.firstWhereOrNull(
+        (e) => e.id == v.destinationid,
+      ) ?? dashCtrl.allLocation.firstWhereOrNull((e) => e.id == v.destinationid);
+      final destName = destLoc?.desc ?? (v.destinationName.isNotEmpty ? v.destinationName : '');
+      if (destName.isNotEmpty) stops.value = [destName];
+    }
+
+    // Search both admin and driver delivery lists
+    final delivery = dashCtrl.allDeliveries.firstWhereOrNull(
+          (d) => d.id == v.deliveryid,
+        ) ??
+        dashCtrl.allCustomerDeliveries.firstWhereOrNull(
+          (d) => d.id == v.deliveryid,
+        );
+    if (delivery != null) {
+      // Only override if not yet populated from ID lookup
+      if (pickup.value.isEmpty) pickup.value = delivery.pickup ?? '';
+      if (stops.isEmpty || (stops.length == 1 && stops.first.isEmpty)) {
+        stops.value = List.from(delivery.stops);
+      }
+      commodityType.value = delivery.commodityType ?? commodityType.value;
+      truckNo.text = delivery.truckno ?? '';
+    }
+
   }
 
-  // ── Submit ────────────────────────────────────────────────────────────────
-  Future<void> submit() async {
+  // ── Admin Actions ─────────────────────────────────────────────────────────
+  Future<bool> createVar(Map<String, dynamic> extraTripData) async {
     try {
       isSubmitting.value = true;
 
@@ -193,30 +275,117 @@ class VarController extends GetxController {
         ),
       );
 
-      print(data.toJson());
+      final payload = {
+        ...extraTripData,
+        ...data.toJson(),
+      };
 
-      final res = await apiService.post(
-        '${AppUrls.varURL}/submit',
-        data: data.toJson(),
-      );
+      final appRepo = Get.find<AppRepo>();
+      final success = await appRepo.createVar(payload);
 
-      if (res.statusCode != null &&
-          res.statusCode! >= 200 &&
-          res.statusCode! < 300) {
-        Ui.showInfo('VAR submitted successfully.', title: 'Success');
+      if (success) {
+        Ui.showInfo('VAR and Trip created successfully.', title: 'Success');
         reset();
-        // Pop both review and form screens
-        Get.back();
-        Get.back();
+        // await fetchVars();
+        return true;
       } else {
-        final msg =
-            res.data?['error'] ?? 'Submission failed. Please try again.';
-        Ui.showError(msg.toString(), title: 'Error');
+        Ui.showError('Creation failed. Please try again.', title: 'Error');
+        return false;
       }
     } catch (e) {
       Ui.showError('An error occurred: ${e.toString()}', title: 'Error');
+      return false;
     } finally {
       isSubmitting.value = false;
+    }
+  }
+
+  Future<bool> updateVar(int id, Map<String, dynamic> extraTripData) async {
+    try {
+      isSubmitting.value = true;
+
+      final data = VarData(
+        deliveryid: selectedDeliveryId.value,
+        driverid: selectedDriverId.value,
+        vehicleid: selectedVehicleId.value,
+        originid: selectedOriginId.value,
+        destinationid: selectedDestinationId.value,
+        joborderno: jobOrderNo.text.trim(),
+        dateofarrival: dateOfArrival.text.trim(),
+        temperaturerange: temperatureRange.value,
+        commodityDetails: commodityRows.map((row) {
+          return CommodityRow(
+            vaccine: row[0].text.trim(),
+            batchNo: row[1].text.trim(),
+            expiryDate: row[2].text.trim(),
+            qtyDispatched: row[3].text.trim(),
+            qtyReceived: row[4].text.trim(),
+            vvmStatus: row[5].text.trim(),
+          );
+        }).toList(),
+        temperatureMonitoring: tempRows.map((row) {
+          return TempRecord(
+            monitoringPoint: row[0].text.trim(),
+            temperatureCelsius: row[1].text.trim(),
+            dateTime: row[2].text.trim(),
+          );
+        }).toList(),
+        reverseLogistics: showReverseLogistics.value && reverseRows.isNotEmpty
+            ? reverseRows.map((row) {
+                return ReverseLogisticsRow(
+                  item: row[0].text.trim(),
+                  quantity: row[1].text.trim(),
+                  condition: row[2].text.trim(),
+                  destination: row[3].text.trim(),
+                );
+              }).toList()
+            : null,
+        signOff: SignOff(
+          dispatchedBy: dispatchedBy.text.trim(),
+          deliveredBy: deliveredBy.text.trim(),
+          receivedBy: receivedBy.text.trim(),
+        ),
+      );
+
+      final payload = {
+        ...extraTripData,
+        ...data.toJson(),
+      };
+
+      final appRepo = Get.find<AppRepo>();
+      final success = await appRepo.updateVar(id, payload);
+
+      if (success) {
+        Ui.showInfo('VAR updated successfully.', title: 'Success');
+        reset();
+        // await fetchVars();
+        return true;
+      } else {
+        Ui.showError('Update failed. Please try again.', title: 'Error');
+        return false;
+      }
+    } catch (e) {
+      Ui.showError('An error occurred: ${e.toString()}', title: 'Error');
+      return false;
+    } finally {
+      isSubmitting.value = false;
+    }
+  }
+
+  Future<void> closeVar(int id) async {
+    try {
+      Ui.showInfo("Closing...", title: "In Progress");
+      final appRepo = Get.find<AppRepo>();
+      final success = await appRepo.closeVar(id);
+      
+      if (success) {
+        Ui.showInfo('VAR closed successfully.', title: 'Success');
+        // await fetchVars();
+      } else {
+        Ui.showError('Failed to close VAR.', title: 'Error');
+      }
+    } catch (e) {
+      Ui.showError('An error occurred: ${e.toString()}', title: 'Error');
     }
   }
 
@@ -248,7 +417,6 @@ class VarController extends GetxController {
 
   // ── Reset ─────────────────────────────────────────────────────────────────
   void reset() {
-    activeDelivery.value = null;
     selectedDeliveryId.value = 0;
     selectedDriverId.value = 0;
     selectedVehicleId.value = 0;
@@ -256,6 +424,10 @@ class VarController extends GetxController {
     selectedDestinationId.value = 0;
     jobOrderNo.clear();
     dateOfArrival.clear();
+    truckNo.clear();
+    pickup.value = '';
+    stops.clear();
+    commodityType.value = '';
     dispatchedBy.clear();
     deliveredBy.clear();
     receivedBy.clear();
@@ -298,6 +470,7 @@ class VarController extends GetxController {
   void onClose() {
     jobOrderNo.dispose();
     dateOfArrival.dispose();
+    truckNo.dispose();
     dispatchedBy.dispose();
     deliveredBy.dispose();
     receivedBy.dispose();

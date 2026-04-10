@@ -11,8 +11,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:syncfusion_flutter_signaturepad/signaturepad.dart';
 import 'package:transborder_logistics/src/features/auth/controllers/excel.dart';
 import 'package:transborder_logistics/src/features/dashboard/controllers/dashboard_controller.dart';
-import 'package:transborder_logistics/src/features/dashboard/controllers/var_controller.dart';
-import 'package:transborder_logistics/src/features/dashboard/views/driver/var_form_screen.dart';
+
 import 'package:transborder_logistics/src/global/services/barrel.dart';
 import 'package:transborder_logistics/src/global/ui/ui_barrel.dart';
 import 'package:transborder_logistics/src/global/ui/widgets/fields/custom_dropdown.dart';
@@ -24,6 +23,8 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:widgets_to_image/widgets_to_image.dart';
 
+import 'package:transborder_logistics/src/features/dashboard/controllers/var_controller.dart';
+import 'package:transborder_logistics/src/features/dashboard/views/driver/var_form_screen.dart';
 import '../../../global/model/barrel.dart';
 import 'package:transborder_logistics/src/features/dashboard/models/var_data.dart';
 
@@ -302,6 +303,13 @@ class VarRecordInfo extends StatelessWidget {
       border: Border.all(color: AppColors.borderColor),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(12),
+      onPressed: () {
+        Get.find<VarController>().populateFromVar(record);
+        Get.bottomSheet(
+          AddResource<VarRecord>("VAR Records", obj: record),
+          isScrollControlled: true,
+        );
+      },
       radius: 12,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -369,10 +377,34 @@ class DriverStatusChip extends StatelessWidget {
         Color(0xFF229EFF),
       ],
       icons: [
-        HugeIcons.strokeRoundedCheckmarkCircle02,
-        HugeIcons.strokeRoundedCheckmarkCircle02,
+        HugeIcons.strokeRoundedCheckmarkCircle01,
+        HugeIcons.strokeRoundedCheckmarkCircle01,
         HugeIcons.strokeRoundedCancelCircle,
-        HugeIcons.strokeRoundedArrowLeftRight,
+        HugeIcons.strokeRoundedClock01,
+      ],
+    );
+  }
+}
+
+class VarRecordStatusChip extends StatelessWidget {
+  const VarRecordStatusChip(this.title, {super.key});
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppChip(
+      title.toLowerCase() == "trip_ended" ? "trip ended" : title.toLowerCase(),
+      bgColors: [
+        AppColors.borderColor.withValues(alpha: 0.2), // pending
+        Color(0xFFFFF4E5), // trip_ended
+        Color(0xFFE6FBEC), // closed
+      ],
+      titles: ["pending", "trip ended", "closed"],
+      titleColors: [AppColors.textColor, Color(0xFFFF9800), Color(0xFF00D743)],
+      icons: [
+        HugeIcons.strokeRoundedClock01,
+        HugeIcons.strokeRoundedContainerTruck01,
+        HugeIcons.strokeRoundedCheckmarkCircle01,
       ],
     );
   }
@@ -910,7 +942,9 @@ class WaybillDetailPage extends StatelessWidget {
                                   );
                                 },
                               ),
-                              backgroundColor: AppColors.white.withOpacity(0.5),
+                              backgroundColor: AppColors.white.withValues(
+                                alpha: 0.5,
+                              ),
                               isScrollControlled: true,
                             );
                             // final a = await wsController.capturePng(pixelRatio: 6);
@@ -1003,37 +1037,12 @@ class WaybillDetailPage extends StatelessWidget {
                                         // Dismiss the confirmation bottom sheet
                                         Get.back();
                                         // Refresh delivery list
-                                        final dash = Get.find<DashboardController>();
+                                        final dash =
+                                            Get.find<DashboardController>();
                                         await dash.getCustomerDelivery();
                                         Ui.showInfo(
                                           "Delivery Ended Successfully",
                                         );
-                                        // If all stops are now delivered,
-                                        // open the VAR form popup automatically.
-                                        final refreshed = dash.allDeliveries
-                                            .firstWhereOrNull(
-                                              (d) => d.id == delivery.id,
-                                            );
-                                        final isFullyDelivered =
-                                            refreshed?.isDelivered ?? delivery.isDelivered;
-                                        if (isFullyDelivered) {
-                                          final appSvc = Get.find<AppService>();
-                                          Get.find<VarController>()
-                                              .initFromDelivery(
-                                                refreshed ?? delivery,
-                                                appSvc.currentUser.value.id,
-                                              );
-                                          // Small delay so the success snack
-                                          // is visible before the popup opens.
-                                          await Future.delayed(
-                                            const Duration(milliseconds: 600),
-                                          );
-                                          Get.bottomSheet(
-                                            VarPopupForm(),
-                                            isScrollControlled: true,
-                                            backgroundColor: Colors.transparent,
-                                          );
-                                        }
                                       } else {
                                         Ui.showInfo("Delivery failed to end");
                                       }
@@ -1130,75 +1139,7 @@ class WaybillDetailPage extends StatelessWidget {
                       text: delivery.hasNotStarted ? "Start Trip" : "End Trip",
                     ),
                   ),
-                Ui.boxHeight(12),
-
-                // ── VAR button: shown to drivers when no VAR has been
-                // submitted for this delivery yet. ─────────────────────────
-                if (appService.currentUser.value.role == 'driver' &&
-                    delivery.isDelivered)
-                  Obx(() {
-                    final varCtrl = Get.find<VarController>();
-                    // Ensure the list is fresh each time the page is shown
-                    if (varCtrl.allVars.isEmpty && !varCtrl.isFetchingVars.value) {
-                      varCtrl.fetchVars();
-                    }
-                    final hasVar = varCtrl.allVars
-                        .any((v) => v.deliveryid == delivery.id);
-                    if (hasVar) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: CurvedContainer(
-                          radius: 8,
-                          color: AppColors.primaryColor.withOpacity(0.08),
-                          border: Border.all(
-                            color: AppColors.primaryColor.withOpacity(0.25),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 10),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              AppIcon(
-                                HugeIcons.strokeRoundedCheckmarkCircle02,
-                                size: 16,
-                                color: AppColors.primaryColor,
-                              ),
-                              Ui.boxWidth(8),
-                              AppText.medium(
-                                'VAR Already Submitted',
-                                fontSize: 12,
-                                color: AppColors.primaryColor,
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: AppButton(
-                          onPressed: () {
-                            final appSvc = Get.find<AppService>();
-                            varCtrl.initFromDelivery(
-                              delivery,
-                              appSvc.currentUser.value.id,
-                            );
-                            Get.bottomSheet(
-                              VarPopupForm(),
-                              isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                            );
-                          },
-                          text: 'Submit VAR',
-                        ),
-                      ),
-                    );
-                  }),
-
                 Ui.boxHeight(24),
-
               ],
             ),
           ),
@@ -1248,7 +1189,7 @@ class _SignatureViewState extends State<SignatureView> {
                 child: Container(
                   decoration: BoxDecoration(
                     border: Border.all(
-                      color: AppColors.lightTextColor.withOpacity(0.3),
+                      color: AppColors.lightTextColor.withValues(alpha: 0.3),
                       width: 1,
                     ),
                   ),
@@ -1838,9 +1779,21 @@ class AddResource<T> extends StatelessWidget {
         tecs[5].text = delivery.commodityType ?? "Drug Revolving Fund (DRF)";
         tecs[6].text = delivery.deliveryType ?? "Last Mile Delivery (LMD)";
       }
+
+      if (title.toLowerCase() == "var records") {
+        final varCtrl = Get.find<VarController>();
+        final varRec = obj as VarRecord;
+        varCtrl.populateFromVar(varRec);
+        tecs[4].text =varRec.waybill;
+        facilities.value = varCtrl.stops.isNotEmpty
+            ? List.from(varCtrl.stops)
+            : [""];
+      }
     } else {
-      if (title.toLowerCase() == "trips") {
-        controller.generateWayBill(locState.value == "Kano").then((v) {
+      if (title.toLowerCase() == "trips" ||
+          title.toLowerCase() == "var records" ||
+          title.toLowerCase() == "varrecords") {
+        controller.generateWayBill(locState.value == "Kano",title.toLowerCase() == "trips" ? "TBL":"VAR" ).then((v) {
           tecs[4].text = v;
         });
         facilities.value = [""];
@@ -2013,6 +1966,36 @@ class AddResource<T> extends StatelessWidget {
               } else {
                 throw "All Fields are mandatory to fill";
               }
+            } else if (title.toLowerCase() == "var records" ||
+                title.toLowerCase() == "varrecords") {
+              final varCtrl = Get.find<VarController>();
+              if (varCtrl.selectedDriverId.value == 0 ||
+                  varCtrl.selectedVehicleId.value == 0 ||
+                  varCtrl.pickup.value.isEmpty ||
+                  varCtrl.stops.isEmpty ||
+                  varCtrl.stops.first.isEmpty) {
+                throw "Please complete the Trip Details (Driver, Vehicle, Origin, Destination).";
+              }
+              if (obj == null) {
+                await varCtrl.createVar({
+                  'waybill': tecs[4].text,
+                  'pickup': varCtrl.pickup.value,
+                  'stops': varCtrl.stops.map((e) => e).toList(),
+                  'truckno': varCtrl.truckNo.text.trim(),
+                  'commoditytype': varCtrl.commodityType.value,
+                  'deliverytype': 'Last Mile Delivery (LMD)',
+                });
+              } else {
+                final varRec = obj as VarRecord;
+                await varCtrl.updateVar(varRec.id, {
+                  'waybill': tecs[4].text,
+                  'pickup': varCtrl.pickup.value,
+                  'stops': varCtrl.stops.map((e) => e).toList(),
+                  'truckno': varCtrl.truckNo.text.trim(),
+                  'commoditytype': varCtrl.commodityType.value,
+                  'deliverytype': 'Last Mile Delivery (LMD)',
+                });
+              }
             }
             await controller.initApp();
             controller.refreshResource();
@@ -2024,8 +2007,10 @@ class AddResource<T> extends StatelessWidget {
           }
         },
         actions: [
-          //TRIP
-          if (title.toLowerCase() == "trips") ...[
+          //TRIP or VAR (State and Waybill common fields)
+          if (title.toLowerCase() == "trips" ||
+              title.toLowerCase() == "var records" ||
+              title.toLowerCase() == "varrecords") ...[
             if (controller.curLoc.value == "All")
               CustomDropdown.city(
                 cities: ["Kano", "Kaduna"],
@@ -2034,7 +2019,7 @@ class AddResource<T> extends StatelessWidget {
                 selectedValue: "Kano",
                 onChanged: (v) {
                   loc.value = v ?? "Kano";
-                  controller.generateWayBill(v == "Kano").then((v) {
+                  controller.generateWayBill(v == "Kano",title.toLowerCase() == "trips" ? "TBL":"VAR" ).then((v) {
                     tecs[4].text = v;
                   });
                 },
@@ -2045,44 +2030,57 @@ class AddResource<T> extends StatelessWidget {
               label: "Waybill",
               readOnly: true,
             ),
-            Obx(
-               () {
-                if(loc.value != "Kano"){
-                  return SizedBox();
-                }
-                return CustomDropdown.city(
-                    cities: ["Drug Revolving Fund (DRF)", "Basic Health Care Provision Fund (BHCPF)","Kano State Contributory Health Management Agency (KSCHMA)","Maternal & Child Health Care (MNCH)","Family Planning (FP)","IMPACT Project"],
-                    hint: "Add Commodity Type",
-                    label: "Commodity Type",
-                    selectedValue: tecs[5].text.isEmpty ? "Drug Revolving Fund (DRF)" : tecs[5].text,
-                    onChanged: (v) {
-                      tecs[5].text = v ?? "Drug Revolving Fund (DRF)";
-                    },
-                  );
+          ],
+          //TRIP specifically
+          if (title.toLowerCase() == "trips") ...[
+            Obx(() {
+              if (loc.value != "Kano") {
+                return SizedBox();
               }
-            ),
-            CustomDropdown.city(
-                cities: ["Last Mile Delivery (LMD)", "Proxy Delivery"],
-                hint: "Add Delivery Type",
-                label: "Delivery Type",
-                selectedValue: tecs[6].text.isEmpty ? "Last Mile Delivery (LMD)" : tecs[6].text,
+              return CustomDropdown.city(
+                cities: [
+                  "Drug Revolving Fund (DRF)",
+                  "Basic Health Care Provision Fund (BHCPF)",
+                  "Kano State Contributory Health Management Agency (KSCHMA)",
+                  "Maternal & Child Health Care (MNCH)",
+                  "Family Planning (FP)",
+                  "IMPACT Project",
+                ],
+                hint: "Add Commodity Type",
+                label: "Commodity Type",
+                selectedValue: tecs[5].text.isEmpty
+                    ? "Drug Revolving Fund (DRF)"
+                    : tecs[5].text,
                 onChanged: (v) {
-                  tecs[6].text = v ?? "Last Mile Delivery (LMD)";
+                  tecs[5].text = v ?? "Drug Revolving Fund (DRF)";
                 },
-              ),
-            Obx(
-               () {
-                return CustomDropdown.city(
-                  cities: controller.allLoadingPoints.where((e) => e.state == loc.value).map((e) => e.desc).toList(),
-                  hint: "Add Loading Point",
-                  label: "Loading Point",
-                  selectedValue: tecs[0].text,
-                  onChanged: (v) {
-                    tecs[0].text = v ?? "";
-                  },
-                );
-              }
+              );
+            }),
+            CustomDropdown.city(
+              cities: ["Last Mile Delivery (LMD)", "Proxy Delivery"],
+              hint: "Add Delivery Type",
+              label: "Delivery Type",
+              selectedValue: tecs[6].text.isEmpty
+                  ? "Last Mile Delivery (LMD)"
+                  : tecs[6].text,
+              onChanged: (v) {
+                tecs[6].text = v ?? "Last Mile Delivery (LMD)";
+              },
             ),
+            Obx(() {
+              return CustomDropdown.city(
+                cities: controller.allLoadingPoints
+                    .where((e) => e.state == loc.value)
+                    .map((e) => e.desc)
+                    .toList(),
+                hint: "Add Loading Point",
+                label: "Loading Point",
+                selectedValue: tecs[0].text,
+                onChanged: (v) {
+                  tecs[0].text = v ?? "";
+                },
+              );
+            }),
             Obx(() {
               final gf = List.generate(facilities.length, (i) {
                 return Padding(
@@ -2199,9 +2197,7 @@ class AddResource<T> extends StatelessWidget {
             ),
 
           //USER
-          if (title.toLowerCase() == "users")
-          ...[
-
+          if (title.toLowerCase() == "users") ...[
             CustomTextField("Add user", tecs[0], label: "Name"),
             CustomTextField("Add email", tecs[1], label: "Email"),
             CustomTextField("Add phone", tecs[2], label: "Phone"),
@@ -2223,11 +2219,10 @@ class AddResource<T> extends StatelessWidget {
                 tecs[4].text = v ?? "";
               },
             ),
-            ],
+          ],
 
           //DRIVER
-          if (title.toLowerCase() == "drivers")
-          ...[
+          if (title.toLowerCase() == "drivers") ...[
             CustomTextField("Add name", tecs[0], label: "Name"),
             CustomTextField("Add email", tecs[1], label: "Email"),
             CustomTextField("Add phone", tecs[2], label: "Phone"),
@@ -2252,7 +2247,6 @@ class AddResource<T> extends StatelessWidget {
           ],
 
           //Location
-            
           if (title.toLowerCase() == "facilities")
             CustomDropdown.city(
               cities: ["Hospital", "Clinic", "Loading Point"],
@@ -2264,9 +2258,8 @@ class AddResource<T> extends StatelessWidget {
               },
             ),
           if (title.toLowerCase() == "facilities" ||
-              title.toLowerCase() == "loading points")
-              ...[
-                CustomTextField("Add name", tecs[0], label: "Name"),
+              title.toLowerCase() == "loading points") ...[
+            CustomTextField("Add name", tecs[0], label: "Name"),
             CustomTextField("Add Facility Code", tecs[4], label: "Code"),
             CustomDropdown.city(
               cities: ["Kano", "Kaduna"],
@@ -2311,14 +2304,27 @@ class AddResource<T> extends StatelessWidget {
               );
             }),
             CustomTextField("1 John Street", tecs[5], label: "Address"),
-            CustomTextField("+2347012345678", tecs[6], label: "Phone Number", varl:  FPL.phone,),
-            CustomTextField("6.33333", tecs[7], label: "Latitude",varl: FPL.number,),
-            CustomTextField("3.6666", tecs[8], label: "Longitude", varl: FPL.number),
-        ],
+            CustomTextField(
+              "+2347012345678",
+              tecs[6],
+              label: "Phone Number",
+              varl: FPL.phone,
+            ),
+            CustomTextField(
+              "6.33333",
+              tecs[7],
+              label: "Latitude",
+              varl: FPL.number,
+            ),
+            CustomTextField(
+              "3.6666",
+              tecs[8],
+              label: "Longitude",
+              varl: FPL.number,
+            ),
+          ],
           //VEHICLE
-          if (title.toLowerCase() == "vehicles")
-          ...[
-                     
+          if (title.toLowerCase() == "vehicles") ...[
             CustomTextField("Vehicle Name", tecs[0], label: "Make & Model"),
             CustomTextField("Reg Number", tecs[1], label: "Plate number"),
             CustomDropdown.city(
@@ -2376,7 +2382,7 @@ class AddResource<T> extends StatelessWidget {
                             ) ??
                             User();
 
-                      driverVehicle.value = !driverVehicle.value;
+                  driverVehicle.value = !driverVehicle.value;
                 },
               );
             }),
@@ -2395,7 +2401,7 @@ class AddResource<T> extends StatelessWidget {
                 }),
               ],
             ),
-        ],
+          ],
           //Location
           // if (title.toLowerCase() == "loading points")
           //   CustomTextField("Add name", tecs[0], label: "Name"),
@@ -2421,6 +2427,9 @@ class AddResource<T> extends StatelessWidget {
           //       tecs[3].text = v ?? "";
           //     },
           //   ),
+          if (title.toLowerCase() == "var records" ||
+              title.toLowerCase() == "varrecords")
+            ...buildVarFormFields(context),
         ],
       ),
     );

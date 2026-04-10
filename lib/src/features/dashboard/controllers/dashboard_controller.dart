@@ -40,8 +40,7 @@ class DashboardController extends GetxController {
 
   RxInt curMode = 0.obs;
   Rx<Slugger> currentModel = User().obs;
-  RxList<List<String>> curFilters =
-      <List<String>>[].obs;
+  RxList<List<String>> curFilters = <List<String>>[].obs;
   RxInt currentModelIndex = 0.obs;
   final appRepo = Get.find<AppRepo>();
   final isLoading = false.obs;
@@ -129,12 +128,14 @@ class DashboardController extends GetxController {
 
   List<User> get allUnavailableDrivers {
     return allDrivers
-          .where((e) => allUndeliveredDeliveries.any((a) => a.driverId == e.id))
-          .toList();
+        .where((e) => allUndeliveredDeliveries.any((a) => a.driverId == e.id))
+        .toList();
   }
 
   List<User> get allAvailableDrivers {
-    return allDrivers.where((test) => !allUnavailableDrivers.contains(test)).toList();
+    return allDrivers
+        .where((test) => !allUnavailableDrivers.contains(test))
+        .toList();
   }
 
   Future<bool> getLocations() async {
@@ -161,23 +162,24 @@ class DashboardController extends GetxController {
       if (res.statusCode != null &&
           res.statusCode! >= 200 &&
           res.statusCode! < 300) {
-        final raw = res.data;
-        final list = (raw is List
-            ? raw
-            : raw is Map && raw['data'] is List
-                ? raw['data'] as List
-                : <dynamic>[]);
+        final raw = res.data["data"];
+        final list = raw['data'] as List;
+
         // Resolve display names using already-loaded lists
         allVarRecords.value = list.map((e) {
           final rec = VarRecord.fromJson(Map<String, dynamic>.from(e as Map));
-          final driver =
-              allDrivers.firstWhereOrNull((u) => u.id == rec.driverid);
-          final vehicle =
-              allVehicles.firstWhereOrNull((v) => v.id == rec.vehicleid);
-          final origin =
-              allLocation.firstWhereOrNull((l) => l.id == rec.originid);
-          final dest =
-              allLocation.firstWhereOrNull((l) => l.id == rec.destinationid);
+          final driver = allDrivers.firstWhereOrNull(
+            (u) => u.id == rec.driverid,
+          );
+          final vehicle = allVehicles.firstWhereOrNull(
+            (v) => v.id == rec.vehicleid,
+          );
+          final origin = allLocation.firstWhereOrNull(
+            (l) => l.id == rec.originid,
+          );
+          final dest = allLocation.firstWhereOrNull(
+            (l) => l.id == rec.destinationid,
+          );
           return VarRecord(
             id: rec.id,
             deliveryid: rec.deliveryid,
@@ -199,6 +201,10 @@ class DashboardController extends GetxController {
                 : '',
             originName: origin?.desc ?? '',
             destinationName: dest?.desc ?? '',
+            status: rec.status,
+            deliveryComplete: rec.deliveryComplete,
+            waybill: rec.waybill,
+            
           );
         }).toList();
       }
@@ -342,7 +348,8 @@ class DashboardController extends GetxController {
     String email,
     String phone,
     String role,
-    String address, String category,{
+    String address,
+    String category, {
     String? truckno,
     String? image,
   }) async {
@@ -405,19 +412,20 @@ class DashboardController extends GetxController {
     String code,
     String address,
     String phone,
-    double lat,double lng
+    double lat,
+    double lng,
   ) async {
     return await appRepo.addLocation({
-        "name": name,
-        "state": state,
-        "lga": lga,
-        "type": type,
-        "code": code,
-        "address": address,
-        "phone": phone,
-        "lat": lat,
-        "lng": lng,
-      },);
+      "name": name,
+      "state": state,
+      "lga": lga,
+      "type": type,
+      "code": code,
+      "address": address,
+      "phone": phone,
+      "lat": lat,
+      "lng": lng,
+    });
   }
 
   Future<bool> editLocation(
@@ -428,20 +436,21 @@ class DashboardController extends GetxController {
     String code,
     String address,
     String phone,
-    double lat,double lng,
+    double lat,
+    double lng,
     int id,
   ) async {
     return await appRepo.updateLocation({
-        "name": name,
-        "state": state,
-        "lga": lga,
-        "type": type,
-        "code": code,
-        "address": address,
-        "phone": phone,
-        "lat": lat,
-        "lng": lng,
-      }, id);
+      "name": name,
+      "state": state,
+      "lga": lga,
+      "type": type,
+      "code": code,
+      "address": address,
+      "phone": phone,
+      "lat": lat,
+      "lng": lng,
+    }, id);
   }
 
   Future<bool> deleteLocation(int id) async {
@@ -456,7 +465,8 @@ class DashboardController extends GetxController {
     String pickup,
     String truckno,
     String invoiceno,
-    String commodityType,String deliveryType
+    String commodityType,
+    String deliveryType,
   ) async {
     return await appRepo.addDelivery(
       waybill,
@@ -467,7 +477,7 @@ class DashboardController extends GetxController {
       truckno,
       invoiceno,
       commodityType,
-      deliveryType
+      deliveryType,
     );
   }
 
@@ -479,10 +489,10 @@ class DashboardController extends GetxController {
     return await appRepo.deleteVehicle(id);
   }
 
-  Future<String> generateWayBill(bool isKano) async {
+  Future<String> generateWayBill(bool isKano,String prefix) async {
     final lastId = await appRepo.getLastDeliveryID();
     final sd = DateFormat("MM/yy").format(DateTime.now());
-    return "TBL/${isKano ? "KN" : "KD"}/$sd/${(lastId + 1).toString().padLeft(4, "0")}";
+    return "$prefix/${isKano ? "KN" : "KD"}/$sd/${(lastId + 1).toString().padLeft(4, "0")}";
   }
 
   Future changeLocation(String v) async {
@@ -585,6 +595,22 @@ class DashboardController extends GetxController {
       } else if (s == "Inactive") {
         v.value = List.from(allLoadingPoints);
       }
+    } else if (title.toLowerCase() == DashboardMode.varRecords.name.toLowerCase()) {
+      if (s == "Pending") {
+        v.value = List.from(
+          allVarRecords.where((rec) => rec.status == 'pending').toList(),
+        );
+      } else if (s == "Trip Ended") {
+        v.value = List.from(
+          allVarRecords.where((rec) => rec.tripEnded).toList(),
+        );
+      } else if (s == "Closed") {
+        v.value = List.from(
+          allVarRecords.where((rec) => rec.isClosed).toList(),
+        );
+      } else if (s == "All") {
+        v.value = List.from(allVarRecords);
+      }
     }
     // v.refresh();
   }
@@ -600,7 +626,11 @@ class DashboardController extends GetxController {
       curResourceHistory.value.items = List.from(
         States.states.indexed.map((t) {
           final (index, e) = t;
-          return StateLocation(id: index+1,name: e, isActive: e == "Kano" || e == "Kaduna");
+          return StateLocation(
+            id: index + 1,
+            name: e,
+            isActive: e == "Kano" || e == "Kaduna",
+          );
         }),
       );
     } else if (curResourceHistory.value.title ==
@@ -610,7 +640,8 @@ class DashboardController extends GetxController {
       curResourceHistory.value.items = allLoadingPoints;
     } else if (curResourceHistory.value.title == DashboardMode.vehicles.name) {
       curResourceHistory.value.items = allVehicles;
-    } else if (curResourceHistory.value.title == DashboardMode.varRecords.name) {
+    } else if (curResourceHistory.value.title ==
+        DashboardMode.varRecords.name) {
       curResourceHistory.value.items = allVarRecords;
     } else {
       curResourceHistory.value.items = [];

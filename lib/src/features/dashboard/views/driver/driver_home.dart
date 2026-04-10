@@ -2,12 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:transborder_logistics/src/features/dashboard/controllers/dashboard_controller.dart';
-import 'package:transborder_logistics/src/features/dashboard/controllers/var_controller.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/admin/resource_history.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/shared.dart';
-import 'package:transborder_logistics/src/features/dashboard/views/driver/var_form_screen.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/driver/var_list_screen.dart';
-import 'package:transborder_logistics/src/global/services/barrel.dart';
 import 'package:transborder_logistics/src/global/ui/widgets/others/containers.dart';
 import 'package:transborder_logistics/src/src_barrel.dart';
 
@@ -249,15 +246,15 @@ class DriverExplorer extends StatelessWidget {
           //     );
           //   },
           // ),
-          InkWell(
-            child: Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: AppIcon(HugeIcons.strokeRoundedLeftToRightListBullet),
-            ),
-            onTap: () {
-              Get.to(() => const VarListScreen());
-            },
-          ),
+          // InkWell(
+          //   child: Padding(
+          //     padding: const EdgeInsets.only(right: 16),
+          //     child: AppIcon(HugeIcons.strokeRoundedLeftToRightListBullet),
+          //   ),
+          //   onTap: () {
+          //     Get.to(() => const VarListScreen());
+          //   },
+          // ),
         ],
         hasBack: false,
         child: Stack(

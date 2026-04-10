@@ -77,7 +77,7 @@ class NetOrAssetImage extends StatelessWidget {
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              color: AppColors.white.withOpacity(0.01),
+              color: AppColors.white..withValues(alpha: 0.01),
             ),
             child: Center(
               child: Opacity(
@@ -547,7 +547,7 @@ class ConcCircle extends StatelessWidget {
       height: 12,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: AppColors.primaryColor.withOpacity(0.5),
+        color: AppColors.primaryColor..withValues(alpha: 0.5),
       ),
       child: const CircleAvatar(
         backgroundColor: AppColors.primaryColor,
@@ -662,11 +662,14 @@ Widget badgeBox(
       child,
       shdShow
           ? Positioned.fill(
-            right: -4,
-            top: -4,
+              right: -4,
+              top: -4,
               child: Ui.align(
                 align: a,
-                child: InkWell(onTap: onTap, child: badge(icon: Icons.close)),
+                child: InkWell(
+                  onTap: onTap,
+                  child: badge(icon: Icons.close),
+                ),
               ),
             )
           : SizedBox(),
@@ -839,7 +842,7 @@ class ShimmerWidget extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 24.0),
       child: Shimmer.fromColors(
-        baseColor: AppColors.grey.withOpacity(0.3),
+        baseColor: AppColors.grey..withValues(alpha: 0.3),
         highlightColor: AppColors.white,
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -959,12 +962,7 @@ class UserProfilePic extends StatelessWidget {
 }
 
 class SvgIcon extends StatelessWidget {
-  SvgIcon(
-    this.asset, {
-    this.size = 24,
-    this.color,
-    super.key,
-  });
+  SvgIcon(this.asset, {this.size = 24, this.color, super.key});
   final String asset;
   Color? color;
   final double size;
@@ -981,13 +979,7 @@ class SvgIcon extends StatelessWidget {
 }
 
 class AppIcon extends StatelessWidget {
-  AppIcon(
-    this.asset, {
-    this.size = 24,
-    this.color,
-    this.fit,
-    super.key,
-  });
+  AppIcon(this.asset, {this.size = 24, this.color, this.fit, super.key});
   final dynamic asset;
   Color? color;
   final double size;

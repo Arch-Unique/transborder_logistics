@@ -5,6 +5,9 @@ import 'package:transborder_logistics/src/features/dashboard/controllers/var_con
 import 'package:transborder_logistics/src/global/ui/widgets/others/containers.dart';
 import 'package:transborder_logistics/src/src_barrel.dart';
 import 'package:transborder_logistics/src/global/ui/ui_barrel.dart';
+import 'package:transborder_logistics/src/features/dashboard/controllers/dashboard_controller.dart';
+import 'package:transborder_logistics/src/features/dashboard/views/shared.dart';
+import 'package:transborder_logistics/src/global/ui/widgets/fields/custom_dropdown.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // VarPopupForm — shown as a bottom sheet after End Trip confirmation.
@@ -14,244 +17,242 @@ import 'package:transborder_logistics/src/global/ui/ui_barrel.dart';
 //   Get.bottomSheet(VarPopupForm(), isScrollControlled: true);
 // ─────────────────────────────────────────────────────────────────────────────
 
-class VarPopupForm extends StatelessWidget {
-  VarPopupForm({super.key});
+// ─────────────────────────────────────────────────────────────────────────────
+// VarCreateForm — shown as a bottom sheet for Admins to create a trip + VAR.
+// ─────────────────────────────────────────────────────────────────────────────
 
+List<Widget> buildVarFormFields(BuildContext context) {
   final controller = Get.find<VarController>();
+  final dashCtrl = Get.find<DashboardController>();
+  if (controller.stops.isEmpty) controller.stops.add("");
 
-  @override
-  Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      initialChildSize: 0.93,
-      maxChildSize: 0.97,
-      minChildSize: 0.5,
-      expand: false,
-      builder: (ctx, scrollController) {
-        return CurvedContainer(
-          radius: 20,
-          color:
-              Theme.of(context).scaffoldBackgroundColor,
-          child: Column(
-            children: [
-              // ── Drag handle ───────────────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.only(top: 12, bottom: 4),
-                child: CurvedContainer(
-                  radius: 4,
-                  color: AppColors.borderColor,
-                  width: 40,
-                  height: 4,
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  children: [
-                    AppIcon(HugeIcons.strokeRoundedDocumentCode,
-                        size: 18, color: AppColors.primaryColor),
-                    Ui.boxWidth(8),
-                    AppText.semiBold('Vaccine Arrival Report', fontSize: 14),
-                    const Spacer(),
-                    GestureDetector(
-                      onTap: () => Get.back(),
-                      child: AppIcon(HugeIcons.strokeRoundedCancel01,
-                          size: 20, color: AppColors.lightTextColor),
-                    ),
-                  ],
-                ),
-              ),
-              AppDivider(),
+  return [
+    // ── Trip Details Section ──────────────────────────────
+    _Section(
+      title: 'Trip Details',
+      icon: HugeIcons.strokeRoundedRoute03,
+      children: [
+        Ui.boxHeight(8),
+        Obx(
+          () => CustomDropdown.city(
+            cities: dashCtrl.allDrivers.map((e) => e.name ?? "").toList(),
+            hint: "Select Driver",
+            label: "Driver",
+            selectedValue:
+                dashCtrl.allDrivers
+                    .firstWhereOrNull(
+                      (d) => d.id == controller.selectedDriverId.value,
+                    )
+                    ?.name ??
+                "",
+            onChanged: (v) {
+              final driver = dashCtrl.allDrivers.firstWhereOrNull(
+                (e) => e.name == v,
+              );
+              controller.selectedDriverId.value = driver?.id ?? 0;
 
-              // ── Scrollable content ────────────────────────────────────────
-              Expanded(
-                child: SingleChildScrollView(
-                  controller: scrollController,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // ── Trip context banner ───────────────────────────────
-                      _TripContextBanner(controller: controller),
-                      Ui.boxHeight(12),
-
-                      // ── Trip Details (driver input) ───────────────────────
-                      _Section(
-                        title: 'Trip Details',
-                        icon: HugeIcons.strokeRoundedRoute03,
-                        children: [
-                          _DatePickerRow(
-                              'Date of Arrival', controller.dateOfArrival, context),
-                          _FieldRow('Job Order No.', controller.jobOrderNo,
-                              hint: 'e.g. JO-001'),
-                        ],
-                      ),
-                      Ui.boxHeight(12),
-
-                      // ── Cold Chain Details ────────────────────────────────
-                      _Section(
-                        title: 'Cold Chain Details',
-                        icon: HugeIcons.strokeRoundedThermometer,
-                        children: [
-                          _TempRangeToggle(controller),
-                        ],
-                      ),
-                      Ui.boxHeight(12),
-
-                      // ── Commodity Details ─────────────────────────────────
-                      _DynamicSection<List<TextEditingController>>(
-                        title: 'Commodity Details',
-                        icon: HugeIcons.strokeRoundedMedicineBottle01,
-                        rows: controller.commodityRows,
-                        onAdd: controller.addCommodityRow,
-                        onRemove: controller.removeCommodityRow,
-                        rowBuilder: (row, i) => _CommodityRowCard(
-                            row: row, index: i, controller: controller),
-                        emptyLabel: 'No commodity added yet',
-                      ),
-                      Ui.boxHeight(12),
-
-                      // ── Temperature Monitoring ────────────────────────────
-                      _DynamicSection<List<TextEditingController>>(
-                        title: 'Temperature Monitoring Record',
-                        icon: HugeIcons.strokeRoundedTemperature,
-                        rows: controller.tempRows,
-                        onAdd: controller.addTempRow,
-                        onRemove: controller.removeTempRow,
-                        rowBuilder: (row, i) => _TempRowCard(
-                            row: row, index: i, controller: controller),
-                        emptyLabel: 'No temperature record added yet',
-                      ),
-                      Ui.boxHeight(12),
-
-                      // ── Reverse Logistics ─────────────────────────────────
-                      _ReverseLogisticsSection(controller),
-                      Ui.boxHeight(12),
-
-                      // ── Sign-Off ──────────────────────────────────────────
-                      _Section(
-                        title: 'Sign-Off',
-                        icon: HugeIcons.strokeRoundedSignature,
-                        children: [
-                          _FieldRow('Dispatched By', controller.dispatchedBy,
-                              hint: 'Name'),
-                          _FieldRow('Delivered By', controller.deliveredBy,
-                              hint: 'Driver name'),
-                          _FieldRow('Received By', controller.receivedBy,
-                              hint: 'Name'),
-                        ],
-                      ),
-                      Ui.boxHeight(24),
-                      AppButton(
-                        onPressed: controller.goToReview,
-                        text: 'Review VAR',
-                      ),
-                      Ui.boxHeight(32),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+              if (v != null && v.isNotEmpty) {
+                final assignedVehicle = dashCtrl.allVehicles.firstWhereOrNull(
+                  (test) => test.driver == v,
+                );
+                if (assignedVehicle != null) {
+                  controller.selectedVehicleId.value = assignedVehicle.id;
+                  controller.truckNo.text = assignedVehicle.regno ?? "";
+                }
+              }
+            },
           ),
-        );
-      },
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Trip context banner — shows read-only trip summary at the top of the form
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _TripContextBanner extends StatelessWidget {
-  const _TripContextBanner({required this.controller});
-  final VarController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(() {
-      final delivery = controller.activeDelivery.value;
-
-      // Waybill / ID header
-      final waybillLabel = delivery != null ? '#${delivery.waybill}' : '—';
-
-      // Origin: pickup field on the delivery
-      final originLabel =
-          (delivery?.pickup?.isNotEmpty ?? false) ? delivery!.pickup! : '—';
-
-      // Destination: all stops joined with " - "
-      final destLabel = (delivery?.stops.isNotEmpty ?? false)
-          ? delivery!.stops.join(' - ')
-          : '—';
-
-      // Driver: name string from the delivery join
-      final driverLabel =
-          (delivery?.driver?.isNotEmpty ?? false) ? delivery!.driver! : '—';
-
-      // Vehicle: truck registration from the delivery
-      final vehicleLabel =
-          (delivery?.truckno?.isNotEmpty ?? false) ? delivery!.truckno! : '—';
-
-      return CurvedContainer(
-        radius: 10,
-        color: AppColors.primaryColor.withOpacity(0.06),
-        border: Border.all(color: AppColors.primaryColor.withOpacity(0.2)),
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(children: [
-              AppIcon(HugeIcons.strokeRoundedContainerTruck01,
-                  size: 14, color: AppColors.primaryColor),
-              Ui.boxWidth(6),
-              AppText.semiBold('Trip Context',
-                  fontSize: 11, color: AppColors.primaryColor),
-              const Spacer(),
-              AppText.thin(waybillLabel,
-                  fontSize: 11, color: AppColors.primaryColor),
-            ]),
-            Ui.boxHeight(8),
-            _ContextRow('Driver', driverLabel),
-            _ContextRow('Vehicle', vehicleLabel),
-            _ContextRow('Origin', originLabel),
-            _ContextRow('Destination', destLabel),
-          ],
         ),
-      );
-    });
-  }
-}
+        Ui.boxHeight(8),
+        Obx(
+          () => CustomDropdown.city(
+            cities: dashCtrl.allVehicles
+                .where((e) => e.isActive)
+                .map((e) => e.desc)
+                .toList(),
+            hint: "Select Vehicle",
+            label: "Vehicle",
+            selectedValue:
+                dashCtrl.allVehicles
+                    .firstWhereOrNull(
+                      (v) => v.id == controller.selectedVehicleId.value,
+                    )
+                    ?.desc ??
+                "",
+            onChanged: (v) {
+              final vehicle = dashCtrl.allVehicles.firstWhereOrNull(
+                (e) => e.desc == v,
+              );
+              controller.selectedVehicleId.value = vehicle?.id ?? 0;
+              controller.truckNo.text = vehicle?.desc ?? "";
 
-class _ContextRow extends StatelessWidget {
-  const _ContextRow(this.label, this.value);
-  final String label, value;
+              if (vehicle != null && vehicle.driver != null && vehicle.driver!.isNotEmpty) {
+                final assignedDriver = dashCtrl.allDrivers.firstWhereOrNull(
+                  (test) => test.name == vehicle.driver,
+                );
+                if (assignedDriver != null) {
+                  controller.selectedDriverId.value = assignedDriver.id;
+                }
+              }
+            },
+          ),
+        ),
+        Ui.boxHeight(8),
+        Obx(
+          () => CustomDropdown.city(
+            cities: dashCtrl.allLoadingPoints.map((e) => e.desc).toList(),
+            hint: "Select Origin/Pickup",
+            label: "Origin",
+            selectedValue: controller.pickup.value,
+            onChanged: (v) {
+              controller.pickup.value = v ?? "";
+              final loc = dashCtrl.allLoadingPoints.firstWhereOrNull(
+                (e) => e.desc == v,
+              );
+              controller.selectedOriginId.value = loc?.id ?? 0;
+            },
+          ),
+        ),
+        Ui.boxHeight(8),
+        Obx(() {
+          final gf = List.generate(controller.stops.length, (i) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: i == controller.stops.length - 1 ? 0 : 8.0,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: CustomDropdown.city(
+                      cities: dashCtrl.allFacilities
+                          .map((e) => e.desc)
+                          .toList(),
+                      hint: "Select Facility",
+                      label: "Destination ${i + 1}",
+                      selectedValue: controller.stops[i],
+                      onChanged: (v) {
+                        if (controller.stops.contains(v)) {
+                          controller.stops[i] = "";
+                          Ui.showError("Facility already selected");
+                        } else {
+                          controller.stops[i] = v ?? "";
+                          if (i == controller.stops.length - 1) {
+                            final loc = dashCtrl.allLocation.firstWhereOrNull(
+                              (e) => e.desc == v,
+                            );
+                            controller.selectedDestinationId.value =
+                                loc?.id ?? 0;
+                          }
+                        }
+                      },
+                    ),
+                  ),
+                  Ui.boxWidth(8),
+                  CircleIcon(
+                    HugeIcons.strokeRoundedAdd01,
+                    onTap: () {
+                      controller.stops.add("");
+                    },
+                    radius: 12,
+                    size: 16,
+                  ),
+                  if (controller.stops.length > 1) Ui.boxWidth(8),
+                  if (controller.stops.length > 1)
+                    CircleIcon(
+                      HugeIcons.strokeRoundedMinusSign,
+                      onTap: () => controller.stops.removeAt(i),
+                      radius: 12,
+                      size: 16,
+                    ),
+                ],
+              ),
+            );
+          });
+          return Column(children: gf);
+        }),
+        Ui.boxHeight(8),
+        Obx(
+          () => CustomDropdown.city(
+            cities: [
+              "Drug Revolving Fund (DRF)",
+              "Basic Health Care Provision Fund (BHCPF)",
+              "Kano State Contributory Health Management Agency (KSCHMA)",
+              "Maternal & Child Health Care (MNCH)",
+              "Family Planning (FP)",
+              "IMPACT Project",
+            ],
+            hint: "Add Commodity Type",
+            label: "Commodity Type",
+            selectedValue: controller.commodityType.value.isEmpty
+                ? "Drug Revolving Fund (DRF)"
+                : controller.commodityType.value,
+            onChanged: (v) => controller.commodityType.value =
+                v ?? "Drug Revolving Fund (DRF)",
+          ),
+        ),
+      ],
+    ),
 
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 64,
-            child: AppText.medium(label,
-                fontSize: 10, color: AppColors.lightTextColor),
-          ),
-          Expanded(
-            child: AppText.thin(value.isEmpty ? '—' : value,
-                fontSize: 11, color: AppColors.textColor,
-                maxlines: 1, overflow: TextOverflow.ellipsis),
-          ),
-        ],
-      ),
-    );
-  }
+    // ── VAR Details Section ───────────────────────────────
+    _Section(
+      title: 'VAR Details',
+      icon: HugeIcons.strokeRoundedDocumentValidation,
+      children: [
+        _DatePickerRow('Date of Arrival', controller.dateOfArrival, context),
+        _FieldRow('Job Order No.', controller.jobOrderNo, hint: 'e.g. JO-001'),
+      ],
+    ),
+
+    // ── Cold Chain Details ────────────────────────────────
+    _Section(
+      title: 'Cold Chain Details',
+      icon: HugeIcons.strokeRoundedThermometer,
+      children: [_TempRangeToggle(controller)],
+    ),
+
+    // ── Commodity Details ─────────────────────────────────
+    _DynamicSection<List<TextEditingController>>(
+      title: 'Commodity Details',
+      icon: HugeIcons.strokeRoundedMedicineBottle01,
+      rows: controller.commodityRows,
+      onAdd: controller.addCommodityRow,
+      onRemove: controller.removeCommodityRow,
+      rowBuilder: (row, i) =>
+          _CommodityRowCard(row: row, index: i, controller: controller),
+      emptyLabel: 'No commodity added yet',
+    ),
+
+    // ── Temperature Monitoring ────────────────────────────
+    _DynamicSection<List<TextEditingController>>(
+      title: 'Temperature Monitoring Record',
+      icon: HugeIcons.strokeRoundedTemperature,
+      rows: controller.tempRows,
+      onAdd: controller.addTempRow,
+      onRemove: controller.removeTempRow,
+      rowBuilder: (row, i) =>
+          _TempRowCard(row: row, index: i, controller: controller),
+      emptyLabel: 'No temperature record added yet',
+    ),
+
+    // ── Reverse Logistics ─────────────────────────────────
+    _ReverseLogisticsSection(controller),
+
+    // ── Sign-Off ──────────────────────────────────────────
+    _Section(
+      title: 'Sign-Off',
+      icon: HugeIcons.strokeRoundedSignature,
+      children: [
+        _FieldRow('Dispatched By', controller.dispatchedBy, hint: 'Optional'),
+        _FieldRow('Delivered By', controller.deliveredBy, hint: 'Optional'),
+        _FieldRow('Received By', controller.receivedBy, hint: 'Optional'),
+      ],
+    ),
+  ];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
-
 
 class _Section extends StatelessWidget {
   const _Section({
@@ -265,22 +266,19 @@ class _Section extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CurvedContainer(
-      border: Border.all(color: AppColors.borderColor),
-      radius: 12,
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(children: [
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
             AppIcon(icon, size: 16, color: AppColors.primaryColor),
             Ui.boxWidth(8),
             AppText.semiBold(title, fontSize: 13),
-          ]),
-          AppDivider(),
-          ...children,
-        ],
-      ),
+          ],
+        ),
+        AppDivider(),
+        ...children,
+      ],
     );
   }
 }
@@ -300,15 +298,17 @@ class _FieldRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 84,
-            child: AppText.medium(label,
-                fontSize: 11, color: AppColors.lightTextColor),
+            child: AppText.medium(
+              label,
+              fontSize: 11,
+              color: AppColors.lightTextColor,
+            ),
           ),
           Expanded(
             child: CurvedContainer(
               radius: 8,
               border: Border.all(color: AppColors.borderColor),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               child: TextField(
                 controller: controller,
                 style: TextStyle(fontSize: 12, color: AppColors.textColor),
@@ -317,7 +317,9 @@ class _FieldRow extends StatelessWidget {
                   isDense: true,
                   hintText: hint,
                   hintStyle: TextStyle(
-                      fontSize: 11, color: AppColors.lightTextColor),
+                    fontSize: 11,
+                    color: AppColors.lightTextColor,
+                  ),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -344,8 +346,11 @@ class _DatePickerRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 84,
-            child: AppText.medium(label,
-                fontSize: 11, color: AppColors.lightTextColor),
+            child: AppText.medium(
+              label,
+              fontSize: 11,
+              color: AppColors.lightTextColor,
+            ),
           ),
           Expanded(
             child: GestureDetector(
@@ -358,7 +363,8 @@ class _DatePickerRow extends StatelessWidget {
                   builder: (ctx, child) => Theme(
                     data: Theme.of(ctx).copyWith(
                       colorScheme: ColorScheme.light(
-                          primary: AppColors.primaryColor),
+                        primary: AppColors.primaryColor,
+                      ),
                     ),
                     child: child!,
                   ),
@@ -371,8 +377,10 @@ class _DatePickerRow extends StatelessWidget {
               child: CurvedContainer(
                 radius: 8,
                 border: Border.all(color: AppColors.borderColor),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 10,
+                ),
                 child: Row(
                   children: [
                     Expanded(
@@ -387,8 +395,11 @@ class _DatePickerRow extends StatelessWidget {
                         ),
                       ),
                     ),
-                    AppIcon(HugeIcons.strokeRoundedCalendar01,
-                        size: 16, color: AppColors.lightTextColor),
+                    AppIcon(
+                      HugeIcons.strokeRoundedCalendar01,
+                      size: 16,
+                      color: AppColors.lightTextColor,
+                    ),
                   ],
                 ),
               ),
@@ -413,47 +424,55 @@ class _TempRangeToggle extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppText.medium('Required Temp. Range',
-              fontSize: 11, color: AppColors.lightTextColor),
+          AppText.medium(
+            'Required Temp. Range',
+            fontSize: 11,
+            color: AppColors.lightTextColor,
+          ),
           Ui.boxHeight(8),
-          Obx(() => Row(
-                children: _options.map((opt) {
-                  final selected = controller.temperatureRange.value == opt;
-                  return Expanded(
-                    child: GestureDetector(
-                      onTap: () => controller.temperatureRange.value = opt,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        margin:
-                            EdgeInsets.only(right: opt == _options.first ? 8 : 0),
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 10, horizontal: 8),
-                        decoration: BoxDecoration(
+          Obx(
+            () => Row(
+              children: _options.map((opt) {
+                final selected = controller.temperatureRange.value == opt;
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () => controller.temperatureRange.value = opt,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      margin: EdgeInsets.only(
+                        right: opt == _options.first ? 8 : 0,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? AppColors.primaryColor
+                            : AppColors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
                           color: selected
                               ? AppColors.primaryColor
-                              : AppColors.white,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: selected
-                                ? AppColors.primaryColor
-                                : AppColors.borderColor,
-                          ),
+                              : AppColors.borderColor,
                         ),
-                        child: Center(
-                          child: AppText.medium(
-                            opt,
-                            fontSize: 11,
-                            color: selected
-                                ? AppColors.white
-                                : AppColors.textColor,
-                            alignment: TextAlign.center,
-                          ),
+                      ),
+                      child: Center(
+                        child: AppText.medium(
+                          opt,
+                          fontSize: 11,
+                          color: selected
+                              ? AppColors.white
+                              : AppColors.textColor,
+                          alignment: TextAlign.center,
                         ),
                       ),
                     ),
-                  );
-                }).toList(),
-              )),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
         ],
       ),
     );
@@ -482,60 +501,77 @@ class _DynamicSection<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CurvedContainer(
-      border: Border.all(color: AppColors.borderColor),
-      radius: 12,
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(children: [
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
             AppIcon(icon, size: 16, color: AppColors.primaryColor),
             Ui.boxWidth(8),
-            AppText.semiBold(title, fontSize: 13),
-            const Spacer(),
+            Expanded(child: AppText.semiBold(title, fontSize: 13)),
+           Ui.boxWidth(8),
             GestureDetector(
               onTap: onAdd,
               child: CurvedContainer(
                 radius: 20,
                 color: AppColors.primaryColor,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  AppIcon(HugeIcons.strokeRoundedAdd01,
-                      size: 14, color: AppColors.white),
-                  Ui.boxWidth(4),
-                  AppText.medium('Add Row',
-                      fontSize: 11, color: AppColors.white),
-                ]),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AppIcon(
+                      HugeIcons.strokeRoundedAdd01,
+                      size: 14,
+                      color: AppColors.white,
+                    ),
+                    Ui.boxWidth(4),
+                    AppText.medium(
+                      'Add Row',
+                      fontSize: 11,
+                      color: AppColors.white,
+                    ),
+                  ],
+                ),
               ),
             ),
-          ]),
-          AppDivider(),
-          Obx(() {
-            if (rows.isEmpty) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Center(
-                  child: AppText.thin(emptyLabel,
-                      fontSize: 12, color: AppColors.lightTextColor),
+          ],
+        ),
+        AppDivider(),
+        Obx(() {
+          if (rows.isEmpty) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Center(
+                child: AppText.thin(
+                  emptyLabel,
+                  fontSize: 12,
+                  color: AppColors.lightTextColor,
                 ),
-              );
-            }
-            return Column(
-              children:
-                  rows.asMap().entries.map((e) => rowBuilder(e.value, e.key)).toList(),
+              ),
             );
-          }),
-        ],
-      ),
+          }
+          return Column(
+            children: rows
+                .asMap()
+                .entries
+                .map((e) => rowBuilder(e.value, e.key))
+                .toList(),
+          );
+        }),
+      ],
     );
   }
 }
 
 class _CommodityRowCard extends StatelessWidget {
-  const _CommodityRowCard(
-      {required this.row, required this.index, required this.controller});
+  const _CommodityRowCard({
+    required this.row,
+    required this.index,
+    required this.controller,
+  });
   final List<TextEditingController> row;
   final int index;
   final VarController controller;
@@ -548,7 +584,7 @@ class _CommodityRowCard extends StatelessWidget {
       'Expiry Date',
       'Qty Dispatched',
       'Qty Received',
-      'VVM Status'
+      'VVM Status',
     ];
     return CurvedContainer(
       border: Border.all(color: AppColors.borderColor),
@@ -560,13 +596,19 @@ class _CommodityRowCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              AppText.medium('Row ${index + 1}',
-                  fontSize: 11, color: AppColors.lightTextColor),
+              AppText.medium(
+                'Row ${index + 1}',
+                fontSize: 11,
+                color: AppColors.lightTextColor,
+              ),
               const Spacer(),
               GestureDetector(
                 onTap: () => controller.removeCommodityRow(index),
-                child: AppIcon(HugeIcons.strokeRoundedDelete01,
-                    size: 16, color: AppColors.red),
+                child: AppIcon(
+                  HugeIcons.strokeRoundedDelete01,
+                  size: 16,
+                  color: AppColors.red,
+                ),
               ),
             ],
           ),
@@ -579,8 +621,11 @@ class _CommodityRowCard extends StatelessWidget {
 }
 
 class _TempRowCard extends StatelessWidget {
-  const _TempRowCard(
-      {required this.row, required this.index, required this.controller});
+  const _TempRowCard({
+    required this.row,
+    required this.index,
+    required this.controller,
+  });
   final List<TextEditingController> row;
   final int index;
   final VarController controller;
@@ -598,13 +643,19 @@ class _TempRowCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              AppText.medium('Record ${index + 1}',
-                  fontSize: 11, color: AppColors.lightTextColor),
+              AppText.medium(
+                'Record ${index + 1}',
+                fontSize: 11,
+                color: AppColors.lightTextColor,
+              ),
               const Spacer(),
               GestureDetector(
                 onTap: () => controller.removeTempRow(index),
-                child: AppIcon(HugeIcons.strokeRoundedDelete01,
-                    size: 16, color: AppColors.red),
+                child: AppIcon(
+                  HugeIcons.strokeRoundedDelete01,
+                  size: 16,
+                  color: AppColors.red,
+                ),
               ),
             ],
           ),
@@ -630,26 +681,29 @@ class _MiniField extends StatelessWidget {
         children: [
           SizedBox(
             width: 120,
-            child: AppText.medium(label,
-                fontSize: 10, color: AppColors.lightTextColor),
+            child: AppText.medium(
+              label,
+              fontSize: 10,
+              color: AppColors.lightTextColor,
+            ),
           ),
           Expanded(
             child: CurvedContainer(
               radius: 6,
               border: Border.all(color: AppColors.borderColor),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: TextField(
                 controller: controller,
-                style:
-                    TextStyle(fontSize: 11, color: AppColors.textColor),
+                style: TextStyle(fontSize: 11, color: AppColors.textColor),
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   isDense: true,
                   contentPadding: EdgeInsets.zero,
                   hintText: '—',
                   hintStyle: TextStyle(
-                      fontSize: 11, color: AppColors.lightTextColor),
+                    fontSize: 11,
+                    color: AppColors.lightTextColor,
+                  ),
                 ),
               ),
             ),
@@ -667,123 +721,136 @@ class _ReverseLogisticsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const labels = ['Item Retrieved', 'Quantity', 'Condition', 'Destination'];
-    return Obx(() => CurvedContainer(
-          border: Border.all(color: AppColors.borderColor),
-          radius: 12,
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Obx(
+      () => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Row(children: [
-                AppIcon(HugeIcons.strokeRoundedArrowTurnBackward,
-                    size: 16, color: AppColors.primaryColor),
+              AppIcon(
+                HugeIcons.strokeRoundedArrowTurnBackward,
+                size: 16,
+                color: AppColors.primaryColor,
+              ),
+              Ui.boxWidth(8),
+              AppText.semiBold('Reverse Logistics', fontSize: 13),
+              const Spacer(),
+              GestureDetector(
+                onTap: () {
+                  controller.showReverseLogistics.value =
+                      !controller.showReverseLogistics.value;
+                  if (controller.showReverseLogistics.value &&
+                      controller.reverseRows.isEmpty) {
+                    controller.addReverseRow();
+                  }
+                },
+                child: CurvedContainer(
+                  radius: 20,
+                  color: controller.showReverseLogistics.value
+                      ? AppColors.primaryColor[100]!
+                      : AppColors.borderColor,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  child: AppText.medium(
+                    controller.showReverseLogistics.value
+                        ? 'Enabled'
+                        : 'Optional',
+                    fontSize: 11,
+                    color: controller.showReverseLogistics.value
+                        ? AppColors.primaryColor
+                        : AppColors.lightTextColor,
+                  ),
+                ),
+              ),
+              if (controller.showReverseLogistics.value) ...[
                 Ui.boxWidth(8),
-                AppText.semiBold('Reverse Logistics', fontSize: 13),
-                const Spacer(),
                 GestureDetector(
-                  onTap: () {
-                    controller.showReverseLogistics.value =
-                        !controller.showReverseLogistics.value;
-                    if (controller.showReverseLogistics.value &&
-                        controller.reverseRows.isEmpty) {
-                      controller.addReverseRow();
-                    }
-                  },
+                  onTap: controller.addReverseRow,
                   child: CurvedContainer(
                     radius: 20,
-                    color: controller.showReverseLogistics.value
-                        ? AppColors.primaryColor[100]!
-                        : AppColors.borderColor,
+                    color: AppColors.primaryColor,
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 6),
-                    child: AppText.medium(
-                      controller.showReverseLogistics.value
-                          ? 'Enabled'
-                          : 'Optional',
-                      fontSize: 11,
-                      color: controller.showReverseLogistics.value
-                          ? AppColors.primaryColor
-                          : AppColors.lightTextColor,
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        AppIcon(
+                          HugeIcons.strokeRoundedAdd01,
+                          size: 14,
+                          color: AppColors.white,
+                        ),
+                        Ui.boxWidth(4),
+                        AppText.medium(
+                          'Add Row',
+                          fontSize: 11,
+                          color: AppColors.white,
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                if (controller.showReverseLogistics.value) ...[
-                  Ui.boxWidth(8),
-                  GestureDetector(
-                    onTap: controller.addReverseRow,
-                    child: CurvedContainer(
-                      radius: 20,
-                      color: AppColors.primaryColor,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            AppIcon(HugeIcons.strokeRoundedAdd01,
-                                size: 14, color: AppColors.white),
-                            Ui.boxWidth(4),
-                            AppText.medium('Add Row',
-                                fontSize: 11, color: AppColors.white),
-                          ]),
-                    ),
-                  ),
-                ],
-              ]),
-              if (controller.showReverseLogistics.value) ...[
-                AppDivider(),
-                if (controller.reverseRows.isEmpty)
-                  Padding(
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 12),
-                    child: Center(
-                      child: AppText.thin('No items added',
-                          fontSize: 12,
-                          color: AppColors.lightTextColor),
-                    ),
-                  )
-                else
-                  ...controller.reverseRows.asMap().entries.map((e) {
-                    final row = e.value;
-                    final idx = e.key;
-                    return CurvedContainer(
-                      border:
-                          Border.all(color: AppColors.borderColor),
-                      radius: 8,
-                      margin:
-                          const EdgeInsets.only(bottom: 10),
-                      padding: const EdgeInsets.all(10),
-                      child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              AppText.medium('Item ${idx + 1}',
-                                  fontSize: 11,
-                                  color:
-                                      AppColors.lightTextColor),
-                              const Spacer(),
-                              GestureDetector(
-                                onTap: () =>
-                                    controller.removeReverseRow(idx),
-                                child: AppIcon(
-                                    HugeIcons
-                                        .strokeRoundedDelete01,
-                                    size: 16,
-                                    color: AppColors.red),
-                              ),
-                            ],
-                          ),
-                          Ui.boxHeight(6),
-                          ...List.generate(4,
-                              (i) => _MiniField(labels[i], row[i])),
-                        ],
-                      ),
-                    );
-                  }),
               ],
             ],
           ),
-        ));
+          if (controller.showReverseLogistics.value) ...[
+            AppDivider(),
+            if (controller.reverseRows.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Center(
+                  child: AppText.thin(
+                    'No items added',
+                    fontSize: 12,
+                    color: AppColors.lightTextColor,
+                  ),
+                ),
+              )
+            else
+              ...controller.reverseRows.asMap().entries.map((e) {
+                final row = e.value;
+                final idx = e.key;
+                return CurvedContainer(
+                  border: Border.all(color: AppColors.borderColor),
+                  radius: 8,
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.all(10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          AppText.medium(
+                            'Item ${idx + 1}',
+                            fontSize: 11,
+                            color: AppColors.lightTextColor,
+                          ),
+                          const Spacer(),
+                          GestureDetector(
+                            onTap: () => controller.removeReverseRow(idx),
+                            child: AppIcon(
+                              HugeIcons.strokeRoundedDelete01,
+                              size: 16,
+                              color: AppColors.red,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Ui.boxHeight(6),
+                      ...List.generate(
+                        4,
+                        (i) => _MiniField(labels[i], row[i]),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+          ],
+        ],
+      ),
+    );
   }
 }

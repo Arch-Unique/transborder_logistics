@@ -558,7 +558,7 @@ class _SearchBottomSheetState<T> extends State<_SearchBottomSheet<T>> {
                           ),
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? AppColors.borderColor.withOpacity(0.1)
+                                ? AppColors.borderColor.withValues(alpha:0.1)
                                 : null,
                           ),
                           child: Row(

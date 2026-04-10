@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:transborder_logistics/src/global/model/user.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -22,22 +24,22 @@ class CommodityRow {
   });
 
   factory CommodityRow.fromJson(Map<String, dynamic> json) => CommodityRow(
-        vaccine: json['vaccine']?.toString() ?? '',
-        batchNo: json['batchNo']?.toString() ?? '',
-        expiryDate: json['expiryDate']?.toString() ?? '',
-        qtyDispatched: json['qtyDispatched']?.toString() ?? '',
-        qtyReceived: json['qtyReceived']?.toString() ?? '',
-        vvmStatus: json['vvmStatus']?.toString() ?? '',
-      );
+    vaccine: json['vaccine_item']?.toString() ?? '',
+    batchNo: json['batch_no']?.toString() ?? '',
+    expiryDate: json['expiry_date']?.toString() ?? '',
+    qtyDispatched: json['qty_dispatched']?.toString() ?? '',
+    qtyReceived: json['qty_received']?.toString() ?? '',
+    vvmStatus: json['vvm_status']?.toString() ?? '',
+  );
 
   Map<String, dynamic> toJson() => {
-        'vaccine_item': vaccine,
-        'batch_no': batchNo,
-        'expiry_date': expiryDate,
-        'qty_dispatched': qtyDispatched,
-        'qty_received': qtyReceived,
-        'vvm_status': vvmStatus,
-      };
+    'vaccine_item': vaccine,
+    'batch_no': batchNo,
+    'expiry_date': expiryDate,
+    'qty_dispatched': qtyDispatched,
+    'qty_received': qtyReceived,
+    'vvm_status': vvmStatus,
+  };
 }
 
 class TempRecord {
@@ -52,16 +54,16 @@ class TempRecord {
   });
 
   factory TempRecord.fromJson(Map<String, dynamic> json) => TempRecord(
-        monitoringPoint: json['monitoringPoint']?.toString() ?? '',
-        temperatureCelsius: json['temperatureCelsius']?.toString() ?? '',
-        dateTime: json['dateTime']?.toString() ?? '',
-      );
+    monitoringPoint: json['monitoring_point']?.toString() ?? '',
+    temperatureCelsius: json['temperature_c']?.toString() ?? '',
+    dateTime: json['date_time']?.toString() ?? '',
+  );
 
   Map<String, dynamic> toJson() => {
-        'monitoring_point': monitoringPoint,
-        'temperature_c': temperatureCelsius,
-        'date_time': dateTime,
-      };
+    'monitoring_point': monitoringPoint,
+    'temperature_c': temperatureCelsius,
+    'date_time': dateTime,
+  };
 }
 
 class ReverseLogisticsRow {
@@ -79,18 +81,18 @@ class ReverseLogisticsRow {
 
   factory ReverseLogisticsRow.fromJson(Map<String, dynamic> json) =>
       ReverseLogisticsRow(
-        item: json['item']?.toString() ?? '',
+        item: json['item_retrieved']?.toString() ?? '',
         quantity: json['quantity']?.toString() ?? '',
         condition: json['condition']?.toString() ?? '',
         destination: json['destination']?.toString() ?? '',
       );
 
   Map<String, dynamic> toJson() => {
-        'item_retrieved': item,
-        'quantity': quantity,
-        'condition': condition,
-        'destination': destination,
-      };
+    'item_retrieved': item,
+    'quantity': quantity,
+    'condition': condition,
+    'destination': destination,
+  };
 }
 
 /// Nested sign-off block: { dispatched_by, delivered_by, received_by }
@@ -106,16 +108,16 @@ class SignOff {
   });
 
   factory SignOff.fromJson(Map<String, dynamic>? json) => SignOff(
-        dispatchedBy: json?['dispatched_by']?.toString() ?? '',
-        deliveredBy: json?['delivered_by']?.toString() ?? '',
-        receivedBy: json?['received_by']?.toString() ?? '',
-      );
+    dispatchedBy: json?['dispatched_by']?.toString() ?? '',
+    deliveredBy: json?['delivered_by']?.toString() ?? '',
+    receivedBy: json?['received_by']?.toString() ?? '',
+  );
 
   Map<String, dynamic> toJson() => {
-        'dispatched_by': dispatchedBy,
-        'delivered_by': deliveredBy,
-        'received_by': receivedBy,
-      };
+    'dispatched_by': dispatchedBy,
+    'delivered_by': deliveredBy,
+    'received_by': receivedBy,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -137,7 +139,7 @@ class VarData {
   final SignOff signOff;
 
   const VarData({
-    required this.deliveryid,
+    this.deliveryid = 0,
     required this.driverid,
     required this.vehicleid,
     required this.originid,
@@ -152,22 +154,22 @@ class VarData {
   });
 
   Map<String, dynamic> toJson() => {
-        'deliveryid': deliveryid,
-        'driverid': driverid,
-        'vehicleid': vehicleid,
-        'originid': originid,
-        'destinationid': destinationid,
-        'joborderno': joborderno,
-        'dateofarrival': dateofarrival,
-        'temperaturerange': temperaturerange,
-        'commodity_details': commodityDetails.map((e) => e.toJson()).toList(),
-        'temperature_monitoring':
-            temperatureMonitoring.map((e) => e.toJson()).toList(),
-        if (reverseLogistics != null && reverseLogistics!.isNotEmpty)
-          'reverse_logistics':
-              reverseLogistics!.map((e) => e.toJson()).toList(),
-        'sign_off': signOff.toJson(),
-      };
+    'deliveryid': deliveryid,
+    'driverid': driverid,
+    'vehicleid': vehicleid,
+    'originid': originid,
+    'destinationid': destinationid,
+    'joborderno': joborderno,
+    'dateofarrival': dateofarrival,
+    'temperaturerange': temperaturerange,
+    'commodity_details': commodityDetails.map((e) => e.toJson()).toList(),
+    'temperature_monitoring': temperatureMonitoring
+        .map((e) => e.toJson())
+        .toList(),
+    if (reverseLogistics != null && reverseLogistics!.isNotEmpty)
+      'reverse_logistics': reverseLogistics!.map((e) => e.toJson()).toList(),
+    'sign_off': signOff.toJson(),
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -190,12 +192,18 @@ class VarRecord implements Slugger {
   final List<ReverseLogisticsRow> reverseLogistics;
   final SignOff signOff;
   final String createdAt;
+  final String status;
+  final bool deliveryComplete;
+  final String waybill;
 
   // Resolved display names (populated by controller after join with other lists)
   final String driverName;
   final String vehicleName;
   final String originName;
   final String destinationName;
+
+  bool get tripEnded => status == 'trip_ended' || deliveryComplete;
+  bool get isClosed => status == 'closed';
 
   VarRecord({
     this.id = 0,
@@ -212,6 +220,9 @@ class VarRecord implements Slugger {
     this.reverseLogistics = const [],
     SignOff? signOff,
     this.createdAt = '',
+    this.status = 'pending',
+    this.deliveryComplete = false,
+    this.waybill = '',
     this.driverName = '',
     this.vehicleName = '',
     this.originName = '',
@@ -221,20 +232,43 @@ class VarRecord implements Slugger {
   factory VarRecord.fromJson(Map<String, dynamic> json) {
     List<CommodityRow> parseCommodity(dynamic raw) {
       if (raw == null) return [];
-      if (raw is List) return raw.map((e) => CommodityRow.fromJson(Map<String, dynamic>.from(e as Map))).toList();
-      return [];
+      try {
+        return (jsonDecode(raw) as List)
+            .map(
+              (e) => CommodityRow.fromJson(Map<String, dynamic>.from(e as Map)),
+            )
+            .toList();
+      } catch (e) {
+        return [];
+      }
     }
 
     List<TempRecord> parseTemp(dynamic raw) {
       if (raw == null) return [];
-      if (raw is List) return raw.map((e) => TempRecord.fromJson(Map<String, dynamic>.from(e as Map))).toList();
-      return [];
+      try {
+        return (jsonDecode(raw) as List)
+            .map(
+              (e) => TempRecord.fromJson(Map<String, dynamic>.from(e as Map)),
+            )
+            .toList();
+      } catch (e) {
+        return [];
+      }
     }
 
     List<ReverseLogisticsRow> parseReverse(dynamic raw) {
       if (raw == null) return [];
-      if (raw is List) return raw.map((e) => ReverseLogisticsRow.fromJson(Map<String, dynamic>.from(e as Map))).toList();
-      return [];
+      try {
+        return (jsonDecode(raw) as List)
+            .map(
+              (e) => ReverseLogisticsRow.fromJson(
+                Map<String, dynamic>.from(e as Map),
+              ),
+            )
+            .toList();
+      } catch (e) {
+        return [];
+      }
     }
 
     return VarRecord(
@@ -250,8 +284,17 @@ class VarRecord implements Slugger {
       commodityDetails: parseCommodity(json['commodity_details']),
       temperatureMonitoring: parseTemp(json['temperature_monitoring']),
       reverseLogistics: parseReverse(json['reverse_logistics']),
-      signOff: SignOff.fromJson(json['sign_off'] as Map<String, dynamic>?),
-      createdAt: json['createdat']?.toString() ?? json['createdAt']?.toString() ?? '',
+      waybill: json['waybill']?.toString() ?? '',
+      signOff: json['sign_off'] == null
+          ? null
+          : SignOff.fromJson(
+              jsonDecode(json['sign_off']) as Map<String, dynamic>?,
+            ),
+      createdAt:
+          json['createdat']?.toString() ?? json['createdAt']?.toString() ?? '',
+      status: json['status']?.toString() ?? 'pending',
+      deliveryComplete:
+          json['delivery_complete'] == true || json['delivery_complete'] == 1,
     );
   }
 
@@ -265,36 +308,47 @@ class VarRecord implements Slugger {
       '$joborderno,$dateofarrival,$driverName,$vehicleName,$originName,$destinationName,${signOff.receivedBy}';
 
   @override
-  List<String> get tableTitle =>
-      ['ID', 'Job Order', 'Date', 'Driver', 'Origin', 'Destination', 'Status'];
+  List<String> get tableTitle => [
+    'ID',
+    'Job Order',
+    'Arrival Date',
+    'Driver',
+    'Origin',
+    'Destination',
+    'Status',
+  ];
 
   @override
   List<String> get tableValue => [
-        rawId,
-        joborderno.isEmpty ? '—' : joborderno,
-        dateofarrival.isEmpty ? '—' : dateofarrival,
-        driverName.isEmpty ? '#$driverid' : driverName,
-        originName.isEmpty ? '#$originid' : originName,
-        destinationName.isEmpty ? '#$destinationid' : destinationName,
-        signOff.receivedBy.isEmpty ? 'Pending' : 'Received',
-      ];
+    rawId,
+    joborderno.isEmpty ? '—' : joborderno,
+    dateofarrival.isEmpty ? '—' : dateofarrival,
+    driverName.isEmpty ? '#$driverid' : driverName,
+    originName.isEmpty ? '#$originid' : originName,
+    destinationName.isEmpty ? '#$destinationid' : destinationName,
+    isClosed ? 'Closed' : (tripEnded ? 'Trip Ended' : 'Pending'),
+  ];
 
   @override
   Map<String, String> get fields => {
-        'ID': id.toString(),
-        'Job Order No.': joborderno,
-        'Date of Arrival': dateofarrival,
-        'Temperature Range': temperaturerange,
-        'Driver': driverName.isEmpty ? '#$driverid' : driverName,
-        'Vehicle': vehicleName.isEmpty ? '#$vehicleid' : vehicleName,
-        'Origin': originName.isEmpty ? '#$originid' : originName,
-        'Destination': destinationName.isEmpty ? '#$destinationid' : destinationName,
-        'Commodities': commodityDetails.length.toString(),
-        'Temp Records': temperatureMonitoring.length.toString(),
-        'Reverse Logistics': reverseLogistics.length.toString(),
-        'Dispatched By': signOff.dispatchedBy,
-        'Delivered By': signOff.deliveredBy,
-        'Received By': signOff.receivedBy,
-        'Submitted At': createdAt,
-      };
+    'ID': id.toString(),
+    'Job Order No.': joborderno,
+    'Date of Arrival': dateofarrival,
+    'Temperature Range': temperaturerange,
+    'Driver': driverName.isEmpty ? '#$driverid' : driverName,
+    'Vehicle': vehicleName.isEmpty ? '#$vehicleid' : vehicleName,
+    'Origin': originName.isEmpty ? '#$originid' : originName,
+    'Destination': destinationName.isEmpty
+        ? '#$destinationid'
+        : destinationName,
+    'Commodities': commodityDetails.length.toString(),
+    'Temp Records': temperatureMonitoring.length.toString(),
+    
+    'Status': status,
+    'Reverse Logistics': reverseLogistics.length.toString(),
+    'Dispatched By': signOff.dispatchedBy,
+    'Delivered By': signOff.deliveredBy,
+    'Received By': signOff.receivedBy,
+    'Submitted At': createdAt,
+  };
 }

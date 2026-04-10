@@ -67,7 +67,7 @@ enum DashboardMode {
   facilities("Facilities",HugeIcons.strokeRoundedBuilding05,["All"]),
   pickups("Loading Points",HugeIcons.strokeRoundedShippingLoading,["All"]),
   location("Location",HugeIcons.strokeRoundedLocation05,["All"]),
-  varRecords("VAR Records",HugeIcons.strokeRoundedDocumentCode,["All"]);
+  varRecords("VAR Records",HugeIcons.strokeRoundedDocumentCode,["All","Pending","Trip Ended","Closed"]);
   
 
   final String name;

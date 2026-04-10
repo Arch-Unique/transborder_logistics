@@ -1,133 +1,149 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:transborder_logistics/src/features/dashboard/controllers/dashboard_controller.dart';
 import 'package:transborder_logistics/src/features/dashboard/controllers/var_controller.dart';
+import 'package:transborder_logistics/src/features/dashboard/models/var_data.dart';
 import 'package:transborder_logistics/src/global/ui/widgets/others/containers.dart';
 import 'package:transborder_logistics/src/src_barrel.dart';
 import 'package:transborder_logistics/src/global/ui/ui_barrel.dart';
 
-class VarReviewScreen extends StatelessWidget {
-  VarReviewScreen({super.key});
-
-  final controller = Get.find<VarController>();
-
-  // ── Resolve display values from the stored delivery ───────────────────────
-  String _deliveryLabel() {
-    final d = controller.activeDelivery.value;
-    final id = controller.selectedDeliveryId.value;
-    return d != null ? '${d.waybill} — ${d.stops.join(', ')}' : '#$id';
-  }
-
-  String _driverLabel() {
-    final d = controller.activeDelivery.value;
-    final id = controller.selectedDriverId.value;
-    return (d?.driver?.isNotEmpty ?? false) ? d!.driver! : '#$id';
-  }
-
-  String _vehicleLabel() {
-    final d = controller.activeDelivery.value;
-    final id = controller.selectedVehicleId.value;
-    return (d?.truckno?.isNotEmpty ?? false) ? d!.truckno! : '#$id';
-  }
-
-  String _originLabel() {
-    final d = controller.activeDelivery.value;
-    return (d?.pickup?.isNotEmpty ?? false) ? d!.pickup! : '—';
-  }
-
-  /// Uses the last stop as the destination display.
-  String _destinationLabel() {
-    final d = controller.activeDelivery.value;
-    if (d == null || d.stops.isEmpty) return '—';
-    return d.stops.last;
-  }
+/// VarDetailReview — Shows a fully resolved, read-only detail view of a [VarRecord].
+/// Opened from the admin resource_history detail panel when the user wants to
+/// see the full record outside of the table grid.
+class VarDetailReview extends StatelessWidget {
+  const VarDetailReview({super.key, required this.record});
+  final VarRecord record;
 
   @override
   Widget build(BuildContext context) {
+    final dashCtrl = Get.find<DashboardController>();
+    final varCtrl = Get.find<VarController>();
+
+    final driverLabel = record.driverName.isNotEmpty
+        ? record.driverName
+        : record.driverid != 0
+            ? '#${record.driverid}'
+            : '—';
+
+    final vehicleLabel = record.vehicleName.isNotEmpty
+        ? record.vehicleName
+        : record.vehicleid != 0
+            ? '#${record.vehicleid}'
+            : '—';
+
+    final originLabel =
+        record.originName.isNotEmpty ? record.originName : '—';
+
+    final destinationLabel =
+        record.destinationName.isNotEmpty ? record.destinationName : '—';
+
     return SinglePageScaffold(
-      title: 'VAR Review',
+      title: 'VAR Detail',
       child: Stack(
         children: [
           SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Trip Information ──────────────────────────────────────
+                // ── Status badge ────────────────────────────────────────────
+                _ReviewSection(
+                  title: 'Status',
+                  icon: HugeIcons.strokeRoundedInformationCircle,
+                  children: [
+                    _InfoRow('Status', record.status),
+                    _InfoRow(
+                        'Delivery Complete',
+                        record.deliveryComplete ? 'Yes — Trip ended' : 'No — Trip ongoing'),
+                  ],
+                ),
+                Ui.boxHeight(12),
+
+                // ── Trip Information ─────────────────────────────────────────
                 _ReviewSection(
                   title: 'Trip Information',
                   icon: HugeIcons.strokeRoundedRoute03,
                   children: [
-                    _InfoRow('Delivery', _deliveryLabel()),
-                    _InfoRow('Job Order No.', controller.jobOrderNo.text),
-                    _InfoRow(
-                        'Date of Arrival', controller.dateOfArrival.text),
-                    _InfoRow('Origin', _originLabel()),
-                    _InfoRow('Destination', _destinationLabel()),
+                    _InfoRow('Job Order No.', record.joborderno),
+                    _InfoRow('Date of Arrival', record.dateofarrival),
+                    _InfoRow('Driver', driverLabel),
+                    _InfoRow('Vehicle', vehicleLabel),
+                    _InfoRow('Origin', originLabel),
+                    _InfoRow('Destination', destinationLabel),
                   ],
                 ),
                 Ui.boxHeight(12),
 
-                // ── Cold Chain ────────────────────────────────────────────
+                // ── Cold Chain ───────────────────────────────────────────────
                 _ReviewSection(
                   title: 'Cold Chain Details',
                   icon: HugeIcons.strokeRoundedThermometer,
                   children: [
-                    _InfoRow('Driver', _driverLabel()),
-                    _InfoRow('Vehicle', _vehicleLabel()),
-                    _InfoRow('Required Temp. Range',
-                        controller.temperatureRange.value),
+                    _InfoRow(
+                      'Required Temp. Range',
+                      record.temperaturerange.isNotEmpty
+                          ? record.temperaturerange
+                          : '—',
+                    ),
                   ],
                 ),
                 Ui.boxHeight(12),
 
-                // ── Commodity Details ─────────────────────────────────────
-                _ReviewSection(
-                  title: 'Commodity Details',
-                  icon: HugeIcons.strokeRoundedMedicineBottle01,
-                  children: [
-                    _TableHeader(const [
-                      'Vaccine/Item',
-                      'Batch No.',
-                      'Expiry',
-                      'Qty D',
-                      'Qty R',
-                      'VVM'
-                    ]),
-                    ...controller.commodityRows.asMap().entries.map((e) {
-                      final row = e.value;
-                      return _TableRow([
-                        row[0].text,
-                        row[1].text,
-                        row[2].text,
-                        row[3].text,
-                        row[4].text,
-                        row[5].text,
-                      ]);
-                    }),
-                  ],
-                ),
-                Ui.boxHeight(12),
+                // ── Commodity Details ────────────────────────────────────────
+                if (record.commodityDetails.isNotEmpty) ...[
+                  _ReviewSection(
+                    title: 'Commodity Details',
+                    icon: HugeIcons.strokeRoundedMedicineBottle01,
+                    children: [
+                      _TableHeader(const [
+                        'Vaccine/Item',
+                        'Batch No.',
+                        'Expiry',
+                        'Qty D',
+                        'Qty R',
+                        'VVM',
+                      ]),
+                      ...record.commodityDetails.map(
+                        (row) => _TableRow([
+                          row.vaccine,
+                          row.batchNo,
+                          row.expiryDate,
+                          row.qtyDispatched,
+                          row.qtyReceived,
+                          row.vvmStatus,
+                        ]),
+                      ),
+                    ],
+                  ),
+                  Ui.boxHeight(12),
+                ],
 
-                // ── Temperature Monitoring ────────────────────────────────
-                _ReviewSection(
-                  title: 'Temperature Monitoring',
-                  icon: HugeIcons.strokeRoundedTemperature,
-                  children: [
-                    _TableHeader(
-                        const ['Monitoring Point', 'Temp (°C)', 'Date/Time']),
-                    ...controller.tempRows.asMap().entries.map((e) {
-                      final row = e.value;
-                      return _TableRow(
-                          [row[0].text, row[1].text, row[2].text]);
-                    }),
-                  ],
-                ),
-                Ui.boxHeight(12),
+                // ── Temperature Monitoring ───────────────────────────────────
+                if (record.temperatureMonitoring.isNotEmpty) ...[
+                  _ReviewSection(
+                    title: 'Temperature Monitoring',
+                    icon: HugeIcons.strokeRoundedTemperature,
+                    children: [
+                      _TableHeader(const [
+                        'Monitoring Point',
+                        'Temp (°C)',
+                        'Date/Time',
+                      ]),
+                      ...record.temperatureMonitoring.map(
+                        (row) => _TableRow([
+                          row.monitoringPoint,
+                          row.temperatureCelsius,
+                          row.dateTime,
+                        ]),
+                      ),
+                    ],
+                  ),
+                  Ui.boxHeight(12),
+                ],
 
-                // ── Reverse Logistics (optional) ──────────────────────────
-                if (controller.showReverseLogistics.value &&
-                    controller.reverseRows.isNotEmpty)
+                // ── Reverse Logistics ────────────────────────────────────────
+                if (record.reverseLogistics.isNotEmpty) ...[
                   _ReviewSection(
                     title: 'Reverse Logistics',
                     icon: HugeIcons.strokeRoundedArrowTurnBackward,
@@ -136,51 +152,58 @@ class VarReviewScreen extends StatelessWidget {
                         'Item Retrieved',
                         'Qty',
                         'Condition',
-                        'Destination'
+                        'Destination',
                       ]),
-                      ...controller.reverseRows.asMap().entries.map((e) {
-                        final row = e.value;
-                        return _TableRow([
-                          row[0].text,
-                          row[1].text,
-                          row[2].text,
-                          row[3].text
-                        ]);
-                      }),
+                      ...record.reverseLogistics.map(
+                        (row) => _TableRow([
+                          row.item,
+                          row.quantity,
+                          row.condition,
+                          row.destination,
+                        ]),
+                      ),
                     ],
                   ),
-
-                if (controller.showReverseLogistics.value &&
-                    controller.reverseRows.isNotEmpty)
                   Ui.boxHeight(12),
+                ],
 
-                // ── Sign-Off ──────────────────────────────────────────────
+                // ── Sign-Off ─────────────────────────────────────────────────
                 _ReviewSection(
-                  title: 'Sign-Off',
-                  icon: HugeIcons.strokeRoundedSignature,
-                  children: [
-                    _InfoRow('Dispatched By', controller.dispatchedBy.text),
-                    _InfoRow('Delivered By', controller.deliveredBy.text),
-                    _InfoRow('Received By', controller.receivedBy.text),
-                  ],
-                ),
+                    title: 'Sign-Off',
+                    icon: HugeIcons.strokeRoundedSignature,
+                    children: [
+                      _InfoRow(
+                          'Dispatched By', record.signOff.dispatchedBy),
+                      _InfoRow(
+                          'Delivered By', record.signOff.deliveredBy),
+                      _InfoRow(
+                          'Received By', record.signOff.receivedBy),
+                    ],
+                  ),
                 Ui.boxHeight(12),
               ],
             ),
           ),
 
-          // ── Sticky submit button ────────────────────────────────────────
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 24,
-            child: Obx(() => controller.isSubmitting.value
-                ? const Center(child: LoadingIndicator(size: 32))
-                : AppButton(
-                    onPressed: controller.submit,
-                    text: 'Confirm & Submit',
-                  )),
-          ),
+          // ── Sticky Close Out button (only admin, only when trip_ended) ────
+          if (record.tripEnded)
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 24,
+              child: Obx(
+                () => varCtrl.isSubmitting.value
+                    ? const Center(child: LoadingIndicator(size: 32))
+                    : AppButton(
+                        onPressed: () async {
+                          await varCtrl.closeVar(record.id);
+                          await dashCtrl.getAllVarRecords();
+                          Get.back();
+                        },
+                        text: 'Close Out VAR',
+                      ),
+              ),
+            ),
         ],
       ),
     );
@@ -188,7 +211,7 @@ class VarReviewScreen extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Sub-widgets
+// Sub-widgets (identical to old review screen, reusable)
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _ReviewSection extends StatelessWidget {
@@ -210,11 +233,13 @@ class _ReviewSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            AppIcon(icon, size: 16, color: AppColors.primaryColor),
-            Ui.boxWidth(8),
-            AppText.semiBold(title, fontSize: 13),
-          ]),
+          Row(
+            children: [
+              AppIcon(icon, size: 16, color: AppColors.primaryColor),
+              Ui.boxWidth(8),
+              AppText.semiBold(title, fontSize: 13),
+            ],
+          ),
           AppDivider(),
           ...children,
         ],
@@ -237,8 +262,11 @@ class _InfoRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 140,
-            child: AppText.medium(label,
-                fontSize: 11, color: AppColors.lightTextColor),
+            child: AppText.medium(
+              label,
+              fontSize: 11,
+              color: AppColors.lightTextColor,
+            ),
           ),
           Expanded(
             child: AppText.medium(
@@ -261,7 +289,7 @@ class _TableHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppColors.primaryColor.withOpacity(0.06),
+      color: AppColors.primaryColor..withValues(alpha: 0.06),
       padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
       child: Row(
         children: headers
@@ -300,9 +328,8 @@ class _TableRow extends StatelessWidget {
                   c.isEmpty ? '—' : c,
                   fontSize: 10,
                   alignment: TextAlign.center,
-                  color: c.isEmpty
-                      ? AppColors.lightTextColor
-                      : AppColors.textColor,
+                  color:
+                      c.isEmpty ? AppColors.lightTextColor : AppColors.textColor,
                 ),
               ),
             )

@@ -109,36 +109,35 @@ class _VarRecordCard extends StatelessWidget {
             AppDivider(),
 
             // ── Meta rows ──────────────────────────────────────────────────
-            _MetaRow(HugeIcons.strokeRoundedCalendar01,
-                record.dateofarrival.isEmpty ? '—' : record.dateofarrival),
+            _MetaRow(
+              HugeIcons.strokeRoundedCalendar01,
+              record.dateofarrival.isEmpty ? '—' : record.dateofarrival,
+            ),
             _MetaRow(
               HugeIcons.strokeRoundedThermometer,
               record.temperaturerange.isEmpty ? '—' : record.temperaturerange,
             ),
-            _MetaRow(
-              HugeIcons.strokeRoundedLocation05,
-              () {
-                final parts = [
-                  if (record.originName.isNotEmpty) record.originName,
-                  if (record.destinationName.isNotEmpty) record.destinationName,
-                ].join(' → ');
-                return parts.isEmpty ? '—' : parts;
-              }(),
-            ),
+            _MetaRow(HugeIcons.strokeRoundedLocation05, () {
+              final parts = [
+                if (record.originName.isNotEmpty) record.originName,
+                if (record.destinationName.isNotEmpty) record.destinationName,
+              ].join(' → ');
+              return parts.isEmpty ? '—' : parts;
+            }()),
 
             // ── Commodity count ────────────────────────────────────────────
             Ui.boxHeight(6),
             Row(
               children: [
-                _CountBadge(
-                    '${record.commodityDetails.length}', 'Commodities'),
+                _CountBadge('${record.commodityDetails.length}', 'Commodities'),
                 Ui.boxWidth(8),
                 _CountBadge(
-                    '${record.temperatureMonitoring.length}', 'Temp Checks'),
+                  '${record.temperatureMonitoring.length}',
+                  'Temp Checks',
+                ),
                 if (record.reverseLogistics.isNotEmpty) ...[
                   Ui.boxWidth(8),
-                  _CountBadge(
-                      '${record.reverseLogistics.length}', 'Reverse'),
+                  _CountBadge('${record.reverseLogistics.length}', 'Reverse'),
                 ],
               ],
             ),
@@ -187,7 +186,7 @@ class _StatusChip extends StatelessWidget {
     final color = isReceived ? AppColors.green : AppColors.yellow;
     return CurvedContainer(
       radius: 20,
-      color: color.withOpacity(0.12),
+      color: color..withValues(alpha: 0.12),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       child: AppText.medium(label, fontSize: 10, color: color),
     );
@@ -272,17 +271,19 @@ class _VarDetailScreen extends StatelessWidget {
                 'Expiry',
                 'Qty D',
                 'Qty R',
-                'VVM'
+                'VVM',
               ],
               rows: record.commodityDetails
-                  .map((c) => [
-                        c.vaccine,
-                        c.batchNo,
-                        c.expiryDate,
-                        c.qtyDispatched,
-                        c.qtyReceived,
-                        c.vvmStatus,
-                      ])
+                  .map(
+                    (c) => [
+                      c.vaccine,
+                      c.batchNo,
+                      c.expiryDate,
+                      c.qtyDispatched,
+                      c.qtyReceived,
+                      c.vvmStatus,
+                    ],
+                  )
                   .toList(),
             ),
             Ui.boxHeight(12),
@@ -291,11 +292,13 @@ class _VarDetailScreen extends StatelessWidget {
               icon: HugeIcons.strokeRoundedTemperature,
               headers: const ['Point', 'Temp (°C)', 'Date/Time'],
               rows: record.temperatureMonitoring
-                  .map((t) => [
-                        t.monitoringPoint,
-                        t.temperatureCelsius,
-                        t.dateTime,
-                      ])
+                  .map(
+                    (t) => [
+                      t.monitoringPoint,
+                      t.temperatureCelsius,
+                      t.dateTime,
+                    ],
+                  )
                   .toList(),
             ),
             if (record.reverseLogistics.isNotEmpty) ...[
@@ -305,12 +308,9 @@ class _VarDetailScreen extends StatelessWidget {
                 icon: HugeIcons.strokeRoundedArrowTurnBackward,
                 headers: const ['Item', 'Qty', 'Condition', 'Destination'],
                 rows: record.reverseLogistics
-                    .map((r) => [
-                          r.item,
-                          r.quantity,
-                          r.condition,
-                          r.destination,
-                        ])
+                    .map(
+                      (r) => [r.item, r.quantity, r.condition, r.destination],
+                    )
                     .toList(),
               ),
             ],
@@ -333,8 +333,11 @@ class _VarDetailScreen extends StatelessWidget {
 }
 
 class _DetailSection extends StatelessWidget {
-  const _DetailSection(
-      {required this.title, required this.icon, required this.fields});
+  const _DetailSection({
+    required this.title,
+    required this.icon,
+    required this.fields,
+  });
   final String title;
   final dynamic icon;
   final Map<String, String> fields;
@@ -348,11 +351,13 @@ class _DetailSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            AppIcon(icon, size: 15, color: AppColors.primaryColor),
-            Ui.boxWidth(8),
-            AppText.semiBold(title, fontSize: 13),
-          ]),
+          Row(
+            children: [
+              AppIcon(icon, size: 15, color: AppColors.primaryColor),
+              Ui.boxWidth(8),
+              AppText.semiBold(title, fontSize: 13),
+            ],
+          ),
           AppDivider(),
           ...fields.entries.map(
             (e) => Padding(
@@ -362,8 +367,11 @@ class _DetailSection extends StatelessWidget {
                 children: [
                   SizedBox(
                     width: 130,
-                    child: AppText.medium(e.key,
-                        fontSize: 11, color: AppColors.lightTextColor),
+                    child: AppText.medium(
+                      e.key,
+                      fontSize: 11,
+                      color: AppColors.lightTextColor,
+                    ),
                   ),
                   Expanded(
                     child: AppText.medium(
@@ -382,11 +390,12 @@ class _DetailSection extends StatelessWidget {
 }
 
 class _TableSection extends StatelessWidget {
-  const _TableSection(
-      {required this.title,
-      required this.icon,
-      required this.headers,
-      required this.rows});
+  const _TableSection({
+    required this.title,
+    required this.icon,
+    required this.headers,
+    required this.rows,
+  });
   final String title;
   final dynamic icon;
   final List<String> headers;
@@ -401,25 +410,30 @@ class _TableSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            AppIcon(icon, size: 15, color: AppColors.primaryColor),
-            Ui.boxWidth(8),
-            AppText.semiBold(title, fontSize: 13),
-          ]),
+          Row(
+            children: [
+              AppIcon(icon, size: 15, color: AppColors.primaryColor),
+              Ui.boxWidth(8),
+              AppText.semiBold(title, fontSize: 13),
+            ],
+          ),
           AppDivider(),
           // Header
           Container(
-            color: AppColors.primaryColor.withOpacity(0.06),
-            padding:
-                const EdgeInsets.symmetric(vertical: 5, horizontal: 4),
+            color: AppColors.primaryColor..withValues(alpha: 0.06),
+            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 4),
             child: Row(
               children: headers
-                  .map((h) => Expanded(
-                        child: AppText.semiBold(h,
-                            fontSize: 9,
-                            color: AppColors.primaryColor,
-                            alignment: TextAlign.center),
-                      ))
+                  .map(
+                    (h) => Expanded(
+                      child: AppText.semiBold(
+                        h,
+                        fontSize: 9,
+                        color: AppColors.primaryColor,
+                        alignment: TextAlign.center,
+                      ),
+                    ),
+                  )
                   .toList(),
             ),
           ),
@@ -428,10 +442,10 @@ class _TableSection extends StatelessWidget {
             (cells) => Container(
               decoration: BoxDecoration(
                 border: Border(
-                    bottom: BorderSide(color: AppColors.borderColor)),
+                  bottom: BorderSide(color: AppColors.borderColor),
+                ),
               ),
-              padding:
-                  const EdgeInsets.symmetric(vertical: 5, horizontal: 4),
+              padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 4),
               child: Row(
                 children: cells
                     .map(

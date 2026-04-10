@@ -469,4 +469,24 @@ class AppRepo extends GetxController {
     final res = await apiService.delete(uri);
     return res.statusCode!.isSuccess();
   }
+
+  // ── VAR Module Endpoints ───────────────────────────────────────────────────
+
+  Future<bool> createVar(Map<String, dynamic> data) async {
+    const uri = "${AppUrls.varURL}/create";
+    final res = await apiService.post(uri, data: data);
+    return res.statusCode!.isSuccess();
+  }
+
+  Future<bool> updateVar(int id, Map<String, dynamic> data) async {
+    final uri = "${AppUrls.varURL}/$id";
+    final res = await apiService.patch(uri, data: data);
+    return res.statusCode!.isSuccess();
+  }
+
+  Future<bool> closeVar(int id) async {
+    final uri = "${AppUrls.varURL}/$id/close";
+    final res = await apiService.patch(uri, data: {});
+    return res.statusCode!.isSuccess();
+  }
 }

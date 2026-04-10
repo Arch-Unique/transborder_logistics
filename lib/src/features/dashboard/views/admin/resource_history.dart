@@ -3,14 +3,13 @@ import 'package:get/get.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:transborder_logistics/src/app/app_barrel.dart';
 import 'package:transborder_logistics/src/features/dashboard/controllers/dashboard_controller.dart';
-import 'package:transborder_logistics/src/features/dashboard/views/admin/drawer.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/shared.dart';
 import 'package:transborder_logistics/src/global/model/user.dart';
 import 'package:transborder_logistics/src/global/ui/ui_barrel.dart';
-import 'package:transborder_logistics/src/global/ui/widgets/fields/custom_dropdown.dart';
 import 'package:transborder_logistics/src/global/ui/widgets/fields/custom_textfield.dart';
 import 'package:transborder_logistics/src/global/ui/widgets/others/containers.dart';
 import 'package:transborder_logistics/src/features/dashboard/models/var_data.dart';
+import 'package:transborder_logistics/src/features/dashboard/controllers/var_controller.dart';
 
 class ResourceHistory<T extends Slugger> {
   String title;
@@ -729,6 +728,8 @@ class ResourceHistoryTable<T extends Slugger> extends StatelessWidget {
                             if (title[j] == "Status") {
                               return rtitle == "Trips"
                                   ? WaybillStatusChip(pageItems[i][j])
+                                  : rtitle == "VAR Records"
+                                  ? VarRecordStatusChip(pageItems[i][j])
                                   : DriverStatusChip(pageItems[i][j]);
                             }
                             return AppText.thin(
@@ -831,11 +832,15 @@ class ResourceHistoryItemDetail extends StatelessWidget {
                       "inactive",
                       "active",
                       "new",
-                      "available"
-                          "completed",
+                      "available",
+                      "completed",
                       "track",
                       "cancelled",
                       "in progress",
+                      "pending",
+                      "trip ended",
+                      "trip_ended",
+                      "closed",
                     ].contains(fields.values.elementAt(i).toLowerCase()))
                       AppText.thin(
                         fields.values.elementAt(i).isEmpty
@@ -850,16 +855,22 @@ class ResourceHistoryItemDetail extends StatelessWidget {
                       "inactive",
                       "active",
                       "new",
-                      "available"
-                          "completed",
+                      "available",
+                      "completed",
                       "track",
                       "cancelled",
                       "in progress",
+                      "pending",
+                      "trip ended",
+                      "trip_ended",
+                      "closed",
                     ].contains(fields.values.elementAt(i).toLowerCase()))
                       SizedBox(
                         width: 150,
                         child: rtitle == "Trips"
                             ? WaybillStatusChip(fields.values.elementAt(i))
+                            : rtitle == "VAR Records"
+                            ? VarRecordStatusChip(fields.values.elementAt(i))
                             : DriverStatusChip(fields.values.elementAt(i)),
                       ),
                   ],
@@ -868,6 +879,57 @@ class ResourceHistoryItemDetail extends StatelessWidget {
             }),
           ),
         ),
+        if (rtitle == "Trips" || rtitle == "VAR Records")
+          Align(
+            alignment: Alignment.center,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: SizedBox(
+                width: 200,
+                child: Builder(
+                  builder: (context) {
+                    final varCtrl = Get.find<VarController>();
+                    if (rtitle == "Trips") {
+                      return AppButton(
+                        onPressed: () {
+                          Get.to(
+                            WaybillDetailPage(
+                              Get.find<DashboardController>().currentModel.value
+                                  as Delivery,
+                            ),
+                          );
+                        },
+                        text: "Share",
+                      );
+                    } else if (rtitle == "VAR Records") {
+                      final currentModel =
+                          Get.find<DashboardController>().currentModel.value
+                              as VarRecord;
+                      if (currentModel.status == 'trip_ended') {
+                        return AppButton(
+                          onPressed: () async {
+                            await Get.bottomSheet(
+                              AddResource<VarRecord>(
+                                "VAR Records",
+                                obj: currentModel,
+                              ),
+                              isScrollControlled: true,
+                            );
+                            await varCtrl.closeVar(currentModel.id);
+                            await Get.find<DashboardController>().initApp();
+            Get.find<DashboardController>().refreshResource();
+                          },
+                          text: "Close Out VAR",
+                        );
+                      }
+                    }
+                    return SizedBox.shrink();
+                  },
+                ),
+              ),
+            ),
+          ),
+
         if (rtitle == "Trips")
           Align(
             alignment: Alignment.center,
@@ -875,16 +937,30 @@ class ResourceHistoryItemDetail extends StatelessWidget {
               padding: const EdgeInsets.all(16.0),
               child: SizedBox(
                 width: 200,
-                child: AppButton(
-                  onPressed: () {
-                    Get.to(
-                      WaybillDetailPage(
-                        Get.find<DashboardController>().currentModel.value
-                            as Delivery,
-                      ),
-                    );
+                child: Builder(
+                  builder: (context) {
+                    if (rtitle == "Trips") {
+                      final currentModel =
+                          Get.find<DashboardController>().currentModel.value
+                              as Delivery;
+                      if (currentModel.status == "New") {
+                        return AppButton(
+                          onPressed: () {
+                            Get.find<VarController>().populateFromTrip(
+                              currentModel,
+                            );
+                            Get.bottomSheet(
+                              AddResource<VarRecord>("VAR Records"),
+
+                              isScrollControlled: true,
+                            );
+                          },
+                          text: "Initiate VAR",
+                        );
+                      }
+                    }
+                    return SizedBox.shrink();
                   },
-                  text: "Share",
                 ),
               ),
             ),
