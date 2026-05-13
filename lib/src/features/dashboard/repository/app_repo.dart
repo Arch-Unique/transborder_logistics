@@ -286,6 +286,52 @@ class AppRepo extends GetxController {
     return locations;
   }
 
+   Future<bool> addStateLocation(
+    Map<String, dynamic> data,
+  ) async {
+    const uri = "${AppUrls.utilsURL}/statelocation";
+
+    final res = await apiService.post(
+      uri,
+      data: data
+    );
+    return res.statusCode!.isSuccess();
+  }
+
+  Future<bool> updateStateLocation(
+    
+    Map<String, dynamic> data,
+    int id,
+  ) async {
+    final uri = "${AppUrls.utilsURL}/statelocation/$id";
+
+    final res = await apiService.patch(
+      uri,
+      data: data
+    );
+    return res.statusCode!.isSuccess();
+  }
+
+  Future<bool> deleteStateLocation(int id) async {
+    final uri = "${AppUrls.utilsURL}/statelocation/$id";
+
+    final res = await apiService.delete(uri);
+    return res.statusCode!.isSuccess();
+  }
+
+  Future<List<StateLocation>> getStateLocations() async {
+    const uri = "${AppUrls.utilsURL}/statelocation?page=1&pageSize=0";
+
+    final res = await apiService.get(uri);
+    List<StateLocation> locations = [];
+    if (res.statusCode!.isSuccess()) {
+      final c = res.data["data"]["data"] as List;
+      locations.addAll(c.map<StateLocation>((e) => StateLocation.fromJson(e)));
+      return locations;
+    }
+    return locations;
+  }
+
   Future<bool> addDelivery(
     String waybill,
     int driver,

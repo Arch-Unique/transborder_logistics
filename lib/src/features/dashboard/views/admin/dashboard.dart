@@ -45,7 +45,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       onChanged: (v) async {
                         await controller.changeLocation(v ?? "All");
                       },
-                      cities: ["All", "Kano", "Kaduna"],
+                      cities: ["All", ...controller.allActiveStateLocations.map((e) => e.name)],
                       hasBottomPadding: false,
                     ),
                   ]),
@@ -112,7 +112,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       onChanged: (v) async {
                         await controller.changeLocation(v ?? "All");
                       },
-                      cities: ["All", "Kano", "Kaduna"],
+                      cities: ["All", ...controller.allActiveStateLocations.map((e) => e.name)],
                       hasBottomPadding: false,
                     ),
                   ]),

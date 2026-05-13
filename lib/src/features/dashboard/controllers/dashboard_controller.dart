@@ -21,6 +21,7 @@ class DashboardController extends GetxController {
 
   RxList<Delivery> allDeliveries = <Delivery>[].obs;
   RxList<Location> allLocation = <Location>[].obs;
+  RxList<StateLocation> allStateLocations = <StateLocation>[].obs;
   RxList<Delivery> allCustomerDeliveries = <Delivery>[].obs;
   Rx<Delivery> currentDelivery = Delivery(createdAt: DateTime.now()).obs;
   RxString curLoc = "All".obs;
@@ -54,6 +55,7 @@ class DashboardController extends GetxController {
     allDeliveries.clear();
     allLocation.clear();
     allCustomerDeliveries.clear();
+    allStateLocations.clear();
     currentDelivery.value = Delivery(createdAt: DateTime.now());
     curLoc.value = "All";
     curPaginatorPage.value = 1;
@@ -78,6 +80,7 @@ class DashboardController extends GetxController {
       await getLocations();
       await getVehicles();
       await getAllVarRecords();
+      await getStateLocations();
       isLoading.value = false;
     } catch (e) {
       // TODO
@@ -138,12 +141,31 @@ class DashboardController extends GetxController {
         .toList();
   }
 
+  List<StateLocation> get allActiveStateLocations {
+    return allStateLocations
+        .where((test) => test.isActive ?? false)
+        .toList();
+  }
+
+  List<StateLocation> get allInactiveStateLocations {
+    return allStateLocations
+        .where((test) => !(test.isActive ?? false))
+        .toList();
+  }
+
   Future<bool> getLocations() async {
     final c = await appRepo.getLocations();
     if (curLoc.value != "All" && curLoc.value.isNotEmpty) {
       c.removeWhere((test) => !(test.state?.contains(curLoc.value) ?? false));
     }
     allLocation.value = c;
+    if (c.isEmpty) return true;
+    return true;
+  }
+
+    Future<bool> getStateLocations() async {
+    final c = await appRepo.getStateLocations();
+    allStateLocations.value = c;
     if (c.isEmpty) return true;
     return true;
   }
@@ -457,6 +479,36 @@ class DashboardController extends GetxController {
     return await appRepo.deleteLocation(id);
   }
 
+    //statelocation
+  Future<bool> addStateLocation(
+    String name,
+    bool isActive,
+    String code,
+  ) async {
+    return await appRepo.addStateLocation({
+      "name": name,
+      "isactive": isActive ? 1:0,
+      "code": code,
+    });
+  }
+
+  Future<bool> editStateLocation(
+    String name,
+    bool isActive,
+    String code,
+    int id,
+  ) async {
+    return await appRepo.updateStateLocation({
+      "name": name,
+      "isactive": isActive ? 1:0,
+      "code": code,
+    }, id);
+  }
+
+  Future<bool> deleteStateLocation(int id) async {
+    return await appRepo.deleteStateLocation(id);
+  }
+
   Future<bool> addDelivery(
     String waybill,
     List<String> loc,
@@ -489,10 +541,10 @@ class DashboardController extends GetxController {
     return await appRepo.deleteVehicle(id);
   }
 
-  Future<String> generateWayBill(bool isKano,String prefix) async {
+  Future<String> generateWayBill(StateLocation sl,String prefix) async {
     final lastId = await appRepo.getLastDeliveryID();
     final sd = DateFormat("MM/yy").format(DateTime.now());
-    return "$prefix/${isKano ? "KN" : "KD"}/$sd/${(lastId + 1).toString().padLeft(4, "0")}";
+    return "$prefix/${sl.code}/$sd/${(lastId + 1).toString().padLeft(4, "0")}";
   }
 
   Future changeLocation(String v) async {
@@ -589,6 +641,12 @@ class DashboardController extends GetxController {
       } else if (s == "Inactive") {
         v.value = List.from(allFacilities);
       }
+    } else if (title.toLowerCase() == "location") {
+      if (s == "Active") {
+        v.value = List.from(allActiveStateLocations);
+      } else if (s == "Inactive") {
+        v.value = List.from(allInactiveStateLocations);
+      }
     } else if (title.toLowerCase() == "loading points") {
       if (s == "Active") {
         v.value = List.from(allLoadingPoints);
@@ -623,16 +681,7 @@ class DashboardController extends GetxController {
     } else if (curResourceHistory.value.title == DashboardMode.drivers.name) {
       curResourceHistory.value.items = allDrivers;
     } else if (curResourceHistory.value.title == DashboardMode.location.name) {
-      curResourceHistory.value.items = List.from(
-        States.states.indexed.map((t) {
-          final (index, e) = t;
-          return StateLocation(
-            id: index + 1,
-            name: e,
-            isActive: e == "Kano" || e == "Kaduna",
-          );
-        }),
-      );
+      curResourceHistory.value.items = allStateLocations;
     } else if (curResourceHistory.value.title ==
         DashboardMode.facilities.name) {
       curResourceHistory.value.items = allFacilities;

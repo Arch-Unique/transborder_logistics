@@ -178,7 +178,7 @@ class Location implements Slugger {
 
 class StateLocation implements Slugger {
   int id;
-  String? name, code;
+  String name, code;
   bool? isActive;
 
   StateLocation({
@@ -196,7 +196,7 @@ class StateLocation implements Slugger {
   @override
   List<String> get tableValue => [
     id.toString(),
-    name ?? "",
+    name,
     (isActive ?? false) ? "Active" : "Inactive",
   ];
 
