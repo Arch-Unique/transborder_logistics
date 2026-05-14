@@ -63,9 +63,7 @@ class _AdminExplorerState extends State<AdminExplorer> {
                 trailing: [
                   Obx(() {
                     return controller.curResourceHistory.value.title ==
-                                "Dashboard" ||
-                            controller.curResourceHistory.value.title ==
-                                "Location"
+                                "Dashboard" 
                         ? SizedBox()
                         : InkWell(
                             onTap: () async {
@@ -82,9 +80,7 @@ class _AdminExplorerState extends State<AdminExplorer> {
                   }),
                   Obx(() {
                     return controller.curResourceHistory.value.title ==
-                                "Dashboard" ||
-                            controller.curResourceHistory.value.title ==
-                                "Location"
+                                "Dashboard"
                         ? InkWell(
                             child: Padding(
                               padding: const EdgeInsets.only(right: 16),
@@ -220,6 +216,14 @@ class _AdminExplorerState extends State<AdminExplorer> {
                                         "Loading Points") {
                                   success = await controller.deleteLocation(
                                     (v as Location).id,
+                                  );
+                                }else if (controller
+                                            .curResourceHistory
+                                            .value
+                                            .title ==
+                                        "Location") {
+                                  success = await controller.deleteStateLocation(
+                                    (v as StateLocation).id,
                                   );
                                 }
                                 if (success) {

@@ -276,7 +276,10 @@ class StateInfo extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: EdgeInsets.all(12),
       onPressed: () {
-        // Get.to(WaybillDetailPage(delivery));
+        Get.bottomSheet(
+          AddResource<StateLocation>("Location", obj: sloc),
+          isScrollControlled: true,
+        );
       },
       radius: 12,
       child: Row(
@@ -2434,6 +2437,25 @@ class AddResource<T> extends StatelessWidget {
                 },
               );
             }),
+            Row(
+              children: [
+                AppText.medium("Enabled", fontSize: 14),
+                Spacer(),
+                Obx(() {
+                  return Switch(
+                    value: isActive.value,
+                    activeThumbColor: AppColors.green,
+                    onChanged: (v) {
+                      isActive.value = v;
+                    },
+                  );
+                }),
+              ],
+            ),
+          ],
+		  if (title.toLowerCase() == "location") ...[
+            CustomTextField("Add name", tecs[0], label: "Name"),
+            CustomTextField("Add Code", tecs[1], label: "Code"),
             Row(
               children: [
                 AppText.medium("Enabled", fontSize: 14),

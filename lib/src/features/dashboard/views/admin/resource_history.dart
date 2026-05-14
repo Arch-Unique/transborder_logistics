@@ -355,7 +355,7 @@ class _ResourceHistoryDesktopPageState<T extends Slugger>
             prefix: HugeIcons.strokeRoundedSearch02,
           ),
         ),
-        if (widget.title != "Location")
+        
           Obx(() {
             return badgeBox(
               CurvedContainer(
@@ -408,7 +408,7 @@ class _ResourceHistoryDesktopPageState<T extends Slugger>
           ),
         ),
         Ui.boxWidth(12),
-        if (widget.title != "Location")
+        
           CurvedContainer(
             onPressed: () {
               if (widget.onAdd != null) {
