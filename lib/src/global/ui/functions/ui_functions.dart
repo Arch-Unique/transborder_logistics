@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hugeicons/hugeicons.dart';
-import 'package:icons_plus/icons_plus.dart';
+import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:transborder_logistics/src/global/ui/widgets/others/containers.dart';
 import '../ui_barrel.dart';
 import '/src/app/app_barrel.dart';
@@ -183,7 +183,7 @@ abstract class Ui {
                   radius: 28,
                   backgroundColor: AppColors.primaryColor,
                   child: Center(
-                    child: Icon(Iconsax.logout_bold, color: Colors.white),
+                    child: Icon(IconsaxPlusBold.logout, color: Colors.white),
                   ),
                 ),
               ),

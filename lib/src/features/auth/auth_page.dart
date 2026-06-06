@@ -1,5 +1,5 @@
 import 'package:hugeicons/hugeicons.dart';
-import 'package:icons_plus/icons_plus.dart';
+import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:transborder_logistics/src/features/auth/controllers/auth_controller.dart';
 import 'package:transborder_logistics/src/global/ui/ui_barrel.dart';
 import 'package:transborder_logistics/src/global/ui/widgets/fields/custom_textfield.dart';

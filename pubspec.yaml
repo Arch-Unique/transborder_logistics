@@ -12,7 +12,7 @@ dependencies:
   intl: ^0.20.1
   get: ^4.6.5
   dio: ^5.1.2
-  icons_plus: ^5.0.0
+  iconsax_plus: ^1.0.0
   flutter_svg: ^2.0.2
   connectivity_plus: ^7.0.0
   get_storage: ^2.1.1
@@ -35,9 +35,8 @@ dependencies:
   file_picker: ^10.3.6
   syncfusion_flutter_signaturepad: ^31.2.12
   widgets_to_image: ^2.0.1
-  google_static_maps_controller: ^1.1.0
-
-
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
 
 dev_dependencies:
   flutter_test:
@@ -68,3 +67,4 @@ flutter_native_splash:
       icon_background_color: "#ffffff"
       image_dark: assets/images/flogo.png
       icon_background_color_dark: "#ffffff"
+

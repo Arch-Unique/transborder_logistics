@@ -8,7 +8,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 import 'package:get/get.dart';
-import 'package:icons_plus/icons_plus.dart';
+import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:shimmer/shimmer.dart';
 import '/src/global/ui/ui_barrel.dart';
 import '/src/src_barrel.dart';
@@ -687,7 +687,7 @@ Widget badge({
     width: size,
     decoration: BoxDecoration(shape: BoxShape.circle, color: color),
     child: Center(
-      child: Icon(icon ?? Iconsax.add_outline, color: AppColors.white),
+      child: Icon(icon ?? IconsaxPlusLinear.add, color: AppColors.white),
     ),
   );
 }
@@ -703,7 +703,7 @@ class _ChooseCamState extends State<ChooseCam> {
   final ImagePicker _picker = ImagePicker();
 
   XFile? finalImage;
-  List<IconData> icons = [Iconsax.camera_outline, Iconsax.image_outline];
+  List<IconData> icons = [IconsaxPlusLinear.camera, IconsaxPlusLinear.image];
   List<String> iconText = ["Camera", "Gallery"];
 
   @override
@@ -935,7 +935,7 @@ class UserProfilePic extends StatelessWidget {
                         builder: (context, value, child) {
                           return Center(
                             child: Icon(
-                              Iconsax.profile_circle_outline,
+                              IconsaxPlusLinear.profile_circle,
                               size: 94,
                               color: value,
                             ),

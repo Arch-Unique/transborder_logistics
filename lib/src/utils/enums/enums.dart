@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
-import 'package:icons_plus/icons_plus.dart';
+import 'package:iconsax_plus/iconsax_plus.dart';
 
 import '../../global/model/barrel.dart';
 import '../utils_barrel.dart';
@@ -48,7 +48,7 @@ enum ErrorTypes {
       "Please check your internet connection and try again"),
   noPatient(Icons.pregnant_woman_rounded, "No Patient Found",
       "Oops. no patients found. Please contact support for help"),
-  noDonation(Iconsax.empty_wallet_outline, "No Donation Found",
+  noDonation(IconsaxPlusLinear.empty_wallet, "No Donation Found",
       "You haven't made any donations yet. Why not make a difference today? "),
   serverFailure(Icons.power_off_rounded, "Server Failure",
       "Something bad happened. Please try again later");

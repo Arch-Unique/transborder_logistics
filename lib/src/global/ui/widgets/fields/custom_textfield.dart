@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:transborder_logistics/src/utils/formatters/num_formatters.dart';
-import 'package:icons_plus/icons_plus.dart';
+import 'package:iconsax_plus/iconsax_plus.dart';
 import '/src/src_barrel.dart';
 
 import '../../ui_barrel.dart';
@@ -200,8 +200,8 @@ class CustomTextField extends StatelessWidget {
                         child: AppIcon(
                           size: 24,
                           isShow
-                              ? Iconsax.eye_outline
-                              : Iconsax.eye_slash_outline,
+                              ? IconsaxPlusLinear.eye
+                              : IconsaxPlusLinear.eye_slash,
                           color:
                               // hasTouched
                               //     ? AppColors.textColor
@@ -266,7 +266,7 @@ class CustomTextField extends StatelessWidget {
       hint,
       controller,
       hasBottomPadding: false,
-      prefix: Iconsax.search_normal_outline,
+      prefix: IconsaxPlusLinear.search_normal,
       iconColor: AppColors.lightTextColor,
       shdValidate: false,
       bcol: AppColors.white,

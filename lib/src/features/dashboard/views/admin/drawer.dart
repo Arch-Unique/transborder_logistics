@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hugeicons/hugeicons.dart';
-import 'package:icons_plus/icons_plus.dart';
+import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:transborder_logistics/src/features/dashboard/controllers/dashboard_controller.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/admin/explorer.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/admin/resource_history.dart';
@@ -185,7 +185,7 @@ class ToogleDarkModeWidget extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         
-        AppIcon(Iconsax.sun_1_bold),
+        AppIcon(IconsaxPlusBold.sun_1),
         Ui.boxWidth(8),
         Obx(
            () {
@@ -200,7 +200,7 @@ class ToogleDarkModeWidget extends StatelessWidget {
           }
         ),
         Ui.boxWidth(16),
-        AppIcon(Iconsax.moon_bold,),
+        AppIcon(IconsaxPlusBold.moon,),
       ],
     );
   }
