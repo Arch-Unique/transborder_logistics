@@ -94,7 +94,7 @@ class _ResourceHistoryPageState<T extends Slugger>
           ),
         CurvedContainer(
           border: Border.all(color: AppColors.borderColor),
-          color: AppColors.primaryColorBackground,
+          color: AppColors.surfaceColor,
           radius: 12,
           padding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
           margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -551,7 +551,7 @@ class ResourceHistoryRowItem extends StatelessWidget {
               ? BorderSide.none
               : BorderSide(color: AppColors.borderColor),
         ),
-        color: isHeader ? Color(0xfff7f7f7) : AppColors.white,
+        color: isHeader ? AppColors.surfaceColor : AppColors.primaryColorBackground,
       ),
       child: isFooter
           ? footer
