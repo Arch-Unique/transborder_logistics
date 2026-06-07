@@ -3,11 +3,13 @@ import 'package:get/get.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:transborder_logistics/src/features/dashboard/controllers/dashboard_controller.dart';
+import 'package:transborder_logistics/src/features/dashboard/views/admin/explorer.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/admin/resource_history.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/shared.dart';
 import 'package:transborder_logistics/src/global/model/user.dart';
 import 'package:transborder_logistics/src/global/ui/widgets/others/containers.dart';
 import 'package:transborder_logistics/src/src_barrel.dart';
+import 'package:transborder_logistics/src/utils/constants/string/facilities.dart';
 import 'package:transborder_logistics/src/features/dashboard/models/var_data.dart';
 
 import '../../../../global/services/barrel.dart';
@@ -16,154 +18,194 @@ import '../../../../global/ui/ui_barrel.dart';
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
 
+  void _navigate(DashboardController controller, DashboardMode e) {
+    controller.curDashboardIndex.value = e.index;
+    controller.currentModelIndex.value = 0;
+
+    if (e != DashboardMode.dashboard) {
+      ResourceHistory rh;
+      if (e == DashboardMode.trips) {
+        controller.currentModel = Delivery(createdAt: DateTime.now()).obs;
+        rh = ResourceHistory<Delivery>(items: controller.allCustomerDeliveries);
+      } else if (e == DashboardMode.users) {
+        controller.currentModel = User().obs;
+        rh = ResourceHistory<User>(items: controller.allCustomers);
+      } else if (e == DashboardMode.drivers) {
+        controller.currentModel = User().obs;
+        rh = ResourceHistory<User>(items: controller.allDrivers);
+      } else if (e == DashboardMode.location) {
+        controller.currentModel = StateLocation().obs;
+        rh = ResourceHistory<StateLocation>(items: controller.allStateLocations);
+      } else if (e == DashboardMode.facilities) {
+        controller.currentModel = Location().obs;
+        rh = ResourceHistory<Location>(items: controller.allFacilities);
+      } else if (e == DashboardMode.pickups) {
+        controller.currentModel = Location().obs;
+        rh = ResourceHistory<Location>(items: controller.allLoadingPoints);
+      } else if (e == DashboardMode.vehicles) {
+        controller.currentModel = Vehicle().obs;
+        rh = ResourceHistory<Vehicle>(items: controller.allVehicles);
+      } else if (e == DashboardMode.varRecords) {
+        controller.currentModel = VarRecord().obs;
+        rh = ResourceHistory<VarRecord>(items: controller.allVarRecords);
+      } else {
+        rh = ResourceHistory(items: []);
+      }
+      controller.currentModel.refresh();
+      rh.title = e.name;
+      rh.filters = e.filters;
+      rh.onFilter = (v, s) => controller.getFilters(v, s, e.name);
+      controller.curResourceHistory.value = rh;
+    } else {
+      controller.curResourceHistory.value = ResourceHistory();
+    }
+    controller.curResourceHistory.refresh();
+    Get.back();
+  }
+
   @override
   Widget build(BuildContext context) {
     final appService = Get.find<AppService>();
     final controller = Get.find<DashboardController>();
-    return CurvedContainer(
-      radius: 0,
+
+    return Container(
       width: Ui.width(context) * 0.75,
-      child: Ui.padding(
+      color: AppColors.primaryColorBackground,
+      child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Ui.boxHeight(24),
-            Align(
-              alignment: Alignment.center,
-              child: Image.asset(Assets.fulllogo, width: 150),
+            // Logo & dark mode toggle
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+              child: Row(
+                children: [
+                  Image.asset(Assets.fulllogo, width: 120),
+                  const Spacer(),
+                  const ToogleDarkModeWidget(),
+                ],
+              ),
             ),
-            Ui.boxHeight(24),
-            Align(alignment: Alignment.center, child: ToogleDarkModeWidget()),
-            Ui.boxHeight(24),
+            const SizedBox(height: 8),
+            Divider(color: AppColors.borderColor, height: 1),
+            const SizedBox(height: 8),
 
-            AppContainer(
-              "",
-              DashboardMode.values
-                  .map(
-                    (e) => InkWell(
-                      onTap: () {
-                        controller.curDashboardIndex.value = e.index;
-
-                        controller.currentModelIndex.value = 0;
-
-                        if (e != DashboardMode.dashboard) {
-                          // List items = [];
-                          ResourceHistory rh;
-                          if (e == DashboardMode.trips) {
-                            controller.currentModel = Delivery(
-                              createdAt: DateTime.now(),
-                            ).obs;
-
-                            rh = ResourceHistory<Delivery>(
-                              items: controller.allCustomerDeliveries,
-                            );
-                          } else if (e == DashboardMode.users) {
-                            controller.currentModel = User().obs;
-                            rh = ResourceHistory<User>(
-                              items: controller.allCustomers,
-                            );
-                          } else if (e == DashboardMode.drivers) {
-                            controller.currentModel = User().obs;
-                            rh = ResourceHistory<User>(
-                              items: controller.allDrivers,
-                            );
-                          } else if (e == DashboardMode.location) {
-                            controller.currentModel = StateLocation().obs;
-                            rh = ResourceHistory<StateLocation>(
-                              items: controller.allStateLocations,
-                            );
-                          } else if (e == DashboardMode.facilities) {
-                            controller.currentModel = Location().obs;
-                            rh = ResourceHistory<Location>(
-                              items: controller.allFacilities,
-                            );
-                          } else if (e == DashboardMode.pickups) {
-                            controller.currentModel = Location().obs;
-                            rh = ResourceHistory<Location>(
-                              items: controller.allLoadingPoints,
-                            );
-                          } else if (e == DashboardMode.vehicles) {
-                            controller.currentModel = Vehicle().obs;
-                            rh = ResourceHistory<Vehicle>(
-                              items: controller.allVehicles,
-                            );
-                          } else if (e == DashboardMode.varRecords) {
-                            controller.currentModel = VarRecord().obs;
-                            rh = ResourceHistory<VarRecord>(
-                              items: controller.allVarRecords,
-                            );
-                          } else {
-                            rh = ResourceHistory(items: []);
-                          }
-                          controller.currentModel.refresh();
-                          rh.title = e.name;
-                          rh.filters = e.filters;
-                          rh.onFilter = (v, s) {
-                            controller.getFilters(v, s, e.name);
-                          };
-
-                          controller.curResourceHistory.value = rh;
-                        } else {
-                          controller.curResourceHistory.value =
-                              ResourceHistory();
-                        }
-                        controller.curResourceHistory.refresh();
-                        Get.back();
-                      },
-                      child: Obx(() {
-                        final txtColor =
-                            controller.curDashboardIndex.value == e.index
-                            ? AppColors.primaryColor
-                            : AppColors.textColor;
-                        final iconColor =
-                            controller.curDashboardIndex.value == e.index
-                            ? AppColors.primaryColor
-                            : AppColors.lightTextColor;
-                        return Row(
+            // Nav items
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                children: DashboardMode.values.map((e) {
+                  return Obx(() {
+                    final isActive = controller.curDashboardIndex.value == e.index;
+                    return GestureDetector(
+                      onTap: () => _navigate(controller, e),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        margin: const EdgeInsets.symmetric(vertical: 3),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isActive
+                              ? AppColors.primaryColor.withOpacity(0.1)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                          border: isActive
+                              ? Border.all(color: AppColors.primaryColor.withOpacity(0.2))
+                              : null,
+                        ),
+                        child: Row(
                           children: [
-                            AppIcon(e.icon, size: 20, color: iconColor),
+                            Container(
+                              width: 34,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                color: isActive
+                                    ? AppColors.primaryColor
+                                    : AppColors.surfaceColor,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Center(
+                                child: AppIcon(
+                                  e.icon,
+                                  size: 18,
+                                  color: isActive ? Colors.white : AppColors.lightTextColor,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: AppText.medium(
+                                e.name,
+                                fontSize: 14,
+                                color: isActive
+                                    ? AppColors.primaryColor
+                                    : AppColors.textColor,
+                              ),
+                            ),
+                            if (isActive)
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryColor,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  });
+                }).toList(),
+              ),
+            ),
 
-                            Ui.boxWidth(8),
-                            AppText.medium(
-                              e.name,
-                              fontSize: 14,
-                              color: txtColor,
+            Divider(color: AppColors.borderColor, height: 1),
+
+            // User profile footer
+            InkWell(
+              onTap: () => Get.to(
+                SinglePageScaffold(title: "Profile", child: ProfilePage()),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                child: Obx(() {
+                  final user = appService.currentUser.value;
+                  return Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: AppColors.primaryColor.withOpacity(0.15),
+                        child: AppText.bold(
+                          (user.name?.isNotEmpty ?? false)
+                              ? user.name![0].toUpperCase()
+                              : '?',
+                          fontSize: 16,
+                          color: AppColors.primaryColor,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            AppText.medium(user.name ?? 'N/A', fontSize: 13),
+                            AppText.thin(
+                              user.role.capitalize ?? '',
+                              fontSize: 11,
+                              color: AppColors.lightTextColor,
                             ),
                           ],
-                        );
-                      }),
-                    ),
-                  )
-                  .toList(),
-              hasBorder: false,
-              margin: 36,
-            ),
-            Spacer(),
-            SafeArea(
-              child: InkWell(
-                onTap: () {
-                  Get.to(
-                    SinglePageScaffold(title: "Profile", child: ProfilePage()),
-                  );
-                },
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CurvedImage("", w: 20, h: 20, fit: BoxFit.cover),
-                    ),
-                    Ui.boxWidth(8),
-                    Expanded(
-                      child: AppText.medium(
-                        appService.currentUser.value.name ?? "N/A",
-                        fontSize: 14,
+                        ),
                       ),
-                    ),
-                    Ui.boxWidth(8),
-                    AppIcon(HugeIcons.strokeRoundedMoreHorizontal),
-                  ],
-                ),
+                      AppIcon(
+                        HugeIcons.strokeRoundedMoreHorizontal,
+                        size: 18,
+                        color: AppColors.lightTextColor,
+                      ),
+                    ],
+                  );
+                }),
               ),
             ),
           ],
@@ -179,30 +221,66 @@ class ToogleDarkModeWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<AppService>();
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        
-        AppIcon(IconsaxPlusBold.sun_1),
-        Ui.boxWidth(8),
-        Obx(
-           () {
-            return Switch(
-              activeTrackColor: AppColors.primaryColor,
-              activeThumbColor: AppColors.white,
-              value: controller.isDarkMode.value,
-              onChanged: (v) async {
-                await controller.toggleDarkMode();
-              },
-            );
-          }
+    return Obx(() {
+      return GestureDetector(
+        onTap: () async => await controller.toggleDarkMode(),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          width: 56,
+          height: 28,
+          padding: const EdgeInsets.all(3),
+          decoration: BoxDecoration(
+            color: controller.isDarkMode.value
+                ? AppColors.primaryColor
+                : AppColors.borderColor,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Stack(
+            children: [
+              AnimatedAlign(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                alignment: controller.isDarkMode.value
+                    ? Alignment.centerRight
+                    : Alignment.centerLeft,
+                child: Container(
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.15),
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Icon(
+                      controller.isDarkMode.value
+                          ? Icons.nightlight_round
+                          : Icons.wb_sunny_rounded,
+                      size: 13,
+                      color: controller.isDarkMode.value
+                          ? AppColors.primaryColor
+                          : AppColors.yellow,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-        Ui.boxWidth(16),
-        AppIcon(IconsaxPlusBold.moon,),
-      ],
-    );
+      );
+    });
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Notifications Panel
+// ─────────────────────────────────────────────────────────────────────────────
+
 class NotificationBell extends StatelessWidget {
   const NotificationBell({super.key});
 
@@ -210,7 +288,9 @@ class NotificationBell extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = Get.find<DashboardController>();
     return Obx(() {
-      final pending = c.allCustomerDeliveries.where((d) => d.hasNotStarted && !d.isCanceled).length;
+      final pending = c.allCustomerDeliveries
+          .where((d) => d.hasNotStarted && !d.isCanceled)
+          .length;
       return InkWell(
         onTap: () => Get.bottomSheet(
           const _NotificationsSheet(),
@@ -225,18 +305,27 @@ class NotificationBell extends StatelessWidget {
               AppIcon(HugeIcons.strokeRoundedNotification01),
               if (pending > 0)
                 Positioned(
-                  top: -4, right: -4,
+                  top: -4,
+                  right: -4,
                   child: Container(
-                    width: 16, height: 16,
+                    width: 16,
+                    height: 16,
                     decoration: BoxDecoration(
                       color: AppColors.primaryColor,
                       shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.primaryColorBackground, width: 1.5),
+                      border: Border.all(
+                        color: AppColors.primaryColorBackground,
+                        width: 1.5,
+                      ),
                     ),
                     child: Center(
                       child: Text(
                         pending > 9 ? '9+' : '$pending',
-                        style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -269,8 +358,12 @@ class _NotificationsSheet extends StatelessWidget {
             children: [
               Container(
                 margin: const EdgeInsets.only(top: 12, bottom: 8),
-                width: 40, height: 4,
-                decoration: BoxDecoration(color: AppColors.borderColor, borderRadius: BorderRadius.circular(2)),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.borderColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -279,12 +372,19 @@ class _NotificationsSheet extends StatelessWidget {
                     AppText.bold('Notifications', fontSize: 18),
                     const Spacer(),
                     Obx(() {
-                      final count = c.allCustomerDeliveries.where((d) => d.hasNotStarted && !d.isCanceled).length;
+                      final count = c.allCustomerDeliveries
+                          .where((d) => d.hasNotStarted && !d.isCanceled)
+                          .length;
                       if (count == 0) return const SizedBox.shrink();
                       return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(color: AppColors.primaryColor, borderRadius: BorderRadius.circular(12)),
-                        child: AppText.medium('$count New', fontSize: 11, color: Colors.white),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryColor,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: AppText.medium('$count New',
+                            fontSize: 11, color: Colors.white),
                       );
                     }),
                   ],
@@ -293,18 +393,31 @@ class _NotificationsSheet extends StatelessWidget {
               AppDivider(),
               Expanded(
                 child: Obx(() {
-                  final newTrips = c.allCustomerDeliveries.where((d) => d.hasNotStarted && !d.isCanceled).toList();
-                  final inProgress = c.allCustomerDeliveries.where((d) => d.hasStarted && d.isNotDelivered).toList();
-                  final completed = c.allCustomerDeliveries.where((d) => d.isDelivered).toList();
+                  final newTrips = c.allCustomerDeliveries
+                      .where((d) => d.hasNotStarted && !d.isCanceled)
+                      .toList();
+                  final inProgress = c.allCustomerDeliveries
+                      .where((d) => d.hasStarted && d.isNotDelivered)
+                      .toList();
+                  final completed = c.allCustomerDeliveries
+                      .where((d) => d.isDelivered)
+                      .toList();
 
-                  if (newTrips.isEmpty && inProgress.isEmpty && completed.isEmpty) {
+                  if (newTrips.isEmpty &&
+                      inProgress.isEmpty &&
+                      completed.isEmpty) {
                     return Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          AppIcon(HugeIcons.strokeRoundedNotification01, size: 48, color: AppColors.lightTextColor),
+                          AppIcon(
+                            HugeIcons.strokeRoundedNotification01,
+                            size: 48,
+                            color: AppColors.lightTextColor,
+                          ),
                           const SizedBox(height: 12),
-                          AppText.thin('No notifications', color: AppColors.lightTextColor),
+                          AppText.thin('No notifications',
+                              color: AppColors.lightTextColor),
                         ],
                       ),
                     );
@@ -314,31 +427,54 @@ class _NotificationsSheet extends StatelessWidget {
                     controller: scrollController,
                     children: [
                       if (newTrips.isNotEmpty) ...[
-                        _NotifSection(title: 'New Trips', color: AppColors.yellow, items: newTrips.map((d) => _NotifItem(
-                          icon: HugeIcons.strokeRoundedAlertCircle,
+                        _NotifSection(
+                          title: 'New Trips',
                           color: AppColors.yellow,
-                          title: 'New trip #${d.waybill}',
-                          subtitle: '${d.pickup ?? "N/A"} → ${d.stops.isNotEmpty ? d.stops.last : "N/A"}',
-                          time: d.created,
-                        )).toList()),
+                          items: newTrips
+                              .map((d) => _NotifItem(
+                                    icon: HugeIcons.strokeRoundedAlertCircle,
+                                    color: AppColors.yellow,
+                                    title: 'New trip #${d.waybill}',
+                                    subtitle:
+                                        '${d.pickup ?? "N/A"} → ${d.stops.isNotEmpty ? d.stops.last : "N/A"}',
+                                    time: d.created,
+                                  ))
+                              .toList(),
+                        ),
                       ],
                       if (inProgress.isNotEmpty) ...[
-                        _NotifSection(title: 'In Progress', color: AppColors.accentColor, items: inProgress.map((d) => _NotifItem(
-                          icon: HugeIcons.strokeRoundedContainerTruck01,
+                        _NotifSection(
+                          title: 'In Progress',
                           color: AppColors.accentColor,
-                          title: 'Trip #${d.waybill} in progress',
-                          subtitle: 'Driver: ${d.driver ?? "N/A"}',
-                          time: d.start,
-                        )).toList()),
+                          items: inProgress
+                              .map((d) => _NotifItem(
+                                    icon: HugeIcons
+                                        .strokeRoundedContainerTruck01,
+                                    color: AppColors.accentColor,
+                                    title: 'Trip #${d.waybill} in progress',
+                                    subtitle: 'Driver: ${d.driver ?? "N/A"}',
+                                    time: d.start,
+                                  ))
+                              .toList(),
+                        ),
                       ],
                       if (completed.isNotEmpty) ...[
-                        _NotifSection(title: 'Recently Completed', color: AppColors.green, items: completed.take(5).map((d) => _NotifItem(
-                          icon: HugeIcons.strokeRoundedCheckmarkCircle02,
+                        _NotifSection(
+                          title: 'Recently Completed',
                           color: AppColors.green,
-                          title: 'Trip #${d.waybill} completed',
-                          subtitle: '${d.stops.isNotEmpty ? d.stops.last : "N/A"}',
-                          time: d.created,
-                        )).toList()),
+                          items: completed
+                              .take(5)
+                              .map((d) => _NotifItem(
+                                    icon: HugeIcons
+                                        .strokeRoundedCheckmarkCircle02,
+                                    color: AppColors.green,
+                                    title: 'Trip #${d.waybill} completed',
+                                    subtitle:
+                                        '${d.stops.isNotEmpty ? d.stops.last : "N/A"}',
+                                    time: d.created,
+                                  ))
+                              .toList(),
+                        ),
                       ],
                       const SizedBox(height: 24),
                     ],
@@ -354,7 +490,8 @@ class _NotificationsSheet extends StatelessWidget {
 }
 
 class _NotifSection extends StatelessWidget {
-  const _NotifSection({required this.title, required this.color, required this.items});
+  const _NotifSection(
+      {required this.title, required this.color, required this.items});
   final String title;
   final Color color;
   final List<Widget> items;
@@ -375,7 +512,13 @@ class _NotifSection extends StatelessWidget {
 }
 
 class _NotifItem extends StatelessWidget {
-  const _NotifItem({required this.icon, required this.color, required this.title, required this.subtitle, required this.time});
+  const _NotifItem({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
+    required this.time,
+  });
   final dynamic icon;
   final Color color;
   final String title, subtitle, time;
@@ -394,7 +537,10 @@ class _NotifItem extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
             child: AppIcon(icon, color: color, size: 16),
           ),
           const SizedBox(width: 12),
@@ -403,11 +549,16 @@ class _NotifItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 AppText.medium(title, fontSize: 12),
-                AppText.thin(subtitle, fontSize: 11, color: AppColors.lightTextColor, maxlines: 1, overflow: TextOverflow.ellipsis),
+                AppText.thin(subtitle,
+                    fontSize: 11,
+                    color: AppColors.lightTextColor,
+                    maxlines: 1,
+                    overflow: TextOverflow.ellipsis),
               ],
             ),
           ),
-          AppText.thin(time.split(' ').first, fontSize: 10, color: AppColors.lightTextColor),
+          AppText.thin(time.split(' ').first,
+              fontSize: 10, color: AppColors.lightTextColor),
         ],
       ),
     );
