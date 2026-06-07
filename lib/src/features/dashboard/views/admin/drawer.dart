@@ -22,7 +22,7 @@ class AppDrawer extends StatelessWidget {
     controller.curDashboardIndex.value = e.index;
     controller.currentModelIndex.value = 0;
 
-    if (e != DashboardMode.dashboard) {
+    if (e != DashboardMode.dashboard && e != DashboardMode.tracking) {
       ResourceHistory rh;
       if (e == DashboardMode.trips) {
         controller.currentModel = Delivery(createdAt: DateTime.now()).obs;
@@ -57,7 +57,7 @@ class AppDrawer extends StatelessWidget {
       rh.onFilter = (v, s) => controller.getFilters(v, s, e.name);
       controller.curResourceHistory.value = rh;
     } else {
-      controller.curResourceHistory.value = ResourceHistory();
+      controller.curResourceHistory.value = ResourceHistory(title: e.name);
     }
     controller.curResourceHistory.refresh();
     Get.back();
@@ -69,18 +69,18 @@ class AppDrawer extends StatelessWidget {
     final controller = Get.find<DashboardController>();
 
     return Container(
-      width: Ui.width(context) * 0.75,
+      width: Ui.width(context) * 0.78,
       color: AppColors.primaryColorBackground,
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Logo & dark mode toggle
+            // ── Logo & dark mode ──────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
               child: Row(
                 children: [
-                  Image.asset(Assets.fulllogo, width: 120),
+                  Image.asset(Assets.fulllogo, width: 110),
                   const Spacer(),
                   const ToogleDarkModeWidget(),
                 ],
@@ -88,84 +88,63 @@ class AppDrawer extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Divider(color: AppColors.borderColor, height: 1),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
 
-            // Nav items
+            // ── Nav items ──────────────────────────────────────────────
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                children: DashboardMode.values.map((e) {
-                  return Obx(() {
-                    final isActive = controller.curDashboardIndex.value == e.index;
-                    return GestureDetector(
-                      onTap: () => _navigate(controller, e),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        margin: const EdgeInsets.symmetric(vertical: 3),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: isActive
-                              ? AppColors.primaryColor.withOpacity(0.1)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(12),
-                          border: isActive
-                              ? Border.all(color: AppColors.primaryColor.withOpacity(0.2))
-                              : null,
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 34,
-                              height: 34,
-                              decoration: BoxDecoration(
-                                color: isActive
-                                    ? AppColors.primaryColor
-                                    : AppColors.surfaceColor,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Center(
-                                child: AppIcon(
-                                  e.icon,
-                                  size: 18,
-                                  color: isActive ? Colors.white : AppColors.lightTextColor,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: AppText.medium(
-                                e.name,
-                                fontSize: 14,
-                                color: isActive
-                                    ? AppColors.primaryColor
-                                    : AppColors.textColor,
-                              ),
-                            ),
-                            if (isActive)
-                              Container(
-                                width: 6,
-                                height: 6,
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryColor,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    );
-                  });
-                }).toList(),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                children: [
+                  // Dashboard
+                  _NavItem(mode: DashboardMode.dashboard, controller: controller, onTap: () => _navigate(controller, DashboardMode.dashboard)),
+                  // Trips
+                  _NavItem(mode: DashboardMode.trips, controller: controller, onTap: () => _navigate(controller, DashboardMode.trips)),
+                  // Tracking
+                  _NavItem(mode: DashboardMode.tracking, controller: controller, onTap: () => _navigate(controller, DashboardMode.tracking)),
+
+                  const SizedBox(height: 4),
+                  // ── Location group ──────────────────────────────────
+                  _NavGroup(
+                    icon: HugeIcons.strokeRoundedLocation05,
+                    label: 'Location',
+                    controller: controller,
+                    children: [
+                      DashboardMode.location,
+                      DashboardMode.pickups,
+                      DashboardMode.facilities,
+                    ],
+                    onTap: _navigate,
+                    childLabels: const ['States', 'Loading Points', 'Facilities'],
+                  ),
+                  const SizedBox(height: 4),
+
+                  // ── Logistics group ─────────────────────────────────
+                  _NavGroup(
+                    icon: HugeIcons.strokeRoundedContainerTruck01,
+                    label: 'Logistics',
+                    controller: controller,
+                    children: [
+                      DashboardMode.vehicles,
+                      DashboardMode.drivers,
+                    ],
+                    onTap: _navigate,
+                    childLabels: const ['Vehicles', 'Drivers'],
+                  ),
+                  const SizedBox(height: 4),
+
+                  // VAR Records
+                  _NavItem(mode: DashboardMode.varRecords, controller: controller, onTap: () => _navigate(controller, DashboardMode.varRecords)),
+                  // Users
+                  _NavItem(mode: DashboardMode.users, controller: controller, onTap: () => _navigate(controller, DashboardMode.users)),
+                ],
               ),
             ),
 
             Divider(color: AppColors.borderColor, height: 1),
 
-            // User profile footer
+            // ── User profile ───────────────────────────────────────────
             InkWell(
-              onTap: () => Get.to(
-                SinglePageScaffold(title: "Profile", child: ProfilePage()),
-              ),
+              onTap: () => Get.to(SinglePageScaffold(title: "Profile", child: ProfilePage())),
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                 child: Obx(() {
@@ -173,14 +152,11 @@ class AppDrawer extends StatelessWidget {
                   return Row(
                     children: [
                       CircleAvatar(
-                        radius: 20,
+                        radius: 18,
                         backgroundColor: AppColors.primaryColor.withOpacity(0.15),
                         child: AppText.bold(
-                          (user.name?.isNotEmpty ?? false)
-                              ? user.name![0].toUpperCase()
-                              : '?',
-                          fontSize: 16,
-                          color: AppColors.primaryColor,
+                          (user.name?.isNotEmpty ?? false) ? user.name![0].toUpperCase() : '?',
+                          fontSize: 14, color: AppColors.primaryColor,
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -190,19 +166,11 @@ class AppDrawer extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             AppText.medium(user.name ?? 'N/A', fontSize: 13),
-                            AppText.thin(
-                              user.role.capitalize ?? '',
-                              fontSize: 11,
-                              color: AppColors.lightTextColor,
-                            ),
+                            AppText.thin(user.role.capitalize ?? '', fontSize: 11, color: AppColors.lightTextColor),
                           ],
                         ),
                       ),
-                      AppIcon(
-                        HugeIcons.strokeRoundedMoreHorizontal,
-                        size: 18,
-                        color: AppColors.lightTextColor,
-                      ),
+                      AppIcon(HugeIcons.strokeRoundedMoreHorizontal, size: 16, color: AppColors.lightTextColor),
                     ],
                   );
                 }),
@@ -215,65 +183,227 @@ class AppDrawer extends StatelessWidget {
   }
 }
 
+// ── Single nav item ─────────────────────────────────────────────────────────
+
+class _NavItem extends StatelessWidget {
+  const _NavItem({required this.mode, required this.controller, required this.onTap});
+  final DashboardMode mode;
+  final DashboardController controller;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final isActive = controller.curDashboardIndex.value == mode.index;
+      return GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          margin: const EdgeInsets.symmetric(vertical: 2),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: isActive ? AppColors.primaryColor.withOpacity(0.1) : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            border: isActive ? Border.all(color: AppColors.primaryColor.withOpacity(0.2)) : null,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 32, height: 32,
+                decoration: BoxDecoration(
+                  color: isActive ? AppColors.primaryColor : AppColors.surfaceColor,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Center(child: AppIcon(mode.icon, size: 16,
+                  color: isActive ? Colors.white : AppColors.lightTextColor)),
+              ),
+              const SizedBox(width: 10),
+              Expanded(child: AppText.medium(mode.name, fontSize: 13,
+                color: isActive ? AppColors.primaryColor : AppColors.textColor)),
+              if (isActive)
+                Container(width: 6, height: 6,
+                  decoration: BoxDecoration(color: AppColors.primaryColor, shape: BoxShape.circle)),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+}
+
+// ── Group nav item with expandable sub-items ────────────────────────────────
+
+class _NavGroup extends StatefulWidget {
+  const _NavGroup({
+    required this.icon,
+    required this.label,
+    required this.controller,
+    required this.children,
+    required this.onTap,
+    required this.childLabels,
+  });
+  final dynamic icon;
+  final String label;
+  final DashboardController controller;
+  final List<DashboardMode> children;
+  final Function(DashboardController, DashboardMode) onTap;
+  final List<String> childLabels;
+
+  @override
+  State<_NavGroup> createState() => _NavGroupState();
+}
+
+class _NavGroupState extends State<_NavGroup> with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  late Animation<double> _expandAnim;
+  bool _isExpanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(vsync: this, duration: const Duration(milliseconds: 250));
+    _expandAnim = CurvedAnimation(parent: _animController, curve: Curves.easeInOut);
+    // Auto-expand if any child is active
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final idx = widget.controller.curDashboardIndex.value;
+      if (widget.children.any((c) => c.index == idx)) {
+        setState(() => _isExpanded = true);
+        _animController.forward();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  void _toggle() {
+    setState(() => _isExpanded = !_isExpanded);
+    _isExpanded ? _animController.forward() : _animController.reverse();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final idx = widget.controller.curDashboardIndex.value;
+      final hasActiveChild = widget.children.any((c) => c.index == idx);
+
+      return Column(
+        children: [
+          // Group header
+          GestureDetector(
+            onTap: _toggle,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              margin: const EdgeInsets.symmetric(vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: hasActiveChild ? AppColors.primaryColor.withOpacity(0.08) : Colors.transparent,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 32, height: 32,
+                    decoration: BoxDecoration(
+                      color: hasActiveChild ? AppColors.primaryColor : AppColors.surfaceColor,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Center(child: AppIcon(widget.icon, size: 16,
+                      color: hasActiveChild ? Colors.white : AppColors.lightTextColor)),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(child: AppText.medium(widget.label, fontSize: 13,
+                    color: hasActiveChild ? AppColors.primaryColor : AppColors.textColor)),
+                  AnimatedRotation(
+                    turns: _isExpanded ? 0.25 : 0,
+                    duration: const Duration(milliseconds: 250),
+                    child: AppIcon(HugeIcons.strokeRoundedArrowRight01, size: 14,
+                      color: AppColors.lightTextColor),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Sub-items
+          SizeTransition(
+            sizeFactor: _expandAnim,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 14, bottom: 2),
+              child: Column(
+                children: List.generate(widget.children.length, (i) {
+                  final mode = widget.children[i];
+                  final label = widget.childLabels[i];
+                  final isActive = idx == mode.index;
+                  return GestureDetector(
+                    onTap: () => widget.onTap(widget.controller, mode),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      margin: const EdgeInsets.symmetric(vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isActive ? AppColors.primaryColor.withOpacity(0.1) : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                        border: isActive ? Border.all(color: AppColors.primaryColor.withOpacity(0.2)) : null,
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 6, height: 6,
+                            decoration: BoxDecoration(
+                              color: isActive ? AppColors.primaryColor : AppColors.borderColor,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(child: AppText.medium(label, fontSize: 12,
+                            color: isActive ? AppColors.primaryColor : AppColors.lightTextColor)),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ),
+          ),
+        ],
+      );
+    });
+  }
+}
+
+
 class ToogleDarkModeWidget extends StatelessWidget {
   const ToogleDarkModeWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<AppService>();
-    return Obx(() {
-      return GestureDetector(
-        onTap: () async => await controller.toggleDarkMode(),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          width: 56,
-          height: 28,
-          padding: const EdgeInsets.all(3),
-          decoration: BoxDecoration(
-            color: controller.isDarkMode.value
-                ? AppColors.primaryColor
-                : AppColors.borderColor,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Stack(
-            children: [
-              AnimatedAlign(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-                alignment: controller.isDarkMode.value
-                    ? Alignment.centerRight
-                    : Alignment.centerLeft,
-                child: Container(
-                  width: 22,
-                  height: 22,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
-                        blurRadius: 4,
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Icon(
-                      controller.isDarkMode.value
-                          ? Icons.nightlight_round
-                          : Icons.wb_sunny_rounded,
-                      size: 13,
-                      color: controller.isDarkMode.value
-                          ? AppColors.primaryColor
-                          : AppColors.yellow,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        
+        AppIcon(IconsaxPlusBold.sun_1),
+        Ui.boxWidth(8),
+        Obx(
+           () {
+            return Switch(
+              activeTrackColor: AppColors.primaryColor,
+              activeThumbColor: AppColors.white,
+              value: controller.isDarkMode.value,
+              onChanged: (v) async {
+                await controller.toggleDarkMode();
+              },
+            );
+          }
         ),
-      );
-    });
+        Ui.boxWidth(16),
+        AppIcon(IconsaxPlusBold.moon,),
+      ],
+    );
   }
 }
 
@@ -288,9 +418,7 @@ class NotificationBell extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = Get.find<DashboardController>();
     return Obx(() {
-      final pending = c.allCustomerDeliveries
-          .where((d) => d.hasNotStarted && !d.isCanceled)
-          .length;
+      final pending = c.allCustomerDeliveries.where((d) => d.hasNotStarted && !d.isCanceled).length;
       return InkWell(
         onTap: () => Get.bottomSheet(
           const _NotificationsSheet(),
@@ -305,27 +433,18 @@ class NotificationBell extends StatelessWidget {
               AppIcon(HugeIcons.strokeRoundedNotification01),
               if (pending > 0)
                 Positioned(
-                  top: -4,
-                  right: -4,
+                  top: -4, right: -4,
                   child: Container(
-                    width: 16,
-                    height: 16,
+                    width: 16, height: 16,
                     decoration: BoxDecoration(
                       color: AppColors.primaryColor,
                       shape: BoxShape.circle,
-                      border: Border.all(
-                        color: AppColors.primaryColorBackground,
-                        width: 1.5,
-                      ),
+                      border: Border.all(color: AppColors.primaryColorBackground, width: 1.5),
                     ),
                     child: Center(
                       child: Text(
                         pending > 9 ? '9+' : '$pending',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 8,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
@@ -356,14 +475,11 @@ class _NotificationsSheet extends StatelessWidget {
           ),
           child: Column(
             children: [
+              // Handle
               Container(
                 margin: const EdgeInsets.only(top: 12, bottom: 8),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.borderColor,
-                  borderRadius: BorderRadius.circular(2),
-                ),
+                width: 40, height: 4,
+                decoration: BoxDecoration(color: AppColors.borderColor, borderRadius: BorderRadius.circular(2)),
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -372,19 +488,12 @@ class _NotificationsSheet extends StatelessWidget {
                     AppText.bold('Notifications', fontSize: 18),
                     const Spacer(),
                     Obx(() {
-                      final count = c.allCustomerDeliveries
-                          .where((d) => d.hasNotStarted && !d.isCanceled)
-                          .length;
+                      final count = c.allCustomerDeliveries.where((d) => d.hasNotStarted && !d.isCanceled).length;
                       if (count == 0) return const SizedBox.shrink();
                       return Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryColor,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: AppText.medium('$count New',
-                            fontSize: 11, color: Colors.white),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(color: AppColors.primaryColor, borderRadius: BorderRadius.circular(12)),
+                        child: AppText.medium('$count New', fontSize: 11, color: Colors.white),
                       );
                     }),
                   ],
@@ -393,31 +502,18 @@ class _NotificationsSheet extends StatelessWidget {
               AppDivider(),
               Expanded(
                 child: Obx(() {
-                  final newTrips = c.allCustomerDeliveries
-                      .where((d) => d.hasNotStarted && !d.isCanceled)
-                      .toList();
-                  final inProgress = c.allCustomerDeliveries
-                      .where((d) => d.hasStarted && d.isNotDelivered)
-                      .toList();
-                  final completed = c.allCustomerDeliveries
-                      .where((d) => d.isDelivered)
-                      .toList();
+                  final newTrips = c.allCustomerDeliveries.where((d) => d.hasNotStarted && !d.isCanceled).toList();
+                  final inProgress = c.allCustomerDeliveries.where((d) => d.hasStarted && d.isNotDelivered).toList();
+                  final completed = c.allCustomerDeliveries.where((d) => d.isDelivered).toList();
 
-                  if (newTrips.isEmpty &&
-                      inProgress.isEmpty &&
-                      completed.isEmpty) {
+                  if (newTrips.isEmpty && inProgress.isEmpty && completed.isEmpty) {
                     return Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          AppIcon(
-                            HugeIcons.strokeRoundedNotification01,
-                            size: 48,
-                            color: AppColors.lightTextColor,
-                          ),
+                          AppIcon(HugeIcons.strokeRoundedNotificationOff01, size: 48, color: AppColors.lightTextColor),
                           const SizedBox(height: 12),
-                          AppText.thin('No notifications',
-                              color: AppColors.lightTextColor),
+                          AppText.thin('No notifications', color: AppColors.lightTextColor),
                         ],
                       ),
                     );
@@ -427,54 +523,31 @@ class _NotificationsSheet extends StatelessWidget {
                     controller: scrollController,
                     children: [
                       if (newTrips.isNotEmpty) ...[
-                        _NotifSection(
-                          title: 'New Trips',
+                        _NotifSection(title: 'New Trips', color: AppColors.yellow, items: newTrips.map((d) => _NotifItem(
+                          icon: HugeIcons.strokeRoundedAlertCircle,
                           color: AppColors.yellow,
-                          items: newTrips
-                              .map((d) => _NotifItem(
-                                    icon: HugeIcons.strokeRoundedAlertCircle,
-                                    color: AppColors.yellow,
-                                    title: 'New trip #${d.waybill}',
-                                    subtitle:
-                                        '${d.pickup ?? "N/A"} → ${d.stops.isNotEmpty ? d.stops.last : "N/A"}',
-                                    time: d.created,
-                                  ))
-                              .toList(),
-                        ),
+                          title: 'New trip #${d.waybill}',
+                          subtitle: '${d.pickup ?? "N/A"} → ${d.stops.isNotEmpty ? d.stops.last : "N/A"}',
+                          time: d.created,
+                        )).toList()),
                       ],
                       if (inProgress.isNotEmpty) ...[
-                        _NotifSection(
-                          title: 'In Progress',
+                        _NotifSection(title: 'In Progress', color: AppColors.accentColor, items: inProgress.map((d) => _NotifItem(
+                          icon: HugeIcons.strokeRoundedTruck,
                           color: AppColors.accentColor,
-                          items: inProgress
-                              .map((d) => _NotifItem(
-                                    icon: HugeIcons
-                                        .strokeRoundedContainerTruck01,
-                                    color: AppColors.accentColor,
-                                    title: 'Trip #${d.waybill} in progress',
-                                    subtitle: 'Driver: ${d.driver ?? "N/A"}',
-                                    time: d.start,
-                                  ))
-                              .toList(),
-                        ),
+                          title: 'Trip #${d.waybill} in progress',
+                          subtitle: 'Driver: ${d.driver ?? "N/A"}',
+                          time: d.start,
+                        )).toList()),
                       ],
                       if (completed.isNotEmpty) ...[
-                        _NotifSection(
-                          title: 'Recently Completed',
+                        _NotifSection(title: 'Recently Completed', color: AppColors.green, items: completed.take(5).map((d) => _NotifItem(
+                          icon: HugeIcons.strokeRoundedCheckmarkCircle02,
                           color: AppColors.green,
-                          items: completed
-                              .take(5)
-                              .map((d) => _NotifItem(
-                                    icon: HugeIcons
-                                        .strokeRoundedCheckmarkCircle02,
-                                    color: AppColors.green,
-                                    title: 'Trip #${d.waybill} completed',
-                                    subtitle:
-                                        '${d.stops.isNotEmpty ? d.stops.last : "N/A"}',
-                                    time: d.created,
-                                  ))
-                              .toList(),
-                        ),
+                          title: 'Trip #${d.waybill} completed',
+                          subtitle: '${d.stops.isNotEmpty ? d.stops.last : "N/A"}',
+                          time: d.created,
+                        )).toList()),
                       ],
                       const SizedBox(height: 24),
                     ],
@@ -490,8 +563,7 @@ class _NotificationsSheet extends StatelessWidget {
 }
 
 class _NotifSection extends StatelessWidget {
-  const _NotifSection(
-      {required this.title, required this.color, required this.items});
+  const _NotifSection({required this.title, required this.color, required this.items});
   final String title;
   final Color color;
   final List<Widget> items;
@@ -512,13 +584,7 @@ class _NotifSection extends StatelessWidget {
 }
 
 class _NotifItem extends StatelessWidget {
-  const _NotifItem({
-    required this.icon,
-    required this.color,
-    required this.title,
-    required this.subtitle,
-    required this.time,
-  });
+  const _NotifItem({required this.icon, required this.color, required this.title, required this.subtitle, required this.time});
   final dynamic icon;
   final Color color;
   final String title, subtitle, time;
@@ -537,10 +603,7 @@ class _NotifItem extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(8),
-            ),
+            decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
             child: AppIcon(icon, color: color, size: 16),
           ),
           const SizedBox(width: 12),
@@ -549,16 +612,11 @@ class _NotifItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 AppText.medium(title, fontSize: 12),
-                AppText.thin(subtitle,
-                    fontSize: 11,
-                    color: AppColors.lightTextColor,
-                    maxlines: 1,
-                    overflow: TextOverflow.ellipsis),
+                AppText.thin(subtitle, fontSize: 11, color: AppColors.lightTextColor, maxlines: 1, overflow: TextOverflow.ellipsis),
               ],
             ),
           ),
-          AppText.thin(time.split(' ').first,
-              fontSize: 10, color: AppColors.lightTextColor),
+          AppText.thin(time.split(' ').first, fontSize: 10, color: AppColors.lightTextColor),
         ],
       ),
     );
