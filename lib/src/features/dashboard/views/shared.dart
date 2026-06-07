@@ -172,11 +172,11 @@ class DeliveryInfo extends StatelessWidget {
             ),
             child: Row(
               children: [
-                AppIcon(HugeIcons.strokeRoundedContainerTruck01, size: 14, color: AppColors.lightTextColor),
+                AppIcon(HugeIcons.strokeRoundedContainerTruck01, size: 13, color: AppColors.lightTextColor),
                 const SizedBox(width: 4),
                 AppText.thin(delivery.truckno ?? 'N/A', fontSize: 11, color: AppColors.lightTextColor),
-                const SizedBox(width: 16),
-                AppIcon(HugeIcons.strokeRoundedUser, size: 14, color: AppColors.lightTextColor),
+                const SizedBox(width: 12),
+                AppIcon(HugeIcons.strokeRoundedUser, size: 13, color: AppColors.lightTextColor),
                 const SizedBox(width: 4),
                 Expanded(
                   child: AppText.thin(
@@ -187,10 +187,32 @@ class DeliveryInfo extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                AppText.thin(
-                  delivery.created.split(' ').first,
-                  fontSize: 10,
-                  color: AppColors.lightTextColor,
+                // Status pill
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: (delivery.isCanceled
+                        ? AppColors.primaryColor
+                        : delivery.isDelivered
+                            ? AppColors.green
+                            : delivery.hasStarted
+                                ? AppColors.accentColor
+                                : AppColors.yellow).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: AppText.medium(
+                    delivery.isCanceled ? 'Cancelled' :
+                    delivery.isDelivered ? 'Completed' :
+                    delivery.hasStarted ? 'In Transit' : 'New',
+                    fontSize: 10,
+                    color: delivery.isCanceled
+                        ? AppColors.primaryColor
+                        : delivery.isDelivered
+                            ? AppColors.green
+                            : delivery.hasStarted
+                                ? AppColors.accentColor
+                                : AppColors.yellow,
+                  ),
                 ),
               ],
             ),
@@ -392,146 +414,202 @@ class VarRecordInfo extends StatelessWidget {
   const VarRecordInfo(this.record, {super.key});
   final VarRecord record;
 
+  Color get _statusColor => record.isClosed
+      ? AppColors.green
+      : record.tripEnded
+          ? AppColors.accentColor
+          : AppColors.yellow;
+
+  String get _statusLabel => record.isClosed
+      ? 'Closed'
+      : record.tripEnded
+          ? 'Trip Ended'
+          : 'Pending';
+
   @override
   Widget build(BuildContext context) {
-    final statusLabel = record.isClosed
-        ? 'Closed'
-        : record.tripEnded
-            ? 'Trip Ended'
-            : 'Pending';
-    final statusColor = record.isClosed
-        ? AppColors.green
-        : record.tripEnded
-            ? AppColors.accentColor
-            : AppColors.yellow;
+    final hasTemp = record.temperaturerange.isNotEmpty;
+    final hasCommodities = record.commodityDetails.isNotEmpty;
+    final hasReverse = record.reverseLogistics?.isNotEmpty ?? false;
+    final isSignedOff = record.signOff.receivedBy.isNotEmpty;
 
-    return CurvedContainer(
-      border: Border.all(color: AppColors.borderColor),
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      onPressed: () {
+    return GestureDetector(
+      onTap: () {
         Get.find<VarController>().populateFromVar(record);
         Get.bottomSheet(
           AddResource<VarRecord>("VAR Records", obj: record),
           isScrollControlled: true,
         );
       },
-      radius: 14,
-      child: Column(
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.07),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: AppText.bold(
-                    record.joborderno.isEmpty ? '—' : record.joborderno,
-                    fontSize: 13,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        decoration: BoxDecoration(
+          color: AppColors.primaryColorBackground,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.borderColor),
+        ),
+        child: Column(
+          children: [
+            // ── Header ────────────────────────────────────────────────
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: _statusColor.withOpacity(0.07),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: _statusColor.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: AppIcon(HugeIcons.strokeRoundedDocumentCode,
+                        size: 14, color: _statusColor),
                   ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(width: 6, height: 6, decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle)),
-                      const SizedBox(width: 4),
-                      AppText.medium(statusLabel, fontSize: 11, color: statusColor),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Details
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              children: [
-                if (record.originName.isNotEmpty || record.destinationName.isNotEmpty)
-                  Row(
-                    children: [
-                      AppIcon(HugeIcons.strokeRoundedRoute03, size: 14, color: AppColors.lightTextColor),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: AppText.thin(
-                          '${record.originName.isNotEmpty ? record.originName : "#${record.originid}"} → ${record.destinationName.isNotEmpty ? record.destinationName : "#${record.destinationid}"}',
-                          fontSize: 11,
-                          color: AppColors.lightTextColor,
-                          maxlines: 1,
-                          overflow: TextOverflow.ellipsis,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AppText.bold(
+                          record.joborderno.isEmpty ? '—' : record.joborderno,
+                          fontSize: 13,
                         ),
-                      ),
-                    ],
+                        if (record.dateofarrival.isNotEmpty)
+                          AppText.thin(record.dateofarrival,
+                              fontSize: 10, color: AppColors.lightTextColor),
+                      ],
+                    ),
                   ),
-                const SizedBox(height: 6),
-                Row(
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _statusColor.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Container(width: 5, height: 5,
+                        decoration: BoxDecoration(color: _statusColor, shape: BoxShape.circle)),
+                      const SizedBox(width: 4),
+                      AppText.medium(_statusLabel, fontSize: 10, color: _statusColor),
+                    ]),
+                  ),
+                ],
+              ),
+            ),
+
+            // ── Route ─────────────────────────────────────────────────
+            if (record.originName.isNotEmpty || record.destinationName.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+                child: Row(
                   children: [
-                    if (record.dateofarrival.isNotEmpty) ...[
-                      AppIcon(HugeIcons.strokeRoundedCalendar01, size: 14, color: AppColors.lightTextColor),
-                      const SizedBox(width: 6),
-                      AppText.thin(record.dateofarrival, fontSize: 11, color: AppColors.lightTextColor),
-                      const SizedBox(width: 16),
-                    ],
-                    if (record.driverName.isNotEmpty) ...[
-                      AppIcon(HugeIcons.strokeRoundedUser, size: 14, color: AppColors.lightTextColor),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: AppText.thin(record.driverName, fontSize: 11, color: AppColors.lightTextColor, maxlines: 1, overflow: TextOverflow.ellipsis),
+                    Column(children: [
+                      Container(width: 8, height: 8,
+                        decoration: BoxDecoration(color: AppColors.green,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.green.withOpacity(0.3), width: 2))),
+                      Container(width: 1, height: 14, color: AppColors.borderColor),
+                      Container(width: 8, height: 8,
+                        decoration: BoxDecoration(color: AppColors.primaryColor,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.primaryColor.withOpacity(0.3), width: 2))),
+                    ]),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AppText.thin(
+                            record.originName.isNotEmpty ? record.originName : '#${record.originid}',
+                            fontSize: 11, maxlines: 1, overflow: TextOverflow.ellipsis),
+                          const SizedBox(height: 10),
+                          AppText.thin(
+                            record.destinationName.isNotEmpty ? record.destinationName : '#${record.destinationid}',
+                            fontSize: 11, maxlines: 1, overflow: TextOverflow.ellipsis),
+                        ],
                       ),
-                    ],
-                    if (record.commodityDetails.isNotEmpty)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(color: AppColors.borderColor, borderRadius: BorderRadius.circular(6)),
-                        child: AppText.thin('${record.commodityDetails.length} items', fontSize: 10),
-                      ),
+                    ),
                   ],
                 ),
-              ],
+              ),
+
+            // ── Summary badges ─────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+              child: Row(
+                children: [
+                  if (record.driverName.isNotEmpty) ...[
+                    AppIcon(HugeIcons.strokeRoundedUser, size: 12, color: AppColors.lightTextColor),
+                    const SizedBox(width: 4),
+                    Expanded(child: AppText.thin(record.driverName,
+                      fontSize: 11, color: AppColors.lightTextColor,
+                      maxlines: 1, overflow: TextOverflow.ellipsis)),
+                  ],
+                  if (hasCommodities)
+                    _badge('${record.commodityDetails.length} items',
+                        AppColors.accentColor),
+                  if (hasTemp) ...[
+                    const SizedBox(width: 6),
+                    _badge(record.temperaturerange, const Color(0xFF2196F3)),
+                  ],
+                  if (hasReverse) ...[
+                    const SizedBox(width: 6),
+                    _badge('Reverse', AppColors.yellow),
+                  ],
+                  if (isSignedOff) ...[
+                    const SizedBox(width: 6),
+                    _badge('✓ Signed', AppColors.green),
+                  ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _badge(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: AppText.medium(label, fontSize: 10, color: color),
     );
   }
 }
 
+
 class DriverStatusChip extends StatelessWidget {
-  const DriverStatusChip(this.title, {super.key});
-  final String title;
+  const DriverStatusChip(this.status, {super.key});
+  final String status;
 
   @override
   Widget build(BuildContext context) {
-    return AppChip(
-      title,
-      bgColors: [
-        Color(0xFFE6FBEC),
-        Color(0xFFE6FBEC),
-        Color(0xFFFFEBEA),
-        Color(0xFFE9F5FF),
-      ],
-      titles: ["Available", "Active", "Inactive", "Busy"],
-      titleColors: [
-        Color(0xFF00D743),
-        Color(0xFF00D743),
-        Color(0xFFFF3B30),
-        Color(0xFF229EFF),
-      ],
-      icons: [
-        HugeIcons.strokeRoundedCheckmarkCircle01,
-        HugeIcons.strokeRoundedCheckmarkCircle01,
-        HugeIcons.strokeRoundedCancelCircle,
-        HugeIcons.strokeRoundedClock01,
-      ],
+    final isAvailable = status.toLowerCase() == 'available';
+    final color = isAvailable ? AppColors.green : AppColors.primaryColor;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(width: 6, height: 6,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+          const SizedBox(width: 4),
+          AppText.medium(status, fontSize: 11, color: color),
+        ],
+      ),
     );
   }
 }
@@ -1300,7 +1378,7 @@ class WaybillDetailPage extends StatelessWidget {
               ],
             ),
           ),
-          AppText.thin('Transborderlogistics.net',
+          AppText.thin('transborderlogistics.net',
               fontSize: 9, color: AppColors.lightTextColor),
         ],
       ),
