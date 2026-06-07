@@ -56,7 +56,7 @@ abstract class AppColors {
 
   static Color get borderColor {
     return appService.isDarkMode.value
-        ? const Color(0xFF9E9E9E)
+        ? const Color(0xFF2C2C2C)
         : const Color(0xFFE8E8E8);
   }
 
@@ -74,7 +74,7 @@ abstract class AppColors {
 
   // Convenience getters for common colors
   static Color get white {
-    return appService.isDarkMode.value ? const Color(0xFF000000) : Colors.white;
+    return appService.isDarkMode.value ? const Color(0xFF1E1E1E) : Colors.white;
   }
 
   static Color get black {
@@ -106,4 +106,15 @@ abstract class AppColors {
         800: Color(0xFF8B1515),
         900: Color(0xFF5F0E0E),
       });
+      static Color get cardBackground {
+    return appService.isDarkMode.value
+        ? const Color(0xFF1E1E1E)
+        : const Color(0xFFFFFFFF);
+  }
+
+  static Color get surfaceColor {
+    return appService.isDarkMode.value
+        ? const Color(0xFF252525)
+        : const Color(0xFFF7F7F7);
+  }
 }

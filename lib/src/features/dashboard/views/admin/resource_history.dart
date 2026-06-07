@@ -86,15 +86,15 @@ class _ResourceHistoryPageState<T extends Slugger>
       children: [
         if (widget.onFilter == null && widget.filters.isEmpty)
           Align(
+            alignment: Alignment.centerLeft,
             child: Padding(
               padding: const EdgeInsets.only(top: 16, left: 16, bottom: 8),
               child: AppText.bold("Ongoing Trips"),
             ),
-            alignment: Alignment.centerLeft,
           ),
         CurvedContainer(
           border: Border.all(color: AppColors.borderColor),
-          color: Color(0xfff7f7f7),
+          color: AppColors.primaryColorBackground,
           radius: 12,
           padding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
           margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -322,14 +322,14 @@ class _ResourceHistoryDesktopPageState<T extends Slugger>
     );
   }
 
-  tableHeader() {
+  Row tableHeader() {
     return Row(
       children: [
         AppText.medium(widget.title, fontSize: 18),
         Spacer(),
         CurvedContainer(
           border: Border.all(color: AppColors.borderColor),
-          color: Color(0xfff7f7f7),
+          color: AppColors.primaryColorBackground,
           width: Ui.width(context) * 0.25,
           radius: 24,
           padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
@@ -438,7 +438,7 @@ class _ResourceHistoryDesktopPageState<T extends Slugger>
     );
   }
 
-  detailHeader() {
+  Obx detailHeader() {
     return Obx(() {
       return controller.currentModelIndex.value == 0
           ? tableHeader()
@@ -659,7 +659,7 @@ class ResourceHistoryTable<T extends Slugger> extends StatelessWidget {
   RxInt curPageSize = 10.obs;
   RxList<List<String>> pageItems = <List<String>>[].obs;
 
-  paginate() {
+  void paginate() {
     curPage.value = curIndex.value + 1;
     int start = (curIndex.value * curPageSize.value);
     int end = (curIndex.value * curPageSize.value) + curPageSize.value;
