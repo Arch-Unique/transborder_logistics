@@ -3,13 +3,11 @@ import 'package:get/get.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:transborder_logistics/src/features/dashboard/controllers/dashboard_controller.dart';
-import 'package:transborder_logistics/src/features/dashboard/views/admin/explorer.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/admin/resource_history.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/shared.dart';
 import 'package:transborder_logistics/src/global/model/user.dart';
 import 'package:transborder_logistics/src/global/ui/widgets/others/containers.dart';
 import 'package:transborder_logistics/src/src_barrel.dart';
-import 'package:transborder_logistics/src/utils/constants/string/facilities.dart';
 import 'package:transborder_logistics/src/features/dashboard/models/var_data.dart';
 
 import '../../../../global/services/barrel.dart';
@@ -202,6 +200,216 @@ class ToogleDarkModeWidget extends StatelessWidget {
         Ui.boxWidth(16),
         AppIcon(IconsaxPlusBold.moon,),
       ],
+    );
+  }
+}
+class NotificationBell extends StatelessWidget {
+  const NotificationBell({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = Get.find<DashboardController>();
+    return Obx(() {
+      final pending = c.allCustomerDeliveries.where((d) => d.hasNotStarted && !d.isCanceled).length;
+      return InkWell(
+        onTap: () => Get.bottomSheet(
+          const _NotificationsSheet(),
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.only(right: 16),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              AppIcon(HugeIcons.strokeRoundedNotification01),
+              if (pending > 0)
+                Positioned(
+                  top: -4, right: -4,
+                  child: Container(
+                    width: 16, height: 16,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryColor,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.primaryColorBackground, width: 1.5),
+                    ),
+                    child: Center(
+                      child: Text(
+                        pending > 9 ? '9+' : '$pending',
+                        style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+}
+
+class _NotificationsSheet extends StatelessWidget {
+  const _NotificationsSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = Get.find<DashboardController>();
+    return DraggableScrollableSheet(
+      initialChildSize: 0.6,
+      maxChildSize: 0.9,
+      minChildSize: 0.4,
+      builder: (_, scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: AppColors.primaryColorBackground,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: 12, bottom: 8),
+                width: 40, height: 4,
+                decoration: BoxDecoration(color: AppColors.borderColor, borderRadius: BorderRadius.circular(2)),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  children: [
+                    AppText.bold('Notifications', fontSize: 18),
+                    const Spacer(),
+                    Obx(() {
+                      final count = c.allCustomerDeliveries.where((d) => d.hasNotStarted && !d.isCanceled).length;
+                      if (count == 0) return const SizedBox.shrink();
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(color: AppColors.primaryColor, borderRadius: BorderRadius.circular(12)),
+                        child: AppText.medium('$count New', fontSize: 11, color: Colors.white),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+              AppDivider(),
+              Expanded(
+                child: Obx(() {
+                  final newTrips = c.allCustomerDeliveries.where((d) => d.hasNotStarted && !d.isCanceled).toList();
+                  final inProgress = c.allCustomerDeliveries.where((d) => d.hasStarted && d.isNotDelivered).toList();
+                  final completed = c.allCustomerDeliveries.where((d) => d.isDelivered).toList();
+
+                  if (newTrips.isEmpty && inProgress.isEmpty && completed.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          AppIcon(HugeIcons.strokeRoundedNotification01, size: 48, color: AppColors.lightTextColor),
+                          const SizedBox(height: 12),
+                          AppText.thin('No notifications', color: AppColors.lightTextColor),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return ListView(
+                    controller: scrollController,
+                    children: [
+                      if (newTrips.isNotEmpty) ...[
+                        _NotifSection(title: 'New Trips', color: AppColors.yellow, items: newTrips.map((d) => _NotifItem(
+                          icon: HugeIcons.strokeRoundedAlertCircle,
+                          color: AppColors.yellow,
+                          title: 'New trip #${d.waybill}',
+                          subtitle: '${d.pickup ?? "N/A"} → ${d.stops.isNotEmpty ? d.stops.last : "N/A"}',
+                          time: d.created,
+                        )).toList()),
+                      ],
+                      if (inProgress.isNotEmpty) ...[
+                        _NotifSection(title: 'In Progress', color: AppColors.accentColor, items: inProgress.map((d) => _NotifItem(
+                          icon: HugeIcons.strokeRoundedContainerTruck01,
+                          color: AppColors.accentColor,
+                          title: 'Trip #${d.waybill} in progress',
+                          subtitle: 'Driver: ${d.driver ?? "N/A"}',
+                          time: d.start,
+                        )).toList()),
+                      ],
+                      if (completed.isNotEmpty) ...[
+                        _NotifSection(title: 'Recently Completed', color: AppColors.green, items: completed.take(5).map((d) => _NotifItem(
+                          icon: HugeIcons.strokeRoundedCheckmarkCircle02,
+                          color: AppColors.green,
+                          title: 'Trip #${d.waybill} completed',
+                          subtitle: '${d.stops.isNotEmpty ? d.stops.last : "N/A"}',
+                          time: d.created,
+                        )).toList()),
+                      ],
+                      const SizedBox(height: 24),
+                    ],
+                  );
+                }),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _NotifSection extends StatelessWidget {
+  const _NotifSection({required this.title, required this.color, required this.items});
+  final String title;
+  final Color color;
+  final List<Widget> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 16, top: 12, bottom: 4),
+          child: AppText.medium(title, fontSize: 12, color: color),
+        ),
+        ...items,
+      ],
+    );
+  }
+}
+
+class _NotifItem extends StatelessWidget {
+  const _NotifItem({required this.icon, required this.color, required this.title, required this.subtitle, required this.time});
+  final dynamic icon;
+  final Color color;
+  final String title, subtitle, time;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(color: AppColors.borderColor),
+        borderRadius: BorderRadius.circular(12),
+        color: color.withOpacity(0.04),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
+            child: AppIcon(icon, color: color, size: 16),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppText.medium(title, fontSize: 12),
+                AppText.thin(subtitle, fontSize: 11, color: AppColors.lightTextColor, maxlines: 1, overflow: TextOverflow.ellipsis),
+              ],
+            ),
+          ),
+          AppText.thin(time.split(' ').first, fontSize: 10, color: AppColors.lightTextColor),
+        ],
+      ),
     );
   }
 }

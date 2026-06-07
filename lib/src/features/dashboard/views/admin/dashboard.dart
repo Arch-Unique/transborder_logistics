@@ -5,6 +5,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:transborder_logistics/src/features/dashboard/controllers/dashboard_controller.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/admin/dashboard_analytics.dart';
+import 'package:transborder_logistics/src/features/dashboard/views/admin/drawer.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/admin/resource_history.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/shared.dart';
 import 'package:transborder_logistics/src/global/ui/ui_barrel.dart';
@@ -131,6 +132,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 AppText.bold('Welcome to Transborder Logistics', fontSize: 22),
                 const Spacer(),
+                const NotificationBell(),
+                const SizedBox(width: 8),
                 SizedBox(
                   width: 260,
                   child: AppContainer('', [

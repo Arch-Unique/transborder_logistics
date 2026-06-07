@@ -61,6 +61,7 @@ class _AdminExplorerState extends State<AdminExplorer> {
                   ),
                 ),
                 trailing: [
+                  const NotificationBell(),
                   Obx(() {
                     return controller.curResourceHistory.value.title ==
                                 "Dashboard" 
@@ -136,7 +137,7 @@ class _AdminExplorerState extends State<AdminExplorer> {
     });
   }
 
-  desktopVersion() {
+  Scaffold desktopVersion() {
     Rx<dynamic> curObj = null.obs;
     return Scaffold(
       drawer: Container(

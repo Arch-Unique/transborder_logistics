@@ -32,74 +32,166 @@ class DeliveryInfo extends StatelessWidget {
   const DeliveryInfo(this.delivery, {super.key});
   final Delivery delivery;
 
+  Color get _statusColor {
+    if (delivery.isCanceled) return AppColors.primaryColor;
+    if (delivery.isDelivered) return AppColors.green;
+    if (delivery.hasStarted) return AppColors.accentColor;
+    return AppColors.yellow;
+  }
+
+  String get _statusLabel {
+    if (delivery.isCanceled) return 'Cancelled';
+    if (delivery.isDelivered) return 'Completed';
+    if (delivery.hasStarted && delivery.isNotDelivered) return 'In Progress';
+    return 'New';
+  }
+
+  dynamic get _statusIcon {
+    if (delivery.isCanceled) return HugeIcons.strokeRoundedCancelCircle;
+    if (delivery.isDelivered) return HugeIcons.strokeRoundedCheckmarkCircle02;
+    if (delivery.hasStarted) return HugeIcons.strokeRoundedContainerTruck01;
+    return HugeIcons.strokeRoundedAlertCircle;
+  }
+
   @override
   Widget build(BuildContext context) {
     return CurvedContainer(
       border: Border.all(color: AppColors.borderColor),
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      onPressed: () {
-        Get.to(WaybillDetailPage(delivery));
-      },
-      radius: 12,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      onPressed: () => Get.to(WaybillDetailPage(delivery)),
+      radius: 14,
       child: Column(
         children: [
-          Ui.padding(
-            padding: 12,
+          // Header row
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: _statusColor.withOpacity(0.07),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+            ),
             child: Row(
               children: [
-                AppText.medium("#${delivery.waybill}", fontSize: 14),
-                Spacer(),
-                if (delivery.hasNotStarted) WaybillStatusChip("New"),
-                if (delivery.isDelivered) WaybillStatusChip("Completed"),
-                if (delivery.hasStarted && delivery.isNotDelivered)
-                  GestureDetector(
-                    onTap: () {
-                      //todo
-                    },
-                    child: WaybillStatusChip("Track"),
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: _statusColor.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                if (delivery.hasStarted && delivery.isNotDelivered)
-                  Ui.boxWidth(8),
-                if (delivery.hasStarted && delivery.isNotDelivered)
-                  WaybillStatusChip("In Progress"),
-                if (delivery.isCanceled) WaybillStatusChip("Cancelled"),
+                  child: AppIcon(_statusIcon, color: _statusColor, size: 16),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppText.bold('#${delivery.waybill}', fontSize: 13),
+                      if (delivery.commodityType?.isNotEmpty ?? false)
+                        AppText.thin(
+                          delivery.commodityType!,
+                          fontSize: 10,
+                          color: AppColors.lightTextColor,
+                          maxlines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _statusColor.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 6, height: 6,
+                        decoration: BoxDecoration(color: _statusColor, shape: BoxShape.circle),
+                      ),
+                      const SizedBox(width: 4),
+                      AppText.medium(_statusLabel, fontSize: 11, color: _statusColor),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
-          AppDivider(),
 
+          // Route row
           Padding(
-            padding: EdgeInsetsGeometry.symmetric(vertical: 0, horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
-                Expanded(
-                  child: InfoValue(
-                    "Pick up location",
-                    delivery.pickup ?? "N/A",
-                    isStart: true,
-                  ),
+                Column(
+                  children: [
+                    Container(
+                      width: 8, height: 8,
+                      decoration: BoxDecoration(
+                        color: AppColors.green,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.green.withOpacity(0.3), width: 2),
+                      ),
+                    ),
+                    Container(width: 1.5, height: 20, color: AppColors.borderColor),
+                    Container(
+                      width: 8, height: 8,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryColor,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.primaryColor.withOpacity(0.3), width: 2),
+                      ),
+                    ),
+                  ],
                 ),
-                Ui.boxWidth(24),
+                const SizedBox(width: 10),
                 Expanded(
-                  child: InfoValue("Delivery Location", delivery.stops.last),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppText.thin(delivery.pickup ?? 'N/A', fontSize: 12, maxlines: 1, overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 12),
+                      AppText.thin(
+                        delivery.stops.isNotEmpty ? delivery.stops.last : 'N/A',
+                        fontSize: 12,
+                        maxlines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
 
-          Padding(
-            padding: EdgeInsetsGeometry.symmetric(vertical: 12, horizontal: 12),
+          // Footer row
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              border: Border(top: BorderSide(color: AppColors.borderColor)),
+            ),
             child: Row(
               children: [
+                AppIcon(HugeIcons.strokeRoundedContainerTruck01, size: 14, color: AppColors.lightTextColor),
+                const SizedBox(width: 4),
+                AppText.thin(delivery.truckno ?? 'N/A', fontSize: 11, color: AppColors.lightTextColor),
+                const SizedBox(width: 16),
+                AppIcon(HugeIcons.strokeRoundedUser, size: 14, color: AppColors.lightTextColor),
+                const SizedBox(width: 4),
                 Expanded(
-                  child: InfoValue(
-                    "Vehicle Reg No",
-                    delivery.truckno,
-                    isStart: true,
+                  child: AppText.thin(
+                    delivery.driver ?? 'N/A',
+                    fontSize: 11,
+                    color: AppColors.lightTextColor,
+                    maxlines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Ui.boxWidth(24),
-                Expanded(child: InfoValue("Driver", delivery.driver)),
+                AppText.thin(
+                  delivery.created.split(' ').first,
+                  fontSize: 10,
+                  color: AppColors.lightTextColor,
+                ),
               ],
             ),
           ),
@@ -2895,7 +2987,7 @@ const lgas = [
       "Gamawa",
       "Ganjuwa",
       "Giade",
-      "Itas\/Gadau",
+      "Itas/Gadau",
       "Jama'Are",
       "Katagum",
       "Kirfi",
@@ -2952,7 +3044,7 @@ const lgas = [
       "Hawul",
       "Jere",
       "Kaga",
-      "Kala\/Balge",
+      "Kala/Balge",
       "Konduga",
       "Kukawa",
       "Kwaya-Kusar",
@@ -2972,7 +3064,7 @@ const lgas = [
     "lgas": [
       "Brass",
       "Ekeremor",
-      "Kolokuma\/Opokuma",
+      "Kolokuma/Opokuma",
       "Nembe",
       "Ogbia",
       "Sagbama",
@@ -3089,7 +3181,7 @@ const lgas = [
       "Ikere",
       "Ikole",
       "Ilejemeje",
-      "Irepodun\/Ifelodun",
+      "Irepodun/Ifelodun",
       "Ise-Orun",
       "Moba",
       "Oye",
@@ -3134,7 +3226,7 @@ const lgas = [
       "Kwami",
       "Nafada",
       "Shongom",
-      "Yamaltu\/Deba",
+      "Yamaltu/Deba",
     ],
   },
   {
@@ -3146,7 +3238,7 @@ const lgas = [
       "Ezinihitte",
       "Ideato-North",
       "Ideato-South",
-      "Ihitte\/Uboma",
+      "Ihitte/Uboma",
       "Ikeduru",
       "Isiala-Mbano",
       "Isu",
@@ -3315,12 +3407,12 @@ const lgas = [
       "Idah",
       "Igalamela-Odolu",
       "Ijumu",
-      "Kabba\/Bunu",
+      "Kabba/Bunu",
       "Kogi",
       "Lokoja",
       "Mopa-Muro",
       "Ofu",
-      "Ogori\/Magongo",
+      "Ogori/Magongo",
       "Okehi",
       "Okene",
       "Olamaboro",
@@ -3467,7 +3559,7 @@ const lgas = [
     "lgas": [
       "Abeokuta-North",
       "Abeokuta-South",
-      "Ado-Odo\/Ota",
+      "Ado-Odo/Ota",
       "Ewekoro",
       "Ifo",
       "Ijebu-East",
@@ -3607,7 +3699,7 @@ const lgas = [
   {
     "state": "Rivers",
     "lgas": [
-      "Abua\/Odual",
+      "Abua/Odual",
       "Ahoada-East",
       "Ahoada-West",
       "Akuku Toru",
@@ -3621,13 +3713,13 @@ const lgas = [
       "Gokana",
       "Ikwerre",
       "Khana",
-      "Obio\/Akpor",
+      "Obio/Akpor",
       "Ogba-Egbema-Ndoni",
-      "Ogba\/Egbema\/Ndoni",
-      "Ogu\/Bolo",
+      "Ogba/Egbema/Ndoni",
+      "Ogu/Bolo",
       "Okrika",
       "Omuma",
-      "Opobo\/Nkoro",
+      "Opobo/Nkoro",
       "Oyigbo",
       "Port-Harcourt",
       "Tai",
