@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:transborder_logistics/src/features/dashboard/controllers/dashboard_controller.dart';
+import 'package:transborder_logistics/src/features/dashboard/views/admin/dashboard_analytics.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/admin/resource_history.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/shared.dart';
 import 'package:transborder_logistics/src/global/ui/ui_barrel.dart';
@@ -23,74 +24,101 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   final controller = Get.find<DashboardController>();
 
+  double _tripRate() {
+    final now = DateTime.now();
+    final thisMonth = controller.allCustomerDeliveries
+        .where((d) => d.createdAt.month == now.month && d.createdAt.year == now.year)
+        .length;
+    final lastMonth = controller.allCustomerDeliveries
+        .where((d) => d.createdAt.month == now.month - 1 && d.createdAt.year == now.year)
+        .length;
+    if (lastMonth == 0) return thisMonth > 0 ? 100 : 0;
+    return ((thisMonth - lastMonth) / lastMonth * 100);
+  }
+
+  double _completionRate() {
+    final total = controller.allCustomerDeliveries.length;
+    if (total == 0) return 0;
+    final done = controller.allCustomerDeliveries.where((d) => d.isDelivered).length;
+    return done / total * 100;
+  }
+
+  double _driverUtilRate() {
+    final total = controller.allDrivers.length;
+    if (total == 0) return 0;
+    return controller.allUnavailableDrivers.length / total * 100;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Obx((){
-      print(controller.appRepo.appService.isDarkMode.value);
-      return Ui.width(context) > 500
-        ? desktopVersion()
-        : RefreshScrollView(
-            onExtend: () async {},
-            onRefreshed: () async {
-              await controller.initApp();
-            },
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  AppContainer("", [
-                    CustomDropdown.city(
-                      hint: "Select Location",
-                      label: "Location",
-                      selectedValue: controller.curLoc.value,
-                      onChanged: (v) async {
-                        await controller.changeLocation(v ?? "All");
-                      },
-                      cities: ["All", ...controller.allActiveStateLocations.map((e) => e.name)],
-                      hasBottomPadding: false,
-                    ),
-                  ]),
-                  Ui.boxHeight(16),
-                  Wrap(
-                    spacing: 16,
-                    runSpacing: 16,
-                    children: [
-                      dashboardItem(
-                        DashboardItem.trips,
-                        controller.allCustomerDeliveries.length,
-                        20,
-                      ),
-                      dashboardItem(
-                        DashboardItem.users,
-                        controller.allCustomers.length,
-                        0,
-                      ),
-                      dashboardItem(
-                        DashboardItem.drivers,
-                        controller.allDrivers.length,
-                        -10,
-                      ),
-                      dashboardItem(
-                        DashboardItem.location,
-                        controller.allLocation.length,
-                        0,
-                      ),
-                      dashboardItem(
-                        DashboardItem.vehicles,
-                        controller.allVehicles.length,
-                        0,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          );
-  
+    return Obx(() {
+      return Ui.width(context) > 600
+          ? _desktopVersion()
+          : _mobileVersion();
     });
-    }
+  }
 
-  Widget desktopVersion() {
+  Widget _mobileVersion() {
+    return RefreshScrollView(
+      onExtend: () async {},
+      onRefreshed: () async => await controller.initApp(),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AppContainer('', [
+              CustomDropdown.city(
+                hint: 'Select Location',
+                label: 'Location',
+                selectedValue: controller.curLoc.value,
+                onChanged: (v) async => await controller.changeLocation(v ?? 'All'),
+                cities: ['All', ...controller.allActiveStateLocations.map((e) => e.name)],
+                hasBottomPadding: false,
+              ),
+            ]),
+            const SizedBox(height: 16),
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 1.6,
+              children: [
+                _statCard(DashboardItem.trips, controller.allCustomerDeliveries.length, _tripRate()),
+                _statCard(DashboardItem.users, controller.allCustomers.length, 0),
+                _statCard(DashboardItem.drivers, controller.allDrivers.length, _driverUtilRate()),
+                _statCard(DashboardItem.location, controller.allLocation.length, 0),
+                _statCard(DashboardItem.vehicles, controller.allVehicles.length, 0),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const DashboardAnalytics(),
+            const SizedBox(height: 16),
+            AppText.bold('Ongoing Trips', fontSize: 16),
+            const SizedBox(height: 8),
+            if (controller.allUndeliveredDeliveries.isEmpty)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: AppText.thin('No ongoing trips', color: AppColors.lightTextColor),
+                ),
+              )
+            else
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: controller.allUndeliveredDeliveries.length,
+                itemBuilder: (_, i) => DeliveryInfo(controller.allUndeliveredDeliveries[i]),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _desktopVersion() {
     return CurvedContainer(
       border: Border.all(color: AppColors.borderColor),
       radius: 0,
@@ -98,22 +126,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           AppDivider(),
           Padding(
-            padding: EdgeInsetsGeometry.all(8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Row(
               children: [
-                AppText.bold("Welcome to Transborder Logistics", fontSize: 24),
-                Spacer(),
+                AppText.bold('Welcome to Transborder Logistics', fontSize: 22),
+                const Spacer(),
                 SizedBox(
-                  width: 280,
-                  child: AppContainer("", [
+                  width: 260,
+                  child: AppContainer('', [
                     CustomDropdown.city(
-                      hint: "Select Location",
-                      label: "Location",
+                      hint: 'Select Location',
+                      label: 'Location',
                       selectedValue: controller.curLoc.value,
-                      onChanged: (v) async {
-                        await controller.changeLocation(v ?? "All");
-                      },
-                      cities: ["All", ...controller.allActiveStateLocations.map((e) => e.name)],
+                      onChanged: (v) async => await controller.changeLocation(v ?? 'All'),
+                      cities: ['All', ...controller.allActiveStateLocations.map((e) => e.name)],
                       hasBottomPadding: false,
                     ),
                   ]),
@@ -122,45 +148,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
           AppDivider(),
-          Ui.boxHeight(8),
-          Wrap(
-            spacing: 16,
-            runSpacing: 16,
-            children: [
-              dashboardItem(
-                DashboardItem.trips,
-                controller.allCustomerDeliveries.length,
-                0,
-              ),
-              dashboardItem(
-                DashboardItem.users,
-                controller.allCustomers.length,
-                0,
-              ),
-              dashboardItem(
-                DashboardItem.drivers,
-                controller.allDrivers.length,
-                0,
-              ),
-              dashboardItem(
-                DashboardItem.location,
-                controller.allLocation.length,
-                0,
-              ),
-              dashboardItem(
-                DashboardItem.vehicles,
-                controller.allVehicles.length,
-                0,
-              ),
-            ],
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Row(
+              children: [
+                Expanded(child: _statCard(DashboardItem.trips, controller.allCustomerDeliveries.length, _tripRate(), flex: true)),
+                const SizedBox(width: 12),
+                Expanded(child: _statCard(DashboardItem.users, controller.allCustomers.length, _completionRate(), flex: true)),
+                const SizedBox(width: 12),
+                Expanded(child: _statCard(DashboardItem.drivers, controller.allDrivers.length, _driverUtilRate(), flex: true)),
+                const SizedBox(width: 12),
+                Expanded(child: _statCard(DashboardItem.location, controller.allLocation.length, 0, flex: true)),
+                const SizedBox(width: 12),
+                Expanded(child: _statCard(DashboardItem.vehicles, controller.allVehicles.length, 0, flex: true)),
+              ],
+            ),
           ),
+          const DashboardAnalytics(),
+          AppDivider(),
           Expanded(
             child: Row(
               children: [
                 SizedBox(
-                  width: 400,
+                  width: 380,
                   child: ResourceHistoryPage<Delivery>(
-                    "Trips",
+                    'Trips',
                     controller.allUndeliveredDeliveries,
                     hasDrawer: true,
                     filters: [],
@@ -168,9 +180,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.all(8.0),
+                    padding: const EdgeInsets.all(8),
                     child: ClipRRect(
-                      borderRadius: BorderRadiusGeometry.circular(24),
+                      borderRadius: BorderRadius.circular(24),
                       child: _DeliveryMap(controller: controller),
                     ),
                   ),
@@ -183,18 +195,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  CurvedContainer dashboardItem(DashboardItem dit, int value, double rate) {
+  Widget _statCard(DashboardItem dit, int value, double rate, {bool flex = false}) {
     final color = rate > 0
         ? AppColors.green
         : rate == 0
-        ? AppColors.yellow
-        : AppColors.primaryColor;
+            ? AppColors.yellow
+            : AppColors.primaryColor;
+
     return CurvedContainer(
-      width: Ui.width(context) > 500
-          ? Ui.width(context) / 7
-          : (Ui.width(context) - 48) / 2,
-      height: 100,
-      padding: EdgeInsets.all(12),
+      height: 90,
+      padding: const EdgeInsets.all(12),
       border: Border.all(color: AppColors.borderColor),
       radius: 12,
       child: Column(
@@ -208,27 +218,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ic: AppColors.primaryColor,
                 bg: AppColors.primaryColor[50],
               ),
-              Ui.boxWidth(4),
-              AppText.medium(dit.name, fontSize: 14),
-              Spacer(),
+              const SizedBox(width: 4),
+              Expanded(child: AppText.medium(dit.name, fontSize: 12)),
               AppIcon(
                 rate > 0
                     ? HugeIcons.strokeRoundedArrowUpRight01
                     : rate == 0
-                    ? HugeIcons.strokeRoundedArrowLeftRight
-                    : HugeIcons.strokeRoundedArrowDownRight01,
+                        ? HugeIcons.strokeRoundedArrowLeftRight
+                        : HugeIcons.strokeRoundedArrowDownRight01,
                 color: color,
               ),
             ],
           ),
-          Spacer(),
+          const Spacer(),
           Row(
             children: [
               AppText.thin(value.toCurrencyWS(), fontSize: 18),
-              Spacer(),
+              const Spacer(),
               AppText.thin(
-                "${rate > 0 ? "+" : ""}${rate.toStringAsFixed(2)}%",
-                fontSize: 12,
+                '${rate > 0 ? '+' : ''}${rate.toStringAsFixed(1)}%',
+                fontSize: 11,
                 color: color,
               ),
             ],
@@ -238,10 +247,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Interactive map widget — renders OSM tiles with delivery location markers
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _DeliveryMap extends StatefulWidget {
   const _DeliveryMap({required this.controller});
@@ -260,13 +265,17 @@ class _DeliveryMapState extends State<_DeliveryMap> {
       .where((l) => (l.lat ?? 0) != 0 && (l.lng ?? 0) != 0)
       .toList();
 
+  LatLng get center {
+    final locations = _locationsWithCoords;
+    return locations.isNotEmpty
+        ? LatLng(locations.first.lat!, locations.first.lng!)
+        : _defaultCenter;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Obx(() {
       final locations = _locationsWithCoords;
-      final center = locations.isNotEmpty
-          ? LatLng(locations.first.lat!, locations.first.lng!)
-          : _defaultCenter;
 
       return Stack(
         children: [
@@ -275,9 +284,7 @@ class _DeliveryMapState extends State<_DeliveryMap> {
             options: MapOptions(
               initialCenter: center,
               initialZoom: 7.0,
-              interactionOptions: const InteractionOptions(
-                flags: InteractiveFlag.all,
-              ),
+              interactionOptions: const InteractionOptions(flags: InteractiveFlag.all),
               onTap: (_, __) => setState(() => _selectedLocation = null),
             ),
             children: [
@@ -288,7 +295,6 @@ class _DeliveryMapState extends State<_DeliveryMap> {
               ),
               MarkerLayer(
                 markers: locations.map((loc) {
-                  final isActive = loc.isActive;
                   final isSelected = _selectedLocation?.id == loc.id;
                   return Marker(
                     point: LatLng(loc.lat!, loc.lng!),
@@ -301,27 +307,14 @@ class _DeliveryMapState extends State<_DeliveryMap> {
                         decoration: BoxDecoration(
                           color: isSelected
                               ? AppColors.primaryColor
-                              : isActive
+                              : loc.isActive
                                   ? AppColors.primaryColor.withOpacity(0.85)
                                   : AppColors.yellow.withOpacity(0.85),
                           shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.white,
-                            width: isSelected ? 3 : 2,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.25),
-                              blurRadius: 6,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
+                          border: Border.all(color: Colors.white, width: isSelected ? 3 : 2),
+                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.25), blurRadius: 6, offset: const Offset(0, 3))],
                         ),
-                        child: Icon(
-                          Icons.location_on,
-                          color: Colors.white,
-                          size: isSelected ? 26 : 20,
-                        ),
+                        child: Icon(Icons.location_on, color: Colors.white, size: isSelected ? 26 : 20),
                       ),
                     ),
                   );
@@ -332,9 +325,7 @@ class _DeliveryMapState extends State<_DeliveryMap> {
 
           if (_selectedLocation != null)
             Positioned(
-              bottom: 16,
-              left: 16,
-              right: 16,
+              bottom: 16, left: 16, right: 16,
               child: Material(
                 elevation: 8,
                 borderRadius: BorderRadius.circular(16),
@@ -354,26 +345,16 @@ class _DeliveryMapState extends State<_DeliveryMap> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             AppText.bold(_selectedLocation!.name ?? '', fontSize: 14),
-                            AppText.thin(
-                              '${_selectedLocation!.lga}, ${_selectedLocation!.state}',
-                              fontSize: 12,
-                              color: AppColors.lightTextColor,
-                            ),
+                            AppText.thin('${_selectedLocation!.lga}, ${_selectedLocation!.state}', fontSize: 12, color: AppColors.lightTextColor),
                             if ((_selectedLocation!.facilityType ?? '').isNotEmpty)
-                              AppText.thin(
-                                _selectedLocation!.facilityType!,
-                                fontSize: 11,
-                                color: AppColors.accentColor,
-                              ),
+                              AppText.thin(_selectedLocation!.facilityType!, fontSize: 11, color: AppColors.accentColor),
                           ],
                         ),
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: _selectedLocation!.isActive
-                              ? AppColors.green.withOpacity(0.15)
-                              : AppColors.yellow.withOpacity(0.15),
+                          color: _selectedLocation!.isActive ? AppColors.green.withOpacity(0.15) : AppColors.yellow.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: AppText.medium(
@@ -394,33 +375,20 @@ class _DeliveryMapState extends State<_DeliveryMap> {
             ),
 
           Positioned(
-            top: 16,
-            right: 16,
+            top: 16, right: 16,
             child: Column(
               children: [
-                _MapButton(
-                  icon: Icons.add,
-                  onTap: () => _mapController.move(
-                      _mapController.camera.center, _mapController.camera.zoom + 1),
-                ),
+                _MapButton(icon: Icons.add, onTap: () => _mapController.move(_mapController.camera.center, _mapController.camera.zoom + 1)),
                 const SizedBox(height: 4),
-                _MapButton(
-                  icon: Icons.remove,
-                  onTap: () => _mapController.move(
-                      _mapController.camera.center, _mapController.camera.zoom - 1),
-                ),
+                _MapButton(icon: Icons.remove, onTap: () => _mapController.move(_mapController.camera.center, _mapController.camera.zoom - 1)),
                 const SizedBox(height: 4),
-                _MapButton(
-                  icon: Icons.my_location,
-                  onTap: () => _mapController.move(center, 7.0),
-                ),
+                _MapButton(icon: Icons.my_location, onTap: () => _mapController.move(center, 7.0)),
               ],
             ),
           ),
 
           Positioned(
-            top: 16,
-            left: 16,
+            top: 16, left: 16,
             child: Material(
               elevation: 4,
               borderRadius: BorderRadius.circular(10),
@@ -459,10 +427,7 @@ class _MapButton extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.all(8),
-          child: Icon(icon, size: 20, color: AppColors.textColor),
-        ),
+        child: Padding(padding: const EdgeInsets.all(8), child: Icon(icon, size: 20, color: AppColors.textColor)),
       ),
     );
   }
@@ -478,11 +443,7 @@ class _LegendItem extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
+        Container(width: 12, height: 12, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
         const SizedBox(width: 6),
         AppText.thin(label, fontSize: 11),
       ],
