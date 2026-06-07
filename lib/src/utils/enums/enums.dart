@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
 
-import '../../global/model/barrel.dart';
-import '../utils_barrel.dart';
 
 enum PasswordStrength {
   normal,
@@ -60,6 +58,7 @@ enum ErrorTypes {
 
 enum DashboardMode {
   dashboard("Dashboard",HugeIcons.strokeRoundedDashboardSquare02,["All"]),
+  tracking("Tracking",HugeIcons.strokeRoundedRoute03,["All"]),
   trips("Trips",HugeIcons.strokeRoundedBus03,["All","In Progress","Completed","Cancelled"]),
   users("Users",HugeIcons.strokeRoundedUser,["All","Driver","Admin","Operator"]),
   drivers("Drivers",HugeIcons.strokeRoundedUserMultiple02,["All","Available","Busy"]),
