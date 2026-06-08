@@ -1,6 +1,9 @@
 import 'dart:io';
 import 'dart:typed_data';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
 import 'package:excel/excel.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
@@ -196,13 +199,28 @@ Future<String?> saveFileDesktop(Uint8List body, String fileName) async {
   try {
     final bytes = body;
 
-    // Handle different platforms
+    // Web: trigger a browser download via an anchor element
+    if (kIsWeb) {
+      final blob = html.Blob([bytes]);
+      final url = html.Url.createObjectUrlFromBlob(blob);
+      final anchor =
+          html.AnchorElement(href: url)
+            ..setAttribute('download', fileName)
+            ..style.display = 'none';
+      html.document.body!.append(anchor);
+      anchor.click();
+      anchor.remove();
+      html.Url.revokeObjectUrl(url);
+      return fileName; // No local path on web; return the file name as confirmation
+    }
+
+    // Handle different native platforms
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
       // For desktop platforms, use file picker to choose save location
       String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
 
       if (selectedDirectory == null) {
-        return null; // User Cancelled the picker
+        return null; // User cancelled the picker
       }
 
       final file = File('$selectedDirectory/$fileName');
@@ -210,17 +228,11 @@ Future<String?> saveFileDesktop(Uint8List body, String fileName) async {
       return file.path;
     } else if (Platform.isAndroid) {
       // For Android
-      Directory? directory;
-      if (Platform.isAndroid) {
-        directory = Directory('/storage/emulated/0/Download');
-        // Make sure it exists
-        if (!await directory.exists()) {
-          // Fallback
-          directory = await getExternalStorageDirectory();
-        }
-      } else {
-        // iOS
-        directory = await getApplicationDocumentsDirectory();
+      Directory? directory = Directory('/storage/emulated/0/Download');
+      // Make sure it exists
+      if (!await directory.exists()) {
+        // Fallback
+        directory = await getExternalStorageDirectory();
       }
 
       if (directory == null) return null;

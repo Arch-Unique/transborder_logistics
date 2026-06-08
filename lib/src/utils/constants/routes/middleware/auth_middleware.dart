@@ -10,14 +10,14 @@ class AuthMiddleWare extends GetMiddleware {
   RouteSettings? redirect(String? route) {
     final controller = Get.find<AppService>();
     FlutterNativeSplash.remove();
-    if (controller.hasOpenedOnboarding.value) {
-      if (controller.isLoggedIn.value) {
-        return const RouteSettings(name: AppRoutes.dashboard);
-      } else {
-        return const RouteSettings(name: AppRoutes.auth);
-      }
+    // Always redirect — never leave the user stuck on the home/splash route.
+    // hasOpenedOnboarding only tracked whether onboarding was shown; it
+    // should not gate the auth redirect logic.
+    if (controller.isLoggedIn.value) {
+      return const RouteSettings(name: AppRoutes.dashboard);
+    } else {
+      return const RouteSettings(name: AppRoutes.auth);
     }
-    return super.redirect(route);
   }
 }
 
