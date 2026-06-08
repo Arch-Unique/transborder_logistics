@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
+import 'package:get_storage_wasm/get_storage_wasm.dart';
 import 'package:transborder_logistics/fcm_functions.dart';
 import 'package:transborder_logistics/firebase_options.dart';
 import 'package:transborder_logistics/src/features/dashboard/controllers/dashboard_controller.dart';

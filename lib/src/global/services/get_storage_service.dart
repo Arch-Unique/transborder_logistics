@@ -1,7 +1,7 @@
 import 'package:transborder_logistics/src/global/interfaces/pref_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
+import 'package:get_storage_wasm/get_storage_wasm.dart';
 
 class MyPrefService extends GetxService implements PrefService {
   static final _prefs = GetStorage("transborder2");
