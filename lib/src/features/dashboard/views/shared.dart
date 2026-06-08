@@ -32,74 +32,188 @@ class DeliveryInfo extends StatelessWidget {
   const DeliveryInfo(this.delivery, {super.key});
   final Delivery delivery;
 
+  Color get _statusColor {
+    if (delivery.isCanceled) return AppColors.primaryColor;
+    if (delivery.isDelivered) return AppColors.green;
+    if (delivery.hasStarted) return AppColors.accentColor;
+    return AppColors.yellow;
+  }
+
+  String get _statusLabel {
+    if (delivery.isCanceled) return 'Cancelled';
+    if (delivery.isDelivered) return 'Completed';
+    if (delivery.hasStarted && delivery.isNotDelivered) return 'In Progress';
+    return 'New';
+  }
+
+  dynamic get _statusIcon {
+    if (delivery.isCanceled) return HugeIcons.strokeRoundedCancelCircle;
+    if (delivery.isDelivered) return HugeIcons.strokeRoundedCheckmarkCircle02;
+    if (delivery.hasStarted) return HugeIcons.strokeRoundedTruck;
+    return HugeIcons.strokeRoundedAlertCircle;
+  }
+
   @override
   Widget build(BuildContext context) {
     return CurvedContainer(
       border: Border.all(color: AppColors.borderColor),
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      onPressed: () {
-        Get.to(WaybillDetailPage(delivery));
-      },
-      radius: 12,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      onPressed: () => Get.to(WaybillDetailPage(delivery)),
+      radius: 14,
       child: Column(
         children: [
-          Ui.padding(
-            padding: 12,
+          // Header row
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: _statusColor.withOpacity(0.07),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+            ),
             child: Row(
               children: [
-                AppText.medium("#${delivery.waybill}", fontSize: 14),
-                Spacer(),
-                if (delivery.hasNotStarted) WaybillStatusChip("New"),
-                if (delivery.isDelivered) WaybillStatusChip("Completed"),
-                if (delivery.hasStarted && delivery.isNotDelivered)
-                  GestureDetector(
-                    onTap: () {
-                      //todo
-                    },
-                    child: WaybillStatusChip("Track"),
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: _statusColor.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                if (delivery.hasStarted && delivery.isNotDelivered)
-                  Ui.boxWidth(8),
-                if (delivery.hasStarted && delivery.isNotDelivered)
-                  WaybillStatusChip("In Progress"),
-                if (delivery.isCanceled) WaybillStatusChip("Cancelled"),
+                  child: AppIcon(_statusIcon, color: _statusColor, size: 16),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppText.bold('#${delivery.waybill}', fontSize: 13),
+                      if (delivery.commodityType?.isNotEmpty ?? false)
+                        AppText.thin(
+                          delivery.commodityType!,
+                          fontSize: 10,
+                          color: AppColors.lightTextColor,
+                          maxlines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _statusColor.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 6, height: 6,
+                        decoration: BoxDecoration(color: _statusColor, shape: BoxShape.circle),
+                      ),
+                      const SizedBox(width: 4),
+                      AppText.medium(_statusLabel, fontSize: 11, color: _statusColor),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
-          AppDivider(),
 
+          // Route row
           Padding(
-            padding: EdgeInsetsGeometry.symmetric(vertical: 0, horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
-                Expanded(
-                  child: InfoValue(
-                    "Pick up location",
-                    delivery.pickup ?? "N/A",
-                    isStart: true,
-                  ),
+                Column(
+                  children: [
+                    Container(
+                      width: 8, height: 8,
+                      decoration: BoxDecoration(
+                        color: AppColors.green,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.green.withOpacity(0.3), width: 2),
+                      ),
+                    ),
+                    Container(width: 1.5, height: 20, color: AppColors.borderColor),
+                    Container(
+                      width: 8, height: 8,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryColor,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.primaryColor.withOpacity(0.3), width: 2),
+                      ),
+                    ),
+                  ],
                 ),
-                Ui.boxWidth(24),
+                const SizedBox(width: 10),
                 Expanded(
-                  child: InfoValue("Delivery Location", delivery.stops.last),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppText.thin(delivery.pickup ?? 'N/A', fontSize: 12, maxlines: 1, overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 12),
+                      AppText.thin(
+                        delivery.stops.isNotEmpty ? delivery.stops.last : 'N/A',
+                        fontSize: 12,
+                        maxlines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
 
-          Padding(
-            padding: EdgeInsetsGeometry.symmetric(vertical: 12, horizontal: 12),
+          // Footer row
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              border: Border(top: BorderSide(color: AppColors.borderColor)),
+            ),
             child: Row(
               children: [
+                AppIcon(HugeIcons.strokeRoundedContainerTruck01, size: 13, color: AppColors.lightTextColor),
+                const SizedBox(width: 4),
+                AppText.thin(delivery.truckno ?? 'N/A', fontSize: 11, color: AppColors.lightTextColor),
+                const SizedBox(width: 12),
+                AppIcon(HugeIcons.strokeRoundedUser, size: 13, color: AppColors.lightTextColor),
+                const SizedBox(width: 4),
                 Expanded(
-                  child: InfoValue(
-                    "Vehicle Reg No",
-                    delivery.truckno,
-                    isStart: true,
+                  child: AppText.thin(
+                    delivery.driver ?? 'N/A',
+                    fontSize: 11,
+                    color: AppColors.lightTextColor,
+                    maxlines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Ui.boxWidth(24),
-                Expanded(child: InfoValue("Driver", delivery.driver)),
+                // Status pill
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: (delivery.isCanceled
+                        ? AppColors.primaryColor
+                        : delivery.isDelivered
+                            ? AppColors.green
+                            : delivery.hasStarted
+                                ? AppColors.accentColor
+                                : AppColors.yellow).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: AppText.medium(
+                    delivery.isCanceled ? 'Cancelled' :
+                    delivery.isDelivered ? 'Completed' :
+                    delivery.hasStarted ? 'In Transit' : 'New',
+                    fontSize: 10,
+                    color: delivery.isCanceled
+                        ? AppColors.primaryColor
+                        : delivery.isDelivered
+                            ? AppColors.green
+                            : delivery.hasStarted
+                                ? AppColors.accentColor
+                                : AppColors.yellow,
+                  ),
+                ),
               ],
             ),
           ),
@@ -108,6 +222,7 @@ class DeliveryInfo extends StatelessWidget {
     );
   }
 }
+
 
 class DriverInfo extends StatelessWidget {
   const DriverInfo(this.user, {super.key});
@@ -299,92 +414,202 @@ class VarRecordInfo extends StatelessWidget {
   const VarRecordInfo(this.record, {super.key});
   final VarRecord record;
 
+  Color get _statusColor => record.isClosed
+      ? AppColors.green
+      : record.tripEnded
+          ? AppColors.accentColor
+          : AppColors.yellow;
+
+  String get _statusLabel => record.isClosed
+      ? 'Closed'
+      : record.tripEnded
+          ? 'Trip Ended'
+          : 'Pending';
+
   @override
   Widget build(BuildContext context) {
-    final received = record.signOff.receivedBy.isNotEmpty;
-    return CurvedContainer(
-      border: Border.all(color: AppColors.borderColor),
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(12),
-      onPressed: () {
+    final hasTemp = record.temperaturerange.isNotEmpty;
+    final hasCommodities = record.commodityDetails.isNotEmpty;
+    final hasReverse = record.reverseLogistics?.isNotEmpty ?? false;
+    final isSignedOff = record.signOff.receivedBy.isNotEmpty;
+
+    return GestureDetector(
+      onTap: () {
         Get.find<VarController>().populateFromVar(record);
         Get.bottomSheet(
           AddResource<VarRecord>("VAR Records", obj: record),
           isScrollControlled: true,
         );
       },
-      radius: 12,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: AppText.medium(
-                  record.joborderno.isEmpty ? '—' : record.joborderno,
-                  fontSize: 13,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        decoration: BoxDecoration(
+          color: AppColors.primaryColorBackground,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.borderColor),
+        ),
+        child: Column(
+          children: [
+            // ── Header ────────────────────────────────────────────────
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: _statusColor.withOpacity(0.07),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: _statusColor.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: AppIcon(HugeIcons.strokeRoundedDocumentCode,
+                        size: 14, color: _statusColor),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AppText.bold(
+                          record.joborderno.isEmpty ? '—' : record.joborderno,
+                          fontSize: 13,
+                        ),
+                        if (record.dateofarrival.isNotEmpty)
+                          AppText.thin(record.dateofarrival,
+                              fontSize: 10, color: AppColors.lightTextColor),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _statusColor.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Container(width: 5, height: 5,
+                        decoration: BoxDecoration(color: _statusColor, shape: BoxShape.circle)),
+                      const SizedBox(width: 4),
+                      AppText.medium(_statusLabel, fontSize: 10, color: _statusColor),
+                    ]),
+                  ),
+                ],
+              ),
+            ),
+
+            // ── Route ─────────────────────────────────────────────────
+            if (record.originName.isNotEmpty || record.destinationName.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+                child: Row(
+                  children: [
+                    Column(children: [
+                      Container(width: 8, height: 8,
+                        decoration: BoxDecoration(color: AppColors.green,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.green.withOpacity(0.3), width: 2))),
+                      Container(width: 1, height: 14, color: AppColors.borderColor),
+                      Container(width: 8, height: 8,
+                        decoration: BoxDecoration(color: AppColors.primaryColor,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.primaryColor.withOpacity(0.3), width: 2))),
+                    ]),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AppText.thin(
+                            record.originName.isNotEmpty ? record.originName : '#${record.originid}',
+                            fontSize: 11, maxlines: 1, overflow: TextOverflow.ellipsis),
+                          const SizedBox(height: 10),
+                          AppText.thin(
+                            record.destinationName.isNotEmpty ? record.destinationName : '#${record.destinationid}',
+                            fontSize: 11, maxlines: 1, overflow: TextOverflow.ellipsis),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              AppChip(received ? 'Completed' : 'New'),
-            ],
-          ),
-          const SizedBox(height: 4),
-          AppText.thin(
-            record.dateofarrival.isEmpty ? '—' : record.dateofarrival,
-            fontSize: 11,
-            color: AppColors.lightTextColor,
-          ),
-          if (record.driverName.isNotEmpty || record.driverid != 0)
-            AppText.thin(
-              record.driverName.isNotEmpty
-                  ? record.driverName
-                  : '#${record.driverid}',
-              fontSize: 11,
-              color: AppColors.lightTextColor,
+
+            // ── Summary badges ─────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+              child: Row(
+                children: [
+                  if (record.driverName.isNotEmpty) ...[
+                    AppIcon(HugeIcons.strokeRoundedUser, size: 12, color: AppColors.lightTextColor),
+                    const SizedBox(width: 4),
+                    Expanded(child: AppText.thin(record.driverName,
+                      fontSize: 11, color: AppColors.lightTextColor,
+                      maxlines: 1, overflow: TextOverflow.ellipsis)),
+                  ],
+                  if (hasCommodities)
+                    _badge('${record.commodityDetails.length} items',
+                        AppColors.accentColor),
+                  if (hasTemp) ...[
+                    const SizedBox(width: 6),
+                    _badge(record.temperaturerange, const Color(0xFF2196F3)),
+                  ],
+                  if (hasReverse) ...[
+                    const SizedBox(width: 6),
+                    _badge('Reverse', AppColors.yellow),
+                  ],
+                  if (isSignedOff) ...[
+                    const SizedBox(width: 6),
+                    _badge('✓ Signed', AppColors.green),
+                  ],
+                ],
+              ),
             ),
-          if (record.originName.isNotEmpty || record.destinationName.isNotEmpty)
-            AppText.thin(
-              '${record.originName.isNotEmpty ? record.originName : '#${record.originid}'}'
-              ' → '
-              '${record.destinationName.isNotEmpty ? record.destinationName : '#${record.destinationid}'}',
-              fontSize: 11,
-              color: AppColors.lightTextColor,
-              maxlines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-        ],
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _badge(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: AppText.medium(label, fontSize: 10, color: color),
     );
   }
 }
 
+
 class DriverStatusChip extends StatelessWidget {
-  const DriverStatusChip(this.title, {super.key});
-  final String title;
+  const DriverStatusChip(this.status, {super.key});
+  final String status;
 
   @override
   Widget build(BuildContext context) {
-    return AppChip(
-      title,
-      bgColors: [
-        Color(0xFFE6FBEC),
-        Color(0xFFE6FBEC),
-        Color(0xFFFFEBEA),
-        Color(0xFFE9F5FF),
-      ],
-      titles: ["Available", "Active", "Inactive", "Busy"],
-      titleColors: [
-        Color(0xFF00D743),
-        Color(0xFF00D743),
-        Color(0xFFFF3B30),
-        Color(0xFF229EFF),
-      ],
-      icons: [
-        HugeIcons.strokeRoundedCheckmarkCircle01,
-        HugeIcons.strokeRoundedCheckmarkCircle01,
-        HugeIcons.strokeRoundedCancelCircle,
-        HugeIcons.strokeRoundedClock01,
-      ],
+    final isAvailable = status.toLowerCase() == 'available';
+    final color = isAvailable ? AppColors.green : AppColors.primaryColor;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(width: 6, height: 6,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+          const SizedBox(width: 4),
+          AppText.medium(status, fontSize: 11, color: color),
+        ],
+      ),
     );
   }
 }
@@ -487,662 +712,63 @@ class WaybillDetailPage extends StatelessWidget {
   const WaybillDetailPage(this.delivery, {super.key});
   final Delivery delivery;
 
+  Color get _statusColor {
+    if (delivery.isCanceled) return AppColors.primaryColor;
+    if (delivery.isDelivered) return AppColors.green;
+    if (delivery.hasStarted) return const Color(0xFF2196F3);
+    return AppColors.yellow;
+  }
+
+  String get _statusLabel {
+    if (delivery.isCanceled) return 'Cancelled';
+    if (delivery.isDelivered) return 'Completed';
+    if (delivery.hasStarted) return 'In Progress';
+    return 'New';
+  }
+
+  int get _progressStep {
+    if (delivery.isCanceled) return 0;
+    if (delivery.isDelivered) return 4;
+    if (delivery.hasStarted) return 2;
+    return 1;
+  }
+
   @override
   Widget build(BuildContext context) {
     final appService = Get.find<AppService>();
-    WidgetsToImageController wsController = WidgetsToImageController();
+    final WidgetsToImageController wsController = WidgetsToImageController();
 
-    final wbBody = CurvedContainer(
-      border: Border.all(color: AppColors.borderColor),
-      radius: 12,
-      margin: EdgeInsets.all(16),
-      child: Column(
-        children: [
-          Ui.padding(
-            padding: 12,
-            child: Row(
-              children: [
-                AppIcon(
-                  HugeIcons.strokeRoundedBus03,
-                  color: AppColors.lightTextColor,
-                ),
-                Ui.boxWidth(16),
-                AppText.medium("Waybill", fontSize: 14),
-                const Spacer(),
-                if (delivery.hasNotStarted) WaybillStatusChip("New"),
-                if (delivery.isDelivered) WaybillStatusChip("Completed"),
-                if (delivery.hasStarted && delivery.isNotDelivered)
-                  GestureDetector(
-                    onTap: () {
-                      //todo
-                    },
-                    child: WaybillStatusChip("Track"),
-                  ),
-                if (delivery.hasStarted && delivery.isNotDelivered)
-                  Ui.boxWidth(8),
-                if (delivery.hasStarted && delivery.isNotDelivered)
-                  WaybillStatusChip("In Progress"),
-                if (delivery.isCanceled) WaybillStatusChip("Cancelled"),
-              ],
-            ),
-          ),
-          QrImageView(
-            data: delivery.waybill,
-            size: 100,
-            foregroundColor: AppColors.black,
-          ),
-          Ui.align(
-            align: Alignment.centerRight,
-            child: SizedBox(width: Ui.width(context) - 88, child: AppDivider()),
-          ),
-
-          Padding(
-            padding: EdgeInsetsGeometry.symmetric(vertical: 0, horizontal: 12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: InfoValue(
-                    "Request Date",
-                    delivery.created,
-                    isStart: true,
-                  ),
-                ),
-                Ui.boxWidth(24),
-                Expanded(child: InfoValue("Request By", delivery.owner)),
-              ],
-            ),
-          ),
-
-          Padding(
-            padding: EdgeInsetsGeometry.symmetric(vertical: 12, horizontal: 12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: InfoValue(
-                    "Trip",
-                    delivery.id.toString(),
-                    isStart: true,
-                  ),
-                ),
-                Ui.boxWidth(24),
-                Expanded(child: InfoValue("Vehicle Reg No", delivery.truckno)),
-              ],
-            ),
-          ),
-
-          Padding(
-            padding: EdgeInsetsGeometry.symmetric(vertical: 0, horizontal: 12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: InfoValue("Driver", delivery.driver, isStart: true),
-                ),
-                Ui.boxWidth(24),
-                Builder(
-                  builder: (context) {
-                    final img = Get.find<DashboardController>().allDrivers
-                        .firstWhereOrNull((e) => e.id == delivery.driverId)
-                        ?.image;
-                    return CurvedImage(
-                      Delivery.nv.contains(img)
-                          ? ""
-                          : "${AppUrls.baseURL}/upload/upload/$img",
-                      w: 24,
-                      h: 24,
-                      fit: BoxFit.cover,
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-
-          Padding(
-            padding: EdgeInsetsGeometry.symmetric(vertical: 12, horizontal: 12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: InfoValue(
-                    "Pick up Location",
-                    delivery.pickup,
-                    isStart: true,
-                  ),
-                ),
-                Ui.boxWidth(24),
-                AppIcon(
-                  HugeIcons.strokeRoundedLocation05,
-                  color: delivery.hasStarted
-                      ? Color(0xFF229EFF)
-                      : AppColors.lightTextColor,
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: EdgeInsetsGeometry.only(
-              top: 0,
-              bottom: 12,
-              left: 12,
-              right: 12,
-            ),
-            child: Row(
-              children: [
-                InfoValue(
-                  "Pick up Date",
-                  delivery.start.isEmpty ? "Not Started" : delivery.start,
-                  isStart: true,
-                ),
-              ],
-            ),
-          ),
-          ...List.generate(delivery.stops.length, (j) {
-            return Padding(
-              padding: EdgeInsetsGeometry.only(
-                top: 0,
-                bottom: 12,
-                left: 12,
-                right: 12,
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: InfoValue(
-                          "Delivery Location ${j + 1}",
-                          delivery.stops[j],
-                          isStart: true,
-                        ),
-                      ),
-                      Ui.boxWidth(24),
-                      AppIcon(
-                        HugeIcons.strokeRoundedLocation05,
-                        color: delivery.hasStarted
-                            ? Color(0xFF229EFF)
-                            : AppColors.lightTextColor,
-                      ),
-                    ],
-                  ),
-                  if (!Delivery.nv.contains(
-                    delivery.receiver.elementAtOrNull(j),
-                  ))
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                InfoValue(
-                                  "Receiver Details",
-                                  "${delivery.receiver.elementAtOrNull(j)![0]}, ${delivery.receiver.elementAtOrNull(j)![0]}",
-                                  isStart: true,
-                                ),
-                                Ui.boxHeight(8),
-                                InfoValue(
-                                  "Received Date",
-                                  delivery.formattedStopsDate.elementAtOrNull(
-                                    j,
-                                  )!,
-                                  isStart: true,
-                                ),
-                              ],
-                            ),
-                          ),
-                          Spacer(),
-                          SizedBox(
-                            width: 150,
-                            height: 36,
-                            child: Image.network(
-                              "${AppUrls.baseURL}/upload/upload/${delivery.receiver.elementAtOrNull(j)![2]}",
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                  if (!Delivery.nv.contains(
-                    delivery.picture.elementAtOrNull(j),
-                  ))
-                    Ui.boxHeight(8),
-                  if (!Delivery.nv.contains(
-                    delivery.picture.elementAtOrNull(j),
-                  ))
-                    SizedBox(
-                      width: Ui.width(context) - 56,
-                      height: 200,
-                      child: Image.network(
-                        "${AppUrls.baseURL}/upload/upload/${delivery.picture.elementAtOrNull(j)}",
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                ],
-              ),
-            );
-          }),
-        ],
-      ),
-    );
+    final wbContent = _buildWaybillContent(context, appService);
 
     final shareBody = WidgetsToImage(
       controller: wsController,
-      child: Column(
-        children: [
-          CurvedContainer(
-            radius: 12,
-            padding: EdgeInsets.all(16),
-            margin: EdgeInsets.only(left: 16, right: 16, top: 0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(),
-                Image.asset(Assets.fulllogo, width: 150),
-                AppText.bold("#${delivery.waybill}"),
-              ],
-            ),
-          ),
-
-          wbBody,
-        ],
+      child: Container(
+        color: AppColors.primaryColorBackground,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [wbContent],
+        ),
       ),
     );
 
     return SinglePageScaffold(
-      title: "#${delivery.waybill}",
-
+      title: '#${delivery.waybill}',
       child: SingleChildScrollView(
         child: Center(
           child: ConstrainedBox(
             constraints: BoxConstraints(
               maxWidth: Ui.isBigScreen(context)
                   ? Ui.width(context) / 2
-                  : (Ui.width(context) - 16),
+                  : Ui.width(context) - 16,
             ),
             child: Column(
               children: [
-                wbBody,
-                //items
+                shareBody,
                 if (delivery.items.isNotEmpty)
-                  Padding(
-                    padding: EdgeInsetsGeometry.only(
-                      top: 0,
-                      bottom: 12,
-                      left: 16,
-                      right: 16,
-                    ),
-                    child: AppContainer("ITEMS", [
-                      ...delivery.items.map(
-                        (e) => Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            AppText.medium(e[0], fontSize: 12),
-                            AppText.thin(
-                              e[1],
-                              fontSize: 10,
-                              color: AppColors.lightTextColor,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ]),
-                  ),
-
-                if (delivery.items.isNotEmpty)
-                  Padding(
-                    padding: EdgeInsetsGeometry.only(
-                      top: 0,
-                      bottom: 12,
-                      left: 16,
-                      right: 16,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        AppText.thin(
-                          "TOTAL AMOUNT",
-                          fontSize: 10,
-                          color: AppColors.lightTextColor,
-                        ),
-                        AppText.medium(delivery.amt.toCurrency(), fontSize: 10),
-                      ],
-                    ),
-                  ),
-
-                Ui.boxHeight(16),
-                if (appService.currentUser.value.role == "admin")
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (delivery.hasNotStarted && delivery.isNotDelivered)
-                        CircleIcon(
-                          HugeIcons.strokeRoundedEdit01,
-                          onTap: () {
-                            Get.bottomSheet(
-                              AddResource<Delivery>("Trips", obj: delivery),
-
-                              isScrollControlled: true,
-                            );
-                          },
-                        ),
-
-                      if (delivery.hasNotStarted && delivery.isNotDelivered)
-                        Ui.boxWidth(16),
-                      if (delivery.isNotDelivered &&
-                          !delivery.isCanceled &&
-                          Get.find<AppService>().currentUser.value.role ==
-                              "admin")
-                        CircleIcon(
-                          HugeIcons.strokeRoundedDelete01,
-                          onTap: () {
-                            Get.bottomSheet(
-                              AppBottomSheet(
-                                "Cancel Trip",
-                                "Confirm",
-                                msg:
-                                    "Are you sure you want to cancel this trip ?. This action is irreversible",
-                                onTap: () async {
-                                  try {
-                                    await Get.find<DashboardController>()
-                                        .appRepo
-                                        .cancelDelivery(
-                                          delivery.waybill,
-                                          delivery.vehicleId,
-                                          delivery.id,
-                                        );
-                                    Get.back();
-                                    await Get.find<DashboardController>()
-                                        .initApp();
-                                    Get.find<DashboardController>()
-                                        .refreshResource();
-
-                                    Get.back();
-                                  } catch (e) {
-                                    print(e);
-                                  }
-                                },
-                              ),
-                            );
-                          },
-                        ),
-                      if (delivery.isNotDelivered &&
-                          !delivery.isCanceled &&
-                          Get.find<AppService>().currentUser.value.role ==
-                              "admin")
-                        Ui.boxWidth(16),
-                      CircleIcon(
-                        HugeIcons.strokeRoundedDownload01,
-                        onTap: () async {
-                          try {
-                            Get.bottomSheet(
-                              Builder(
-                                builder: (context) {
-                                  return SingleChildScrollView(
-                                    child: Column(
-                                      children: [
-                                        SafeArea(
-                                          child: Padding(
-                                            padding: const EdgeInsets.only(
-                                              top: 24,
-                                              bottom: 24,
-                                            ),
-                                            child: CircleIcon(
-                                              HugeIcons
-                                                  .strokeRoundedMultiplicationSign,
-                                              onTap: () {
-                                                Get.back();
-                                              },
-                                            ),
-                                          ),
-                                        ),
-                                        shareBody,
-                                        Ui.boxHeight(16),
-                                        CircleIcon(
-                                          HugeIcons.strokeRoundedShare08,
-                                          onTap: () async {
-                                            try {
-                                              final a = await wsController
-                                                  .capturePng(pixelRatio: 6);
-                                              if (a != null) {
-                                                final b =
-                                                    await UtilFunctions.saveToTempFile(
-                                                      a,
-                                                    );
-
-                                                if (GetPlatform.isMobile) {
-                                                  final x = XFile(b.path);
-
-                                                  await SharePlus.instance.share(
-                                                    ShareParams(
-                                                      title:
-                                                          "Share Waybill #${delivery.waybill}",
-                                                      previewThumbnail: x,
-                                                      files: [x],
-                                                    ),
-                                                  );
-                                                } else {
-                                                  final x = await saveFileDesktop(
-                                                    b.readAsBytesSync(),
-                                                    "Share${DateTime.now()}.png",
-                                                  );
-                                                  if (x != null) {
-                                                    Ui.showInfo(
-                                                      "Successfully Saved to $x",
-                                                    );
-                                                  }
-                                                }
-                                              }
-                                            } catch (e) {
-                                              print(e);
-                                            }
-                                          },
-                                        ),
-
-                                        SafeArea(child: Ui.boxHeight(8)),
-                                      ],
-                                    ),
-                                  );
-                                },
-                              ),
-                              backgroundColor: AppColors.white.withValues(
-                                alpha: 0.5,
-                              ),
-                              isScrollControlled: true,
-                            );
-                            // final a = await wsController.capturePng(pixelRatio: 6);
-                            // if (a != null) {
-                            //   final b = await UtilFunctions.saveToTempFile(a);
-
-                            //   final x = XFile(b.path);
-
-                            //   await SharePlus.instance.share(
-                            //     ShareParams(
-                            //       title: "Share Waybill #${delivery.waybill}",
-                            //       previewThumbnail: x,
-                            //       files: [x],
-                            //     ),
-                            //   );
-                            // }
-                          } catch (e) {
-                            print(e);
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-
-                if (appService.currentUser.value.role == "driver" &&
-                    delivery.isNotDelivered)
-                  SizedBox(
-                    width: Ui.width(context) / 3,
-                    child: AppButton(
-                      onPressed: () {
-                        if (delivery.hasNotStarted) {
-                          Get.bottomSheet(
-                            AppBottomSheet(
-                              "Confirm Start",
-                              "Confirm",
-                              msg: "Are you sure you want to start the trip",
-                              onTap: () async {
-                                final a = await Get.find<DashboardController>()
-                                    .startDelivery(delivery.id);
-                                if (a) {
-                                  Get.back();
-                                  Get.back();
-                                  await Get.find<DashboardController>()
-                                      .getCustomerDelivery();
-                                  Ui.showInfo("Delivery Started Successfully");
-                                } else {
-                                  Ui.showError("Failed to start delivery");
-                                }
-                              },
-                            ),
-                          );
-                        } else {
-                          try {
-                            List<TextEditingController> tecs = List.generate(
-                              3,
-                              (i) => TextEditingController(),
-                            );
-                            RxString img = "".obs;
-                            RxString curStop = "".obs;
-                            Rx<Uint8List> u8 = Uint8List(0).obs;
-                            int curStopIndex = 0;
-                            Get.bottomSheet(
-                              AppBottomSheet(
-                                "Confirm Delivery",
-                                "Confirm",
-                                onTap: () async {
-                                  try {
-                                    if (UtilFunctions.validateTecs(tecs)) {
-                                      if (u8.value.isEmpty &&
-                                          curStop.value.isEmpty) {
-                                        return Ui.showError(
-                                          "Signature and Stop must be filled",
-                                        );
-                                      }
-                                      final c =
-                                          await UtilFunctions.saveToTempFile(
-                                            u8.value,
-                                          );
-                                      final a =
-                                          await Get.find<DashboardController>()
-                                              .stopDelivery(
-                                                delivery.id,
-                                                curStopIndex,
-                                                tecs[2].text,
-                                                tecs[0].text,
-                                                tecs[1].text,
-                                                c.path,
-                                              );
-                                      if (a) {
-                                        // Dismiss the confirmation bottom sheet
-                                        Get.back();
-                                        // Refresh delivery list
-                                        final dash =
-                                            Get.find<DashboardController>();
-                                        await dash.getCustomerDelivery();
-                                        Ui.showInfo(
-                                          "Delivery Ended Successfully",
-                                        );
-                                      } else {
-                                        Ui.showInfo("Delivery failed to end");
-                                      }
-                                    } else {
-                                      Ui.showError(
-                                        "All Fields are mandatory to fill",
-                                      );
-                                    }
-                                  } catch (e) {
-                                    print(e);
-                                  }
-                                },
-                                actions: [
-                                  CustomDropdown.city(
-                                    hint: "Stop",
-                                    label: "Select Stop",
-                                    selectedValue: curStop.value,
-                                    onChanged: (v) {
-                                      curStop.value = v ?? "";
-                                      curStopIndex = delivery.stops.indexOf(
-                                        curStop.value,
-                                      );
-                                    },
-                                    cities: delivery.undeliveredStops
-                                        .where((e) => e.isNotEmpty)
-                                        .toList(),
-                                  ),
-                                  CustomTextField(
-                                    "Add Name",
-                                    tecs[0],
-                                    label: "Name of receiver",
-                                  ),
-                                  CustomTextField(
-                                    "Add Contact",
-                                    tecs[1],
-                                    label: "Contact",
-                                  ),
-
-                                  FieldValue(
-                                    "Proof Image",
-                                    child: InkWell(
-                                      onTap: () async {
-                                        // img.value="";
-                                        final path = await Get.bottomSheet(
-                                          ChooseCam(),
-                                        );
-                                        //upload image;
-                                        if (path != null) {
-                                          tecs[2].text = path;
-                                          img.value = path;
-                                        }
-                                      },
-                                      child: Obx(() {
-                                        if (img.value.isNotEmpty) {
-                                          return Image.file(
-                                            File(img.value),
-                                            height: 100,
-                                            fit: BoxFit.contain,
-                                          );
-                                        }
-                                        return AppText.thin(
-                                          "Select image >",
-                                          color: AppColors.lightTextColor,
-                                          fontSize: 12,
-                                        );
-                                      }),
-                                    ),
-                                  ),
-                                  FieldValue(
-                                    "Signature",
-                                    child: Expanded(
-                                      child: SignatureView(u8, ""),
-                                    ),
-                                  ),
-                                  // Obx(() {
-                                  //   if (img.value.isNotEmpty) {
-                                  //     return Image.file(
-                                  //       File(img.value),
-                                  //       height: 100,
-                                  //       fit: BoxFit.contain,
-                                  //     );
-                                  //   }
-                                  //   return SizedBox();
-                                  // }),
-                                ],
-                              ),
-                              isScrollControlled: true,
-                            );
-                          } catch (e) {
-                            print(e);
-                          }
-                        }
-                      },
-                      text: delivery.hasNotStarted ? "Start Trip" : "End Trip",
-                    ),
-                  ),
-                Ui.boxHeight(24),
+                  _buildItemsSection(context),
+                const SizedBox(height: 16),
+                _buildActionButtons(context, appService, wsController),
+                const SizedBox(height: 32),
               ],
             ),
           ),
@@ -1150,7 +776,908 @@ class WaybillDetailPage extends StatelessWidget {
       ),
     );
   }
+
+  // ── Professional waybill body ────────────────────────────────────────────
+
+  Widget _buildWaybillContent(BuildContext context, AppService appService) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.primaryColorBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildWaybillHeader(context),
+            _buildWaybillId(context),
+            _buildProgressTracker(),
+            _buildDivider(),
+            _buildTripDetails(context),
+            _buildDivider(),
+            _buildRouteTimeline(),
+            if ((delivery.commodityType?.isNotEmpty ?? false) || delivery.items.isNotEmpty) ...[
+              _buildDivider(),
+              _buildCommoditySection(),
+            ],
+            _buildDivider(),
+            _buildSignatureSection(context, appService),
+            _buildWaybillFooter(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Header with branding ─────────────────────────────────────────────────
+
+  Widget _buildWaybillHeader(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      color: AppColors.primaryColor,
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: AppIcon(HugeIcons.strokeRoundedContainerTruck01,
+                color: Colors.white, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppText.bold('Transborder Logistics',
+                    fontSize: 16, color: Colors.white),
+                AppText.thin('Precise. Progressive. People.',
+                    fontSize: 11, color: Colors.white.withOpacity(0.8)),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: QrImageView(
+              data: delivery.waybill,
+              size: 52,
+              foregroundColor: AppColors.primaryColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Waybill ID + status ──────────────────────────────────────────────────
+
+  Widget _buildWaybillId(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      color: AppColors.surfaceColor,
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppText.bold('#${delivery.waybill}',
+                    fontSize: 18),
+                const SizedBox(height: 3),
+                AppText.thin(
+                  '${delivery.commodityType?.isNotEmpty ?? false ? delivery.commodityType! : "General Cargo"}'
+                  ' · Issued ${delivery.created.split(' ').first}',
+                  fontSize: 11,
+                  color: AppColors.lightTextColor,
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: _statusColor.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: _statusColor.withOpacity(0.3)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 7, height: 7,
+                  decoration: BoxDecoration(
+                      color: _statusColor, shape: BoxShape.circle),
+                ),
+                const SizedBox(width: 6),
+                AppText.medium(_statusLabel,
+                    fontSize: 12, color: _statusColor),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Progress tracker ─────────────────────────────────────────────────────
+
+  Widget _buildProgressTracker() {
+    final steps = ['Assigned', 'Picked up', 'In transit', 'Delivered', 'Confirmed'];
+    final step = _progressStep;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      color: AppColors.surfaceColor,
+      child: Row(
+        children: List.generate(steps.length * 2 - 1, (i) {
+          if (i.isOdd) {
+            final lineIdx = i ~/ 2;
+            return Expanded(
+              child: Container(
+                height: 2,
+                color: lineIdx < step
+                    ? AppColors.primaryColor
+                    : AppColors.borderColor,
+              ),
+            );
+          }
+          final idx = i ~/ 2;
+          final isDone = idx < step;
+          final isActive = idx == step;
+          return Column(
+            children: [
+              Container(
+                width: 22, height: 22,
+                decoration: BoxDecoration(
+                  color: isDone
+                      ? AppColors.primaryColor
+                      : isActive
+                          ? const Color(0xFF2196F3)
+                          : AppColors.surfaceColor,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isDone
+                        ? AppColors.primaryColor
+                        : isActive
+                            ? const Color(0xFF2196F3)
+                            : AppColors.borderColor,
+                    width: 2,
+                  ),
+                ),
+                child: isDone
+                    ? const Icon(Icons.check, color: Colors.white, size: 12)
+                    : isActive
+                        ? const Icon(Icons.local_shipping,
+                            color: Colors.white, size: 12)
+                        : null,
+              ),
+              const SizedBox(height: 4),
+              SizedBox(
+                width: 56,
+                child: Text(
+                  steps[idx],
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: isDone || isActive
+                        ? AppColors.textColor
+                        : AppColors.lightTextColor,
+                    fontWeight: isActive ? FontWeight.w500 : FontWeight.w400,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+
+  // ── Trip details grid ────────────────────────────────────────────────────
+
+  Widget _buildTripDetails(BuildContext context) {
+    final driver = Get.find<DashboardController>()
+        .allDrivers
+        .firstWhereOrNull((e) => e.id == delivery.driverId);
+
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionLabel('Trip Details'),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(child: _infoBlock('Trip ID', '#${delivery.id}')),
+              Expanded(child: _infoBlock('Waybill No.', delivery.waybill)),
+              Expanded(child: _infoBlock('Vehicle Reg', delivery.truckno ?? 'N/A')),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(child: _infoBlock('Driver', delivery.driver ?? 'N/A')),
+              Expanded(child: _infoBlock('Requested By', delivery.owner ?? 'N/A')),
+              Expanded(child: _infoBlock('Issue Date', delivery.created.split(' ').first)),
+            ],
+          ),
+          if (delivery.hasStarted) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(child: _infoBlock('Pickup Date', delivery.start.split(' ').first)),
+                if (delivery.invoiceno?.isNotEmpty ?? false)
+                  Expanded(child: _infoBlock('Invoice No.', delivery.invoiceno!)),
+                if (delivery.deliveryType?.isNotEmpty ?? false)
+                  Expanded(child: _infoBlock('Delivery Type', delivery.deliveryType!)),
+              ],
+            ),
+          ],
+          if (driver != null && !(Delivery.nv.contains(driver.image))) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                CurvedImage(
+                  '${AppUrls.baseURL}/upload/upload/${driver.image}',
+                  w: 32, h: 32, fit: BoxFit.cover,
+                ),
+                const SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppText.medium(delivery.driver ?? '', fontSize: 12),
+                    AppText.thin('Assigned Driver', fontSize: 10,
+                        color: AppColors.lightTextColor),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // ── Route timeline ───────────────────────────────────────────────────────
+
+  Widget _buildRouteTimeline() {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionLabel('Route'),
+          const SizedBox(height: 12),
+          // Pickup
+          _routeStop(
+            dotColor: AppColors.green,
+            label: 'Pickup Location',
+            location: delivery.pickup ?? 'N/A',
+            meta: delivery.pickupName?.isNotEmpty ?? false
+                ? delivery.pickupName!
+                : null,
+            date: delivery.hasStarted ? delivery.start : null,
+            isLast: false,
+            signature: delivery.pickupSignature,
+          ),
+          // Stops
+          ...List.generate(delivery.stops.length, (j) {
+            final isLast = j == delivery.stops.length - 1;
+            final receiverData = delivery.receiver.elementAtOrNull(j);
+            final stopDate = delivery.formattedStopsDate.elementAtOrNull(j);
+            final picture = delivery.picture.elementAtOrNull(j);
+            return _routeStop(
+              dotColor: AppColors.primaryColor,
+              label: 'Delivery Location ${delivery.stops.length > 1 ? j + 1 : ''}',
+              location: delivery.stops[j],
+              meta: receiverData != null && receiverData.isNotEmpty
+                  ? receiverData[0]
+                  : null,
+              date: stopDate,
+              isLast: isLast,
+              picture: picture,
+              signature: receiverData != null && receiverData.length > 2
+                  ? receiverData[2]
+                  : null,
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _routeStop({
+    required Color dotColor,
+    required String label,
+    required String location,
+    String? meta,
+    String? date,
+    String? picture,
+    String? signature,
+    required bool isLast,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Column(
+          children: [
+            Container(
+              width: 14, height: 14,
+              decoration: BoxDecoration(
+                color: dotColor,
+                shape: BoxShape.circle,
+                border: Border.all(
+                    color: dotColor.withOpacity(0.3), width: 3),
+              ),
+            ),
+            if (!isLast)
+              Container(
+                width: 2,
+                height: 48,
+                color: AppColors.borderColor,
+              ),
+          ],
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppText.thin(label, fontSize: 10,
+                    color: AppColors.lightTextColor),
+                const SizedBox(height: 2),
+                AppText.medium(location, fontSize: 13),
+                if (meta != null && meta.isNotEmpty)
+                  AppText.thin(meta, fontSize: 11,
+                      color: AppColors.lightTextColor),
+                if (date != null && date.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      AppIcon(HugeIcons.strokeRoundedClock01,
+                          size: 12, color: AppColors.accentColor),
+                      const SizedBox(width: 4),
+                      AppText.thin(date, fontSize: 11,
+                          color: AppColors.accentColor),
+                    ],
+                  ),
+                ],
+                if (picture != null && !Delivery.nv.contains(picture)) ...[
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      '${AppUrls.baseURL}/upload/upload/$picture',
+                      height: 120,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                    ),
+                  ),
+                ],
+                if (signature != null && !Delivery.nv.contains(signature)) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppColors.borderColor),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.all(4),
+                    child: Image.network(
+                      '${AppUrls.baseURL}/upload/upload/$signature',
+                      height: 48,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Commodity section ────────────────────────────────────────────────────
+
+  Widget _buildCommoditySection() {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionLabel('Commodity'),
+          const SizedBox(height: 12),
+          if (delivery.commodityType?.isNotEmpty ?? false)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.primaryColor.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: AppText.medium(delivery.commodityType!,
+                  fontSize: 12, color: AppColors.primaryColor),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildItemsSection(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      decoration: BoxDecoration(
+        border: Border.all(color: AppColors.borderColor),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(children: [
+              Expanded(child: _sectionLabel('Items')),
+              if (delivery.amt > 0)
+                AppText.medium(delivery.amt.toCurrency(), fontSize: 13),
+            ]),
+          ),
+          ...delivery.items.asMap().entries.map((e) {
+            final isLast = e.key == delivery.items.length - 1;
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(color: AppColors.borderColor),
+                  bottom: isLast
+                      ? BorderSide.none
+                      : BorderSide(color: AppColors.borderColor),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 22, height: 22,
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceColor,
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: Center(
+                      child: AppText.thin('${e.key + 1}', fontSize: 11,
+                          color: AppColors.lightTextColor),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(child: AppText.medium(e.value[0], fontSize: 12)),
+                  AppText.thin(e.value.length > 1 ? e.value[1] : '',
+                      fontSize: 11, color: AppColors.lightTextColor),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  // ── Signature section ────────────────────────────────────────────────────
+
+  Widget _buildSignatureSection(BuildContext context, AppService appService) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionLabel('Acknowledgement'),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(child: _signBox(
+                label: 'Dispatched by',
+                name: delivery.owner ?? 'N/A',
+                date: delivery.created.split(' ').first,
+                signatureUrl: null,
+                isSigned: true,
+              )),
+              const SizedBox(width: 12),
+              Expanded(child: _signBox(
+                label: 'Received by',
+                name: delivery.isDelivered
+                    ? (delivery.receiver.firstOrNull?.firstOrNull ?? 'N/A')
+                    : '—',
+                date: delivery.isDelivered
+                    ? (delivery.formattedStopsDate.firstOrNull ?? 'Pending')
+                    : 'Pending delivery',
+                signatureUrl: delivery.isDelivered &&
+                        (delivery.receiver.firstOrNull?.length ?? 0) > 2
+                    ? '${AppUrls.baseURL}/upload/upload/${delivery.receiver.first![2]}'
+                    : null,
+                isSigned: delivery.isDelivered,
+              )),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _signBox({
+    required String label,
+    required String name,
+    required String date,
+    String? signatureUrl,
+    required bool isSigned,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(color: AppColors.borderColor),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppText.thin(label.toUpperCase(),
+              fontSize: 9, color: AppColors.lightTextColor),
+          const SizedBox(height: 8),
+          Container(
+            height: 44,
+            alignment: Alignment.bottomLeft,
+            decoration: BoxDecoration(
+              border: Border(
+                  bottom: BorderSide(color: AppColors.borderColor)),
+            ),
+            child: signatureUrl != null
+                ? Image.network(signatureUrl, height: 40, fit: BoxFit.contain)
+                : AppText.thin(isSigned ? '✓ Signed' : 'Signature',
+                    fontSize: 11, color: AppColors.lightTextColor),
+          ),
+          const SizedBox(height: 6),
+          AppText.medium(name, fontSize: 12),
+          AppText.thin(date, fontSize: 10, color: AppColors.lightTextColor),
+        ],
+      ),
+    );
+  }
+
+  // ── Footer ───────────────────────────────────────────────────────────────
+
+  Widget _buildWaybillFooter() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      color: AppColors.surfaceColor,
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppText.medium('Transborder Logistics Ltd.',
+                    fontSize: 11),
+                AppText.thin(
+                  'This document is system-generated and valid without a physical stamp.',
+                  fontSize: 9,
+                  color: AppColors.lightTextColor,
+                ),
+              ],
+            ),
+          ),
+          AppText.thin('transborderlogistics.net',
+              fontSize: 9, color: AppColors.lightTextColor),
+        ],
+      ),
+    );
+  }
+
+  // ── Action buttons ───────────────────────────────────────────────────────
+
+  Widget _buildActionButtons(BuildContext context, AppService appService,
+      WidgetsToImageController wsController) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        children: [
+          // Admin actions row
+          if (appService.currentUser.value.role == 'admin')
+            Row(
+              children: [
+                if (delivery.hasNotStarted && delivery.isNotDelivered)
+                  _actionBtn(
+                    icon: HugeIcons.strokeRoundedEdit01,
+                    label: 'Edit Trip',
+                    onTap: () => Get.bottomSheet(
+                      AddResource<Delivery>('Trips', obj: delivery),
+                      isScrollControlled: true,
+                    ),
+                  ),
+                if (delivery.hasNotStarted && delivery.isNotDelivered)
+                  const SizedBox(width: 10),
+                if (delivery.isNotDelivered && !delivery.isCanceled)
+                  _actionBtn(
+                    icon: HugeIcons.strokeRoundedDelete01,
+                    label: 'Cancel Trip',
+                    isDestructive: true,
+                    onTap: () => Get.bottomSheet(
+                      AppBottomSheet(
+                        'Cancel Trip', 'Confirm',
+                        msg: 'Are you sure you want to cancel this trip? This action is irreversible.',
+                        onTap: () async {
+                          try {
+                            await Get.find<DashboardController>()
+                                .appRepo
+                                .cancelDelivery(
+                              delivery.waybill,
+                              delivery.vehicleId,
+                              delivery.id,
+                            );
+                            Get.back();
+                            await Get.find<DashboardController>().initApp();
+                            Get.find<DashboardController>().refreshResource();
+                            Get.back();
+                          } catch (e) {
+                            print(e);
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          const SizedBox(height: 12),
+          // Download / Share button
+          SizedBox(
+            width: double.infinity,
+            child: _actionBtn(
+              icon: HugeIcons.strokeRoundedDownload01,
+              label: 'Download Waybill',
+              isPrimary: true,
+              fullWidth: true,
+              onTap: () async {
+                Get.bottomSheet(
+                  _WaybillShareSheet(
+                    wsController: wsController,
+                    waybill: delivery.waybill,
+                  ),
+                  backgroundColor: Colors.transparent,
+                  isScrollControlled: true,
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _actionBtn({
+    required dynamic icon,
+    required String label,
+    required VoidCallback onTap,
+    bool isPrimary = false,
+    bool isDestructive = false,
+    bool fullWidth = false,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: fullWidth ? double.infinity : null,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: isPrimary
+              ? AppColors.primaryColor
+              : isDestructive
+                  ? AppColors.primaryColor.withOpacity(0.08)
+                  : AppColors.surfaceColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isPrimary
+                ? AppColors.primaryColor
+                : isDestructive
+                    ? AppColors.primaryColor.withOpacity(0.3)
+                    : AppColors.borderColor,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: fullWidth ? MainAxisSize.max : MainAxisSize.min,
+          mainAxisAlignment: fullWidth ? MainAxisAlignment.center : MainAxisAlignment.start,
+          children: [
+            AppIcon(icon,
+                size: 16,
+                color: isPrimary
+                    ? Colors.white
+                    : isDestructive
+                        ? AppColors.primaryColor
+                        : AppColors.textColor),
+            const SizedBox(width: 8),
+            AppText.medium(label,
+                fontSize: 13,
+                color: isPrimary
+                    ? Colors.white
+                    : isDestructive
+                        ? AppColors.primaryColor
+                        : AppColors.textColor),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
+
+  Widget _sectionLabel(String text) {
+    return AppText.medium(text.toUpperCase(),
+        fontSize: 10, color: AppColors.lightTextColor);
+  }
+
+  Widget _infoBlock(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AppText.thin(label, fontSize: 10, color: AppColors.lightTextColor),
+        const SizedBox(height: 3),
+        AppText.medium(value, fontSize: 12),
+      ],
+    );
+  }
+
+  Widget _buildDivider() {
+    return Divider(color: AppColors.borderColor, height: 1);
+  }
 }
+
+// ── Waybill share bottom sheet ───────────────────────────────────────────────
+
+class _WaybillShareSheet extends StatelessWidget {
+  const _WaybillShareSheet({
+    required this.wsController,
+    required this.waybill,
+  });
+  final WidgetsToImageController wsController;
+  final String waybill;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.primaryColorBackground,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 36, height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.borderColor,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 16),
+          AppText.bold('Download Waybill', fontSize: 16),
+          AppText.thin('#$waybill', fontSize: 12,
+              color: AppColors.lightTextColor),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _ShareOption(
+                icon: HugeIcons.strokeRoundedImage01,
+                label: 'Save as PNG',
+                color: AppColors.accentColor,
+                onTap: () async {
+                  try {
+                    Get.back();
+                    final bytes = await wsController.capturePng(pixelRatio: 6);
+                    if (bytes != null) {
+                      final file = await UtilFunctions.saveToTempFile(bytes);
+                      if (GetPlatform.isMobile) {
+                        await SharePlus.instance.share(
+                          ShareParams(
+                            title: 'Waybill #$waybill',
+                            files: [XFile(file.path)],
+                          ),
+                        );
+                      } else {
+                        final path = await saveFileDesktop(
+                          file.readAsBytesSync(),
+                          'Waybill_$waybill.png',
+                        );
+                        if (path != null) {
+                          Ui.showInfo('Saved to $path');
+                        }
+                      }
+                    }
+                  } catch (e) {
+                    print(e);
+                  }
+                },
+              ),
+              const SizedBox(width: 16),
+              _ShareOption(
+                icon: HugeIcons.strokeRoundedShare08,
+                label: 'Share',
+                color: AppColors.green,
+                onTap: () async {
+                  try {
+                    Get.back();
+                    final bytes = await wsController.capturePng(pixelRatio: 6);
+                    if (bytes != null) {
+                      final file = await UtilFunctions.saveToTempFile(bytes);
+                      await SharePlus.instance.share(
+                        ShareParams(
+                          title: 'Waybill #$waybill',
+                          text: 'Please find attached waybill #$waybill from Transborder Logistics.',
+                          files: [XFile(file.path)],
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    print(e);
+                  }
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
+          SafeArea(child: const SizedBox()),
+        ],
+      ),
+    );
+  }
+}
+
+class _ShareOption extends StatelessWidget {
+  const _ShareOption({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+  final dynamic icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            width: 60, height: 60,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: color.withOpacity(0.2)),
+            ),
+            child: Center(child: AppIcon(icon, color: color, size: 26)),
+          ),
+          const SizedBox(height: 8),
+          AppText.medium(label, fontSize: 12),
+        ],
+      ),
+    );
+  }
+}
+
 
 class SignatureView extends StatefulWidget {
   const SignatureView(this.tec, this.label, {this.size, super.key});

@@ -5,6 +5,7 @@ import 'package:transborder_logistics/src/features/dashboard/controllers/dashboa
 import 'package:transborder_logistics/src/features/dashboard/views/admin/dashboard.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/admin/drawer.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/admin/resource_history.dart';
+import 'package:transborder_logistics/src/features/dashboard/views/admin/tracking_screen.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/shared.dart';
 import 'package:transborder_logistics/src/global/model/user.dart';
 import 'package:transborder_logistics/src/global/ui/ui_barrel.dart';
@@ -61,6 +62,7 @@ class _AdminExplorerState extends State<AdminExplorer> {
                   ),
                 ),
                 trailing: [
+                  const NotificationBell(),
                   Obx(() {
                     return controller.curResourceHistory.value.title ==
                                 "Dashboard" 
@@ -123,6 +125,8 @@ class _AdminExplorerState extends State<AdminExplorer> {
 
                 return title == "Dashboard"
                     ? DashboardScreen()
+                    : title == "Tracking"
+                    ? const TrackingScreen()
                     : ResourceHistoryPage(
                         title,
                         controller.curResourceHistory.value.items,
@@ -136,7 +140,7 @@ class _AdminExplorerState extends State<AdminExplorer> {
     });
   }
 
-  desktopVersion() {
+  Scaffold desktopVersion() {
     Rx<dynamic> curObj = null.obs;
     return Scaffold(
       drawer: Container(
@@ -161,6 +165,8 @@ class _AdminExplorerState extends State<AdminExplorer> {
               }
               return controller.curResourceHistory.value.title == "Dashboard"
                   ? DashboardScreen()
+                  : controller.curResourceHistory.value.title == "Tracking"
+                  ? const TrackingScreen()
                   : ResourceHistoryDesktopPage(
                       controller.curResourceHistory.value.title,
                       controller.curResourceHistory.value.items,
