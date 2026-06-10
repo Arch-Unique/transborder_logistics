@@ -1,0 +1,47 @@
+name: Flutter Build
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: self-hosted
+
+    env:
+      CM_KEYSTORE_PATH: ${{ secrets.CM_KEYSTORE_PATH }}
+      CM_KEYSTORE_PASSWORD: ${{ secrets.CM_KEYSTORE_PASSWORD }}
+      CM_KEY_ALIAS: ${{ secrets.CM_KEY_ALIAS }}
+      CM_KEY_PASSWORD: ${{ secrets.CM_KEY_PASSWORD }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build Web (release)
+        run: flutter build web --release
+
+      - name: Deploy to /root/projects
+        run: |
+          REPO_NAME="${{ gitea.repository }}"
+          REPO_NAME="${REPO_NAME##*/}"
+          DEST="/root/projects/${REPO_NAME}"
+
+          mkdir -p "${DEST}/apk"
+          mkdir -p "${DEST}/web"
+
+          # Copy APK
+          # cp -f build/app/outputs/flutter-apk/app-release.apk "${DEST}/apk/app-release.apk"
+
+          # Copy web build (overwrite contents)
+          rm -rf "${DEST}/web"
+          cp -r build/web "${DEST}/web"
+          
+          rm -rf /home/tbl.ng/public_html/app
+          cp -r build/web /home/tbl.ng/public_html/app
+
+          echo "Deployed to ${DEST}"
