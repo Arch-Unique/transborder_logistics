@@ -1,0 +1,31 @@
+name: Mirror to Gitea
+
+on:
+  push:
+    branches:
+      - '**'
+    tags:
+      - '**'
+  workflow_dispatch:
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.GITEA_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p ${{ secrets.GITEA_PORT }} ${{ secrets.GITEA_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Push to Gitea
+        run: |
+          git remote add gitea ssh://git@${{ secrets.GITEA_HOST }}:${{ secrets.GITEA_PORT }}/${{ secrets.GITEA_REPO_PATH }}
+          git push gitea --all
+          git push gitea --tags
