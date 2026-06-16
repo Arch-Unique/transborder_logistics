@@ -342,6 +342,7 @@ class AppRepo extends GetxController {
     String invoiceno,
     String commodityType,
     String deliveryType,
+    String receiverPhone,
   ) async {
     const uri = "${AppUrls.deliveryURL}/deliveries";
 
@@ -358,6 +359,7 @@ class AppRepo extends GetxController {
         "invoiceno": invoiceno,
         "commoditytype": commodityType,
         "deliverytype": deliveryType,
+        "receiverphone": receiverPhone,
       },
     );
     return res.statusCode!.isSuccess();
@@ -373,6 +375,7 @@ class AppRepo extends GetxController {
     String invoiceno,
     String commodityType,
     String deliveryType,
+    String receiverPhone,
     int id,
   ) async {
     final uri = "${AppUrls.deliveryURL}/deliveries/admin/$id";
@@ -390,6 +393,7 @@ class AppRepo extends GetxController {
         "invoiceno": invoiceno,
         "commoditytype": commodityType,
         "deliverytype": deliveryType,
+        "receiverphone": receiverPhone,
       },
     );
     return res.statusCode!.isSuccess();

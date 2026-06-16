@@ -314,6 +314,7 @@ class Delivery implements Slugger {
   bool isCanceled;
   String? pickup, pickupName, pickupContact, pickupSignature, invoiceno;
   String? commodityType, deliveryType;
+  String? receiverPhone;
 
   static const nv = [null, "", "[]", [], "null"];
 
@@ -419,6 +420,7 @@ class Delivery implements Slugger {
     this.pickupSignature = "",
     this.commodityType,
     this.deliveryType,
+    this.receiverPhone,
     required this.createdAt,
   });
 
@@ -441,6 +443,7 @@ class Delivery implements Slugger {
       truckno: json["truckno"] ?? "",
       commodityType: json["commoditytype"],
       deliveryType: json["deliverytype"],
+      receiverPhone: json["receiverphone"],
       
       picture: json["picture"] == null
           ? []

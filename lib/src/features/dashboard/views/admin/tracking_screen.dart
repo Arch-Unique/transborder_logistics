@@ -29,6 +29,22 @@ class _TrackingScreenState extends State<TrackingScreen> {
   List<LatLng> _routePoints = [];
   bool _loadingRoute = false;
 
+  @override
+  void initState() {
+    super.initState();
+    // If a trip was tapped from the Trips table's "Track" status, jump
+    // straight to it and clear the flag so revisiting Tracking normally
+    // doesn't keep re-focusing the same trip.
+    final focused = controller.trackingFocusDelivery.value;
+    if (focused != null) {
+      _selectedDelivery = focused;
+      controller.trackingFocusDelivery.value = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _fetchRoute(focused);
+      });
+    }
+  }
+
   // Search & filter
   String _searchQuery = '';
   String _filterStatus = 'All';

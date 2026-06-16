@@ -24,6 +24,7 @@ class DashboardController extends GetxController {
   RxList<StateLocation> allStateLocations = <StateLocation>[].obs;
   RxList<Delivery> allCustomerDeliveries = <Delivery>[].obs;
   Rx<Delivery> currentDelivery = Delivery(createdAt: DateTime.now()).obs;
+  Rx<Delivery?> trackingFocusDelivery = Rx<Delivery?>(null);
   RxString curLoc = "All".obs;
   RxList<VarRecord> allVarRecords = <VarRecord>[].obs;
 
@@ -519,6 +520,7 @@ class DashboardController extends GetxController {
     String invoiceno,
     String commodityType,
     String deliveryType,
+    String receiverPhone,
   ) async {
     return await appRepo.addDelivery(
       waybill,
@@ -530,6 +532,7 @@ class DashboardController extends GetxController {
       invoiceno,
       commodityType,
       deliveryType,
+      receiverPhone,
     );
   }
 

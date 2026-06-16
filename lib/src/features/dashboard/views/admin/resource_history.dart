@@ -10,6 +10,7 @@ import 'package:transborder_logistics/src/global/ui/widgets/fields/custom_textfi
 import 'package:transborder_logistics/src/global/ui/widgets/others/containers.dart';
 import 'package:transborder_logistics/src/features/dashboard/models/var_data.dart';
 import 'package:transborder_logistics/src/features/dashboard/controllers/var_controller.dart';
+import 'package:transborder_logistics/src/src_barrel.dart';
 
 class ResourceHistory<T extends Slugger> {
   String title;
@@ -726,6 +727,23 @@ class ResourceHistoryTable<T extends Slugger> extends StatelessWidget {
                         child: Builder(
                           builder: (c) {
                             if (title[j] == "Status") {
+                              if (rtitle == "Trips" &&
+                                  pageItems[i][j] == "Track") {
+                                return GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () {
+                                    final dc =
+                                        Get.find<DashboardController>();
+                                    dc.trackingFocusDelivery.value =
+                                        pageRawItems[i] as Delivery;
+                                    dc.curDashboardIndex.value =
+                                        DashboardMode.tracking.index;
+                                    dc.curResourceHistory.value =
+                                        ResourceHistory(title: "Tracking");
+                                  },
+                                  child: WaybillStatusChip(pageItems[i][j]),
+                                );
+                              }
                               return rtitle == "Trips"
                                   ? WaybillStatusChip(pageItems[i][j])
                                   : rtitle == "VAR Records"

@@ -1410,7 +1410,7 @@ class WaybillDetailPage extends StatelessWidget {
               ],
             ),
           ),
-          AppText.thin('fleetsync.archyuniq.com',
+          AppText.thin('transborderlogistics.net',
               fontSize: 9, color: AppColors.lightTextColor),
         ],
       ),
@@ -2347,6 +2347,7 @@ class AddResource<T> extends StatelessWidget {
         tecs[1].text = delivery.invoiceno ?? "";
         tecs[5].text = delivery.commodityType ?? "Drug Revolving Fund (DRF)";
         tecs[6].text = delivery.deliveryType ?? "Last Mile Delivery (LMD)";
+        tecs[7].text = delivery.receiverPhone ?? "";
       }
 
       if (title.toLowerCase() == "var records") {
@@ -2400,6 +2401,7 @@ class AddResource<T> extends StatelessWidget {
                     tecs[1].text,
                     tecs[5].text,
                     tecs[6].text,
+                    tecs[7].text,
                   );
                 } else {
                   //edit trip
@@ -2418,6 +2420,7 @@ class AddResource<T> extends StatelessWidget {
                     tecs[1].text,
                     tecs[5].text,
                     tecs[6].text,
+                    tecs[7].text,
                     trip.id,
                   );
                 }
@@ -2777,6 +2780,11 @@ class AddResource<T> extends StatelessWidget {
               );
             }),
             CustomTextField("Add Invoice No", tecs[1], label: "Invoice No"),
+            CustomTextField(
+              "Add Receiver Phone",
+              tecs[7],
+              label: "Receiver Phone",
+            ),
           ],
           //USER OR VEHICLE
           if (title.toLowerCase() == "users" ||
