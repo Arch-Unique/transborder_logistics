@@ -34,6 +34,7 @@ class DashboardController extends GetxController {
   RxInt curPaginatorRows = 10.obs;
   RxString curQuery = "".obs;
   RxInt curDashboardIndex = 0.obs;
+  RxBool isSidebarCollapsed = false.obs;
   Rx<ResourceHistory> curResourceHistory = ResourceHistory(
     title: "Dashboard",
     filters: [],

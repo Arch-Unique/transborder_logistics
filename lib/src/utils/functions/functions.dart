@@ -1,9 +1,12 @@
 import 'dart:io';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 import '/src/utils/utils_barrel.dart';
 
@@ -118,7 +121,7 @@ abstract class UtilFunctions {
     return !(tecs.any((test) => test.text.isEmpty));
   }
 
-    static Future<File> saveToTempFile(Uint8List uint8list,
+  static Future<File> saveToTempFile(Uint8List uint8list,
       {String? filename}) async {
     try {
       // Get the system's temporary directory
@@ -139,5 +142,28 @@ abstract class UtilFunctions {
     } catch (e) {
       throw Exception('Failed to convert Uint8List to File: $e');
     }
+  }
+
+  /// Wraps a captured PNG image (e.g. from [WidgetsToImageController]) into
+  /// a single-page PDF, fitted to the page with a small margin. This keeps
+  /// the PDF visually identical to whatever was rendered on screen, rather
+  /// than re-building the layout with PDF widgets.
+  static Future<Uint8List> imageBytesToPdf(Uint8List pngBytes) async {
+    final doc = pw.Document();
+    final image = pw.MemoryImage(pngBytes);
+
+    doc.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(16),
+        build: (context) {
+          return pw.Center(
+            child: pw.Image(image, fit: pw.BoxFit.contain),
+          );
+        },
+      ),
+    );
+
+    return doc.save();
   }
 }

@@ -729,19 +729,22 @@ class ResourceHistoryTable<T extends Slugger> extends StatelessWidget {
                             if (title[j] == "Status") {
                               if (rtitle == "Trips" &&
                                   pageItems[i][j] == "Track") {
-                                return GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: () {
-                                    final dc =
-                                        Get.find<DashboardController>();
-                                    dc.trackingFocusDelivery.value =
-                                        pageRawItems[i] as Delivery;
-                                    dc.curDashboardIndex.value =
-                                        DashboardMode.tracking.index;
-                                    dc.curResourceHistory.value =
-                                        ResourceHistory(title: "Tracking");
-                                  },
-                                  child: WaybillStatusChip(pageItems[i][j]),
+                                return MouseRegion(
+                                  cursor: SystemMouseCursors.click,
+                                  child: GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap: () {
+                                      final dc =
+                                          Get.find<DashboardController>();
+                                      dc.trackingFocusDelivery.value =
+                                          pageRawItems[i] as Delivery;
+                                      dc.curDashboardIndex.value =
+                                          DashboardMode.tracking.index;
+                                      dc.curResourceHistory.value =
+                                          ResourceHistory(title: "Tracking");
+                                    },
+                                    child: WaybillStatusChip(pageItems[i][j]),
+                                  ),
                                 );
                               }
                               return rtitle == "Trips"

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -1062,6 +1063,16 @@ class WaybillDetailPage extends StatelessWidget {
               ],
             ),
           ],
+          if (delivery.receiverPhone?.isNotEmpty ?? false) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(child: _infoBlock('Receiver Phone', delivery.receiverPhone!)),
+                const Expanded(child: SizedBox()),
+                const Expanded(child: SizedBox()),
+              ],
+            ),
+          ],
           if (driver != null && !(Delivery.nv.contains(driver.image))) ...[
             const SizedBox(height: 12),
             Row(
@@ -1617,27 +1628,87 @@ class _WaybillShareSheet extends StatelessWidget {
                   try {
                     Get.back();
                     final bytes = await wsController.capturePng(pixelRatio: 6);
-                    if (bytes != null) {
+                    if (bytes == null) {
+                      Ui.showError('Could not generate waybill image');
+                      return;
+                    }
+                    if (kIsWeb) {
+                      // Web has no real filesystem — go straight to a
+                      // browser download instead of writing a temp file.
+                      final path = await saveFileDesktop(
+                        bytes,
+                        'Waybill_$waybill.png',
+                      );
+                      if (path != null) {
+                        Ui.showInfo('Waybill downloaded');
+                      }
+                    } else if (GetPlatform.isMobile) {
                       final file = await UtilFunctions.saveToTempFile(bytes);
-                      if (GetPlatform.isMobile) {
-                        await SharePlus.instance.share(
-                          ShareParams(
-                            title: 'Waybill #$waybill',
-                            files: [XFile(file.path)],
-                          ),
-                        );
-                      } else {
-                        final path = await saveFileDesktop(
-                          file.readAsBytesSync(),
-                          'Waybill_$waybill.png',
-                        );
-                        if (path != null) {
-                          Ui.showInfo('Saved to $path');
-                        }
+                      await SharePlus.instance.share(
+                        ShareParams(
+                          title: 'Waybill #$waybill',
+                          files: [XFile(file.path)],
+                        ),
+                      );
+                    } else {
+                      final file = await UtilFunctions.saveToTempFile(bytes);
+                      final path = await saveFileDesktop(
+                        file.readAsBytesSync(),
+                        'Waybill_$waybill.png',
+                      );
+                      if (path != null) {
+                        Ui.showInfo('Saved to $path');
                       }
                     }
                   } catch (e) {
-                    print(e);
+                    Ui.showError('Failed to download waybill: $e');
+                  }
+                },
+              ),
+              const SizedBox(width: 16),
+              _ShareOption(
+                icon: HugeIcons.strokeRoundedDocumentValidation,
+                label: 'Save as PDF',
+                color: AppColors.primaryColor,
+                onTap: () async {
+                  try {
+                    Get.back();
+                    final bytes = await wsController.capturePng(pixelRatio: 6);
+                    if (bytes == null) {
+                      Ui.showError('Could not generate waybill image');
+                      return;
+                    }
+                    final pdfBytes = await UtilFunctions.imageBytesToPdf(bytes);
+                    if (kIsWeb) {
+                      final path = await saveFileDesktop(
+                        pdfBytes,
+                        'Waybill_$waybill.pdf',
+                      );
+                      if (path != null) {
+                        Ui.showInfo('Waybill downloaded');
+                      }
+                    } else if (GetPlatform.isMobile) {
+                      final file = await UtilFunctions.saveToTempFile(
+                        pdfBytes,
+                        filename: 'Waybill_$waybill.pdf',
+                      );
+                      await SharePlus.instance.share(
+                        ShareParams(
+                          title: 'Waybill #$waybill',
+                          files: [XFile(file.path)],
+                        ),
+                      );
+                    } else {
+                      final path = await saveFileDesktop(
+                        pdfBytes,
+                        'Waybill_$waybill.pdf',
+                      );
+                      if (path != null) {
+                        Ui.showInfo('Saved to $path');
+                      }
+                    }
+                  } catch (e) {
+                    Ui.showError('Failed to download waybill: $e');
                   }
                 },
               ),
@@ -1650,7 +1721,21 @@ class _WaybillShareSheet extends StatelessWidget {
                   try {
                     Get.back();
                     final bytes = await wsController.capturePng(pixelRatio: 6);
-                    if (bytes != null) {
+                    if (bytes == null) {
+                      Ui.showError('Could not generate waybill image');
+                      return;
+                    }
+                    if (kIsWeb) {
+                      // Browsers don't have a consistent native share sheet —
+                      // fall back to a direct download instead.
+                      final path = await saveFileDesktop(
+                        bytes,
+                        'Waybill_$waybill.png',
+                      );
+                      if (path != null) {
+                        Ui.showInfo('Waybill downloaded');
+                      }
+                    } else {
                       final file = await UtilFunctions.saveToTempFile(bytes);
                       await SharePlus.instance.share(
                         ShareParams(
@@ -1661,7 +1746,7 @@ class _WaybillShareSheet extends StatelessWidget {
                       );
                     }
                   } catch (e) {
-                    print(e);
+                    Ui.showError('Failed to share waybill: $e');
                   }
                 },
               ),

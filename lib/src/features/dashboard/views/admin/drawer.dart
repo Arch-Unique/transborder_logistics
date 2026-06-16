@@ -16,7 +16,8 @@ import '../../../../global/services/barrel.dart';
 import '../../../../global/ui/ui_barrel.dart';
 
 class AppDrawer extends StatelessWidget {
-  const AppDrawer({super.key});
+  const AppDrawer({this.collapsed = false, super.key});
+  final bool collapsed;
 
   void _navigate(DashboardController controller, DashboardMode e) {
     controller.curDashboardIndex.value = e.index;
@@ -69,7 +70,7 @@ class AppDrawer extends StatelessWidget {
     final controller = Get.find<DashboardController>();
 
     return Container(
-      width: Ui.width(context) * 0.78,
+      width: collapsed ? double.infinity : Ui.width(context) * 0.78,
       color: AppColors.primaryColorBackground,
       child: SafeArea(
         child: Column(
@@ -78,13 +79,18 @@ class AppDrawer extends StatelessWidget {
             // ── Logo & dark mode ──────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-              child: Row(
-                children: [
-                  Image.asset(Assets.fulllogo, width: 110),
-                  const Spacer(),
-                  const ToogleDarkModeWidget(),
-                ],
-              ),
+              child: collapsed
+                  ? Center(
+                      child: AppIcon(HugeIcons.strokeRoundedTruck,
+                          color: AppColors.primaryColor, size: 26),
+                    )
+                  : Row(
+                      children: [
+                        Image.asset(Assets.fulllogo, width: 110),
+                        const Spacer(),
+                        const ToogleDarkModeWidget(),
+                      ],
+                    ),
             ),
             const SizedBox(height: 8),
             Divider(color: AppColors.borderColor, height: 1),
@@ -93,14 +99,14 @@ class AppDrawer extends StatelessWidget {
             // ── Nav items ──────────────────────────────────────────────
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
+                padding: EdgeInsets.symmetric(horizontal: collapsed ? 6 : 10),
                 children: [
                   // Dashboard
-                  _NavItem(mode: DashboardMode.dashboard, controller: controller, onTap: () => _navigate(controller, DashboardMode.dashboard)),
+                  _NavItem(mode: DashboardMode.dashboard, controller: controller, collapsed: collapsed, onTap: () => _navigate(controller, DashboardMode.dashboard)),
                   // Trips
-                  _NavItem(mode: DashboardMode.trips, controller: controller, onTap: () => _navigate(controller, DashboardMode.trips)),
+                  _NavItem(mode: DashboardMode.trips, controller: controller, collapsed: collapsed, onTap: () => _navigate(controller, DashboardMode.trips)),
                   // Tracking
-                  _NavItem(mode: DashboardMode.tracking, controller: controller, onTap: () => _navigate(controller, DashboardMode.tracking)),
+                  _NavItem(mode: DashboardMode.tracking, controller: controller, collapsed: collapsed, onTap: () => _navigate(controller, DashboardMode.tracking)),
 
                   const SizedBox(height: 4),
                   // ── Location group ──────────────────────────────────
@@ -108,6 +114,7 @@ class AppDrawer extends StatelessWidget {
                     icon: HugeIcons.strokeRoundedLocation05,
                     label: 'Location',
                     controller: controller,
+                    collapsed: collapsed,
                     children: [
                       DashboardMode.location,
                       DashboardMode.pickups,
@@ -123,6 +130,7 @@ class AppDrawer extends StatelessWidget {
                     icon: HugeIcons.strokeRoundedContainerTruck01,
                     label: 'Logistics',
                     controller: controller,
+                    collapsed: collapsed,
                     children: [
                       DashboardMode.vehicles,
                       DashboardMode.drivers,
@@ -133,9 +141,9 @@ class AppDrawer extends StatelessWidget {
                   const SizedBox(height: 4),
 
                   // VAR Records
-                  _NavItem(mode: DashboardMode.varRecords, controller: controller, onTap: () => _navigate(controller, DashboardMode.varRecords)),
+                  _NavItem(mode: DashboardMode.varRecords, controller: controller, collapsed: collapsed, onTap: () => _navigate(controller, DashboardMode.varRecords)),
                   // Users
-                  _NavItem(mode: DashboardMode.users, controller: controller, onTap: () => _navigate(controller, DashboardMode.users)),
+                  _NavItem(mode: DashboardMode.users, controller: controller, collapsed: collapsed, onTap: () => _navigate(controller, DashboardMode.users)),
                 ],
               ),
             ),
@@ -146,19 +154,23 @@ class AppDrawer extends StatelessWidget {
             InkWell(
               onTap: () => Get.to(SinglePageScaffold(title: "Profile", child: ProfilePage())),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                padding: EdgeInsets.fromLTRB(collapsed ? 0 : 16, 12, collapsed ? 0 : 16, 16),
                 child: Obx(() {
                   final user = appService.currentUser.value;
+                  final avatar = CircleAvatar(
+                    radius: 18,
+                    backgroundColor: AppColors.primaryColor.withOpacity(0.15),
+                    child: AppText.bold(
+                      (user.name?.isNotEmpty ?? false) ? user.name![0].toUpperCase() : '?',
+                      fontSize: 14, color: AppColors.primaryColor,
+                    ),
+                  );
+                  if (collapsed) {
+                    return Center(child: avatar);
+                  }
                   return Row(
                     children: [
-                      CircleAvatar(
-                        radius: 18,
-                        backgroundColor: AppColors.primaryColor.withOpacity(0.15),
-                        child: AppText.bold(
-                          (user.name?.isNotEmpty ?? false) ? user.name![0].toUpperCase() : '?',
-                          fontSize: 14, color: AppColors.primaryColor,
-                        ),
-                      ),
+                      avatar,
                       const SizedBox(width: 10),
                       Expanded(
                         child: Column(
@@ -186,15 +198,46 @@ class AppDrawer extends StatelessWidget {
 // ── Single nav item ─────────────────────────────────────────────────────────
 
 class _NavItem extends StatelessWidget {
-  const _NavItem({required this.mode, required this.controller, required this.onTap});
+  const _NavItem({required this.mode, required this.controller, required this.onTap, this.collapsed = false});
   final DashboardMode mode;
   final DashboardController controller;
   final VoidCallback onTap;
+  final bool collapsed;
 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
       final isActive = controller.curDashboardIndex.value == mode.index;
+      final iconBadge = Container(
+        width: 32, height: 32,
+        decoration: BoxDecoration(
+          color: isActive ? AppColors.primaryColor : AppColors.surfaceColor,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Center(child: AppIcon(mode.icon, size: 16,
+          color: isActive ? Colors.white : AppColors.lightTextColor)),
+      );
+
+      if (collapsed) {
+        return Tooltip(
+          message: mode.name,
+          child: GestureDetector(
+            onTap: onTap,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              margin: const EdgeInsets.symmetric(vertical: 2),
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              decoration: BoxDecoration(
+                color: isActive ? AppColors.primaryColor.withOpacity(0.1) : Colors.transparent,
+                borderRadius: BorderRadius.circular(10),
+                border: isActive ? Border.all(color: AppColors.primaryColor.withOpacity(0.2)) : null,
+              ),
+              child: Center(child: iconBadge),
+            ),
+          ),
+        );
+      }
+
       return GestureDetector(
         onTap: onTap,
         child: AnimatedContainer(
@@ -208,15 +251,7 @@ class _NavItem extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Container(
-                width: 32, height: 32,
-                decoration: BoxDecoration(
-                  color: isActive ? AppColors.primaryColor : AppColors.surfaceColor,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Center(child: AppIcon(mode.icon, size: 16,
-                  color: isActive ? Colors.white : AppColors.lightTextColor)),
-              ),
+              iconBadge,
               const SizedBox(width: 10),
               Expanded(child: AppText.medium(mode.name, fontSize: 13,
                 color: isActive ? AppColors.primaryColor : AppColors.textColor)),
@@ -241,6 +276,7 @@ class _NavGroup extends StatefulWidget {
     required this.children,
     required this.onTap,
     required this.childLabels,
+    this.collapsed = false,
   });
   final dynamic icon;
   final String label;
@@ -248,6 +284,7 @@ class _NavGroup extends StatefulWidget {
   final List<DashboardMode> children;
   final Function(DashboardController, DashboardMode) onTap;
   final List<String> childLabels;
+  final bool collapsed;
 
   @override
   State<_NavGroup> createState() => _NavGroupState();
@@ -289,6 +326,40 @@ class _NavGroupState extends State<_NavGroup> with SingleTickerProviderStateMixi
     return Obx(() {
       final idx = widget.controller.curDashboardIndex.value;
       final hasActiveChild = widget.children.any((c) => c.index == idx);
+
+      if (widget.collapsed) {
+        return Tooltip(
+          message: widget.label,
+          child: GestureDetector(
+            onTap: () {
+              // Groups need the full sidebar to show sub-items, so
+              // collapsing them inline doesn't make sense — instead,
+              // tapping a collapsed group re-expands the whole sidebar.
+              widget.controller.isSidebarCollapsed.value = false;
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              margin: const EdgeInsets.symmetric(vertical: 2),
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              decoration: BoxDecoration(
+                color: hasActiveChild ? AppColors.primaryColor.withOpacity(0.08) : Colors.transparent,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Center(
+                child: Container(
+                  width: 32, height: 32,
+                  decoration: BoxDecoration(
+                    color: hasActiveChild ? AppColors.primaryColor : AppColors.surfaceColor,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Center(child: AppIcon(widget.icon, size: 16,
+                    color: hasActiveChild ? Colors.white : AppColors.lightTextColor)),
+                ),
+              ),
+            ),
+          ),
+        );
+      }
 
       return Column(
         children: [

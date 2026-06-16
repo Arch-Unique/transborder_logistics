@@ -157,7 +157,54 @@ class _AdminExplorerState extends State<AdminExplorer> {
       key: gkey,
       body: Row(
         children: [
-          SizedBox(width: Ui.width(context) / 5, child: AppDrawer()),
+          Obx(() {
+            final collapsed = controller.isSidebarCollapsed.value;
+            final fullWidth = Ui.width(context) / 5;
+            return Stack(
+              clipBehavior: Clip.none,
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeInOut,
+                  width: collapsed ? 72 : fullWidth,
+                  child: AppDrawer(collapsed: collapsed),
+                ),
+                Positioned(
+                  top: 24,
+                  right: -12,
+                  child: GestureDetector(
+                    onTap: () => controller.isSidebarCollapsed.value = !collapsed,
+                    child: Container(
+                      width: 24, height: 24,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryColorBackground,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.borderColor),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: AnimatedRotation(
+                          turns: collapsed ? 0.5 : 0,
+                          duration: const Duration(milliseconds: 220),
+                          child: AppIcon(
+                            HugeIcons.strokeRoundedArrowLeft02,
+                            size: 14,
+                            color: AppColors.lightTextColor,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }),
           Expanded(
             child: Obx(() {
               if (controller.isLoading.value) {
