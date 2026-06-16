@@ -164,6 +164,38 @@ class DeliveryInfo extends StatelessWidget {
             ),
           ),
 
+          // Progress bar (only for active/started trips)
+          if (delivery.hasStarted && delivery.isNotDelivered)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      AppIcon(HugeIcons.strokeRoundedRoute03, size: 11, color: AppColors.accentColor),
+                      const SizedBox(width: 4),
+                      AppText.thin('In transit', fontSize: 10, color: AppColors.accentColor),
+                      const Spacer(),
+                      AppText.thin(
+                        delivery.start.isNotEmpty ? 'Started ${delivery.start.split(' ').first}' : '',
+                        fontSize: 10, color: AppColors.lightTextColor),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: 0.5,
+                      backgroundColor: AppColors.borderColor,
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.accentColor),
+                      minHeight: 4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
           // Footer row
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -1378,7 +1410,7 @@ class WaybillDetailPage extends StatelessWidget {
               ],
             ),
           ),
-          AppText.thin('transborderlogistics.net',
+          AppText.thin('fleetsync.archyuniq.com',
               fontSize: 9, color: AppColors.lightTextColor),
         ],
       ),
