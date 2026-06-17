@@ -171,20 +171,20 @@ class _AdminExplorerState extends State<AdminExplorer> {
                 ),
                 Positioned(
                   top: 24,
-                  right: -12,
+                  right: -14,
                   child: GestureDetector(
                     onTap: () => controller.isSidebarCollapsed.value = !collapsed,
                     child: Container(
-                      width: 24, height: 24,
+                      width: 28, height: 28,
                       decoration: BoxDecoration(
-                        color: AppColors.primaryColorBackground,
+                        color: AppColors.primaryColor,
                         shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.borderColor),
+                        border: Border.all(color: AppColors.white, width: 2),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 4,
-                            offset: const Offset(0, 1),
+                            color: Colors.black.withOpacity(0.25),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
                           ),
                         ],
                       ),
@@ -194,8 +194,8 @@ class _AdminExplorerState extends State<AdminExplorer> {
                           duration: const Duration(milliseconds: 220),
                           child: AppIcon(
                             HugeIcons.strokeRoundedArrowLeft02,
-                            size: 14,
-                            color: AppColors.lightTextColor,
+                            size: 15,
+                            color: AppColors.white,
                           ),
                         ),
                       ),
