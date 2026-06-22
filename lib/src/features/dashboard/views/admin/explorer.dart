@@ -122,9 +122,8 @@ class _AdminExplorerState extends State<AdminExplorer> {
                   return Center(child: CircularProgressIndicator());
                 }
                 final title = controller.curResourceHistory.value.title;
-
-                return title == "Dashboard"
-                    ? DashboardScreen()
+                final pageChild = title == "Dashboard"
+                    ? const DashboardScreen()
                     : title == "Tracking"
                     ? const TrackingScreen()
                     : ResourceHistoryPage(
@@ -135,6 +134,25 @@ class _AdminExplorerState extends State<AdminExplorer> {
                         hasDrawer: true,
                         key: ValueKey(title),
                       );
+                return AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 280),
+                  switchInCurve: Curves.easeOut,
+                  switchOutCurve: Curves.easeIn,
+                  transitionBuilder: (child, animation) => FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0.04, 0),
+                        end: Offset.zero,
+                      ).animate(animation),
+                      child: child,
+                    ),
+                  ),
+                  child: KeyedSubtree(
+                    key: ValueKey(title),
+                    child: pageChild,
+                  ),
+                );
               }),
             );
     });
@@ -210,9 +228,10 @@ class _AdminExplorerState extends State<AdminExplorer> {
               if (controller.isLoading.value) {
                 return Center(child: CircularProgressIndicator());
               }
-              return controller.curResourceHistory.value.title == "Dashboard"
-                  ? DashboardScreen()
-                  : controller.curResourceHistory.value.title == "Tracking"
+              final title = controller.curResourceHistory.value.title;
+              final child = title == "Dashboard"
+                  ? const DashboardScreen()
+                  : title == "Tracking"
                   ? const TrackingScreen()
                   : ResourceHistoryDesktopPage(
                       controller.curResourceHistory.value.title,
@@ -305,6 +324,27 @@ class _AdminExplorerState extends State<AdminExplorer> {
                         );
                       },
                     );
+            return AnimatedSwitcher(
+              duration: const Duration(milliseconds: 280),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
+              transitionBuilder: (child, animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0.03, 0),
+                      end: Offset.zero,
+                    ).animate(animation),
+                    child: child,
+                  ),
+                );
+              },
+              child: KeyedSubtree(
+                key: ValueKey(title),
+                child: child,
+              ),
+            );
             }),
           ),
         ],
