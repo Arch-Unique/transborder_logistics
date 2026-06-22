@@ -27,7 +27,7 @@
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png">
 
-  <title>transborder_logistics</title>
+  <title>Transborder Logistics</title>
   <link rel="manifest" href="manifest.json">
   
   
@@ -55,6 +55,15 @@
       left: 50%;
       -ms-transform: translate(-50%, -50%);
       transform: translate(-50%, -50%);
+      width: min(280px, 55vw);
+      height: auto;
+      image-rendering: -webkit-optimize-contrast;
+      animation: splashFadeIn 0.5s ease-out forwards;
+    }
+
+    @keyframes splashFadeIn {
+      from { opacity: 0; transform: translate(-50%, -46%); }
+      to   { opacity: 1; transform: translate(-50%, -50%); }
     }
 
     .contain {
