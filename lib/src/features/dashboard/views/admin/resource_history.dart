@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:transborder_logistics/src/app/app_barrel.dart';
 import 'package:transborder_logistics/src/features/dashboard/controllers/dashboard_controller.dart';
 import 'package:transborder_logistics/src/features/dashboard/views/shared.dart';
@@ -60,15 +61,28 @@ class ResourceHistoryPage<T extends Slugger> extends StatefulWidget {
 }
 
 class _ResourceHistoryPageState<T extends Slugger>
-    extends State<ResourceHistoryPage<T>> {
+    extends State<ResourceHistoryPage<T>>
+    with TickerProviderStateMixin {
   RxString curFilter = "All".obs;
   final tec = TextEditingController();
   RxList<T> allItems = <T>[].obs;
+  late AnimationController _listCtrl;
 
   @override
   void initState() {
     allItems.value = List.from(widget.items);
+    _listCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    )..forward();
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _listCtrl.dispose();
+    tec.dispose();
+    super.dispose();
   }
 
   @override
@@ -77,6 +91,7 @@ class _ResourceHistoryPageState<T extends Slugger>
       allItems.value = List.from(widget.items);
       curFilter.value = "All";
       tec.clear();
+      _listCtrl.forward(from: 0);
     }
     super.didUpdateWidget(oldWidget);
   }
@@ -170,36 +185,96 @@ class _ResourceHistoryPageState<T extends Slugger>
         ),
         Expanded(
           child: Obx(() {
+            // ── Shimmer skeleton while loading ───────────────────────
+            if (widget.items.isEmpty && allItems.isEmpty) {
+              return ListView.builder(
+                itemCount: 6,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                itemBuilder: (_, __) => Shimmer.fromColors(
+                  baseColor: AppColors.borderColor,
+                  highlightColor: AppColors.surfaceColor,
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 6),
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            // ── Empty state ──────────────────────────────────────────
+            if (allItems.isEmpty) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 72, height: 72,
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryColor.withOpacity(0.08),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: AppIcon(
+                            HugeIcons.strokeRoundedInboxUpload,
+                            size: 32,
+                            color: AppColors.primaryColor,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      AppText.bold('No records found',
+                          fontSize: 15,
+                          color: AppColors.textColor),
+                      const SizedBox(height: 6),
+                      AppText.thin(
+                        'Try adjusting your search or filters',
+                        fontSize: 12,
+                        color: AppColors.lightTextColor,
+                        alignment: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            // ── Animated list ────────────────────────────────────────
             return ListView.separated(
               itemBuilder: (c, i) {
+                Widget card;
                 if (allItems[i].runtimeType == Delivery) {
-                  return DeliveryInfo(allItems[i] as Delivery);
-                }
-                if (allItems[i].runtimeType == User &&
+                  card = DeliveryInfo(allItems[i] as Delivery);
+                } else if (allItems[i].runtimeType == User &&
                     widget.title.toLowerCase() == "drivers") {
-                  return DriverInfo(allItems[i] as User);
-                }
-                if (allItems[i].runtimeType == User &&
+                  card = DriverInfo(allItems[i] as User);
+                } else if (allItems[i].runtimeType == User &&
                     widget.title.toLowerCase() == "users") {
-                  return UserInfo(allItems[i] as User);
+                  card = UserInfo(allItems[i] as User);
+                } else if (allItems[i].runtimeType == Location) {
+                  card = LocationInfo(allItems[i] as Location);
+                } else if (allItems[i].runtimeType == StateLocation) {
+                  card = StateInfo(allItems[i] as StateLocation);
+                } else if (allItems[i].runtimeType == Vehicle) {
+                  card = VehicleInfo(allItems[i] as Vehicle);
+                } else if (allItems[i].runtimeType == VarRecord) {
+                  card = VarRecordInfo(allItems[i] as VarRecord);
+                } else {
+                  card = const SizedBox();
                 }
-                if (allItems[i].runtimeType == Location) {
-                  return LocationInfo(allItems[i] as Location);
-                }
-                if (allItems[i].runtimeType == StateLocation) {
-                  return StateInfo(allItems[i] as StateLocation);
-                }
-                if (allItems[i].runtimeType == Vehicle) {
-                  return VehicleInfo(allItems[i] as Vehicle);
-                }
-                if (allItems[i].runtimeType == VarRecord) {
-                  return VarRecordInfo(allItems[i] as VarRecord);
-                }
-                return SizedBox();
+                return _StaggeredListItem(
+                  index: i,
+                  controller: _listCtrl,
+                  child: card,
+                );
               },
-              separatorBuilder: (c, i) {
-                return Ui.boxHeight(0);
-              },
+              separatorBuilder: (c, i) => Ui.boxHeight(0),
               itemCount: allItems.length,
             );
           }),
@@ -987,6 +1062,48 @@ class ResourceHistoryItemDetail extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+// ── Staggered fade + slide for mobile list items ──────────────────────────────
+class _StaggeredListItem extends StatelessWidget {
+  const _StaggeredListItem({
+    required this.index,
+    required this.controller,
+    required this.child,
+  });
+
+  final int index;
+  final AnimationController controller;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    const int itemMs   = 320;
+    const int staggerMs = 55;
+    final int totalMs  = controller.duration!.inMilliseconds;
+
+    final double start =
+        (index * staggerMs).clamp(0, totalMs - itemMs) / totalMs;
+    final double end =
+        ((index * staggerMs + itemMs).clamp(0, totalMs)) / totalMs;
+
+    final fade = CurvedAnimation(
+      parent: controller,
+      curve: Interval(start, end, curve: Curves.easeOut),
+    );
+    final slide = Tween<Offset>(
+      begin: const Offset(0, 0.1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: controller,
+      curve: Interval(start, end, curve: Curves.easeOutCubic),
+    ));
+
+    return FadeTransition(
+      opacity: fade,
+      child: SlideTransition(position: slide, child: child),
     );
   }
 }
