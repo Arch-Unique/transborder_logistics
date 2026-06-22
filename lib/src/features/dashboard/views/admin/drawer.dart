@@ -482,14 +482,61 @@ class ToogleDarkModeWidget extends StatelessWidget {
 // Notifications Panel
 // ─────────────────────────────────────────────────────────────────────────────
 
-class NotificationBell extends StatelessWidget {
+class NotificationBell extends StatefulWidget {
   const NotificationBell({super.key});
+
+  @override
+  State<NotificationBell> createState() => _NotificationBellState();
+}
+
+class _NotificationBellState extends State<NotificationBell>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _shakeCtrl;
+  late final Animation<double> _shakeAnim;
+  int _lastPending = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _shakeCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _shakeAnim = TweenSequence([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: -0.08), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: -0.08, end: 0.08), weight: 2),
+      TweenSequenceItem(tween: Tween(begin: 0.08, end: -0.08), weight: 2),
+      TweenSequenceItem(tween: Tween(begin: -0.08, end: 0.08), weight: 2),
+      TweenSequenceItem(tween: Tween(begin: 0.08, end: 0.0), weight: 1),
+    ]).animate(CurvedAnimation(parent: _shakeCtrl, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _shakeCtrl.dispose();
+    super.dispose();
+  }
+
+  void _triggerShake() {
+    _shakeCtrl.forward(from: 0);
+  }
 
   @override
   Widget build(BuildContext context) {
     final c = Get.find<DashboardController>();
     return Obx(() {
-      final pending = c.allCustomerDeliveries.where((d) => d.hasNotStarted && !d.isCanceled).length;
+      final pending = c.allCustomerDeliveries
+          .where((d) => d.hasNotStarted && !d.isCanceled)
+          .length;
+
+      // Shake when new notifications arrive
+      if (pending > _lastPending) {
+        _lastPending = pending;
+        WidgetsBinding.instance.addPostFrameCallback((_) => _triggerShake());
+      } else {
+        _lastPending = pending;
+      }
+
       return InkWell(
         onTap: () => Get.bottomSheet(
           const _NotificationsSheet(),
@@ -498,29 +545,43 @@ class NotificationBell extends StatelessWidget {
         ),
         child: Padding(
           padding: const EdgeInsets.only(right: 16),
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              AppIcon(HugeIcons.strokeRoundedNotification01),
-              if (pending > 0)
-                Positioned(
-                  top: -4, right: -4,
-                  child: Container(
-                    width: 16, height: 16,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryColor,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.primaryColorBackground, width: 1.5),
-                    ),
-                    child: Center(
-                      child: Text(
-                        pending > 9 ? '9+' : '$pending',
-                        style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+          child: AnimatedBuilder(
+            animation: _shakeAnim,
+            builder: (_, child) => Transform.rotate(
+              angle: _shakeAnim.value,
+              child: child,
+            ),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                AppIcon(HugeIcons.strokeRoundedNotification01),
+                if (pending > 0)
+                  Positioned(
+                    top: -4, right: -4,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.elasticOut,
+                      width: 16, height: 16,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryColor,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                            color: AppColors.primaryColorBackground,
+                            width: 1.5),
+                      ),
+                      child: Center(
+                        child: Text(
+                          pending > 9 ? '9+' : '$pending',
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 8,
+                              fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       );

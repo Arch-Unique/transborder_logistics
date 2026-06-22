@@ -639,31 +639,44 @@ class _TrackingScreenState extends State<TrackingScreen> {
         ),
 
         // Selected trip info bar at bottom
-        if (_selectedDelivery != null)
-          Positioned(
-            bottom: 0, left: 0, right: 0,
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.primaryColorBackground,
-                border: Border(top: BorderSide(color: AppColors.borderColor)),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              child: Row(
-                children: [
-                  Container(
-                    width: 10, height: 10,
-                    decoration: BoxDecoration(
-                      color: _statusColor(_selectedDelivery!), shape: BoxShape.circle),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
+        Positioned(
+          bottom: 0, left: 0, right: 0,
+          child: AnimatedSlide(
+            offset: _selectedDelivery != null
+                ? Offset.zero
+                : const Offset(0, 1),
+            duration: const Duration(milliseconds: 320),
+            curve: Curves.easeOutCubic,
+            child: AnimatedOpacity(
+              opacity: _selectedDelivery != null ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 280),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColorBackground,
+                  border: Border(top: BorderSide(color: AppColors.borderColor)),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 10, height: 10,
+                      decoration: BoxDecoration(
+                        color: _selectedDelivery != null
+                            ? _statusColor(_selectedDelivery!)
+                            : Colors.transparent,
+                        shape: BoxShape.circle),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        AppText.bold('#${_selectedDelivery!.waybill}', fontSize: 12),
+                        AppText.bold('#${_selectedDelivery?.waybill ?? ''}', fontSize: 12),
                         AppText.thin(
-                          '${_selectedDelivery!.pickup ?? "?"} → ${_selectedDelivery!.stops.isNotEmpty ? _selectedDelivery!.stops.last : "?"}',
+                          _selectedDelivery != null
+                              ? '${_selectedDelivery!.pickup ?? "?"} → ${_selectedDelivery!.stops.isNotEmpty ? _selectedDelivery!.stops.last : "?"}'
+                              : '',
                           fontSize: 11, color: AppColors.lightTextColor,
                           maxlines: 1, overflow: TextOverflow.ellipsis,
                         ),
@@ -692,6 +705,8 @@ class _TrackingScreenState extends State<TrackingScreen> {
               ),
             ),
           ),
+          ),
+        ),
       ],
     );
   }

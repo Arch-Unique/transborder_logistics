@@ -741,9 +741,31 @@ class AppChip extends StatelessWidget {
   }
 }
 
-class WaybillDetailPage extends StatelessWidget {
+class WaybillDetailPage extends StatefulWidget {
   const WaybillDetailPage(this.delivery, {super.key});
   final Delivery delivery;
+
+  @override
+  State<WaybillDetailPage> createState() => _WaybillDetailPageState();
+}
+
+class _WaybillDetailPageState extends State<WaybillDetailPage>
+    with TickerProviderStateMixin {
+
+  late final AnimationController _headerCtrl;
+  late final AnimationController _detailsCtrl;
+  late final AnimationController _routeCtrl;
+  late final AnimationController _actionsCtrl;
+
+  late final Animation<double> _headerFade;
+  late final Animation<Offset>  _headerSlide;
+  late final Animation<double> _detailsFade;
+  late final Animation<Offset>  _detailsSlide;
+  late final Animation<double> _routeFade;
+  late final Animation<Offset>  _routeSlide;
+  late final Animation<double> _actionsFade;
+
+  Delivery get delivery => widget.delivery;
 
   Color get _statusColor {
     if (delivery.isCanceled) return AppColors.primaryColor;
@@ -764,6 +786,44 @@ class WaybillDetailPage extends StatelessWidget {
     if (delivery.isDelivered) return 4;
     if (delivery.hasStarted) return 2;
     return 1;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    _headerCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 380));
+    _headerFade  = CurvedAnimation(parent: _headerCtrl, curve: Curves.easeOut);
+    _headerSlide = Tween<Offset>(begin: const Offset(0, -0.06), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _headerCtrl, curve: Curves.easeOut));
+
+    _detailsCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
+    _detailsFade  = CurvedAnimation(parent: _detailsCtrl, curve: Curves.easeOut);
+    _detailsSlide = Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _detailsCtrl, curve: Curves.easeOutCubic));
+
+    _routeCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
+    _routeFade  = CurvedAnimation(parent: _routeCtrl, curve: Curves.easeOut);
+    _routeSlide = Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _routeCtrl, curve: Curves.easeOutCubic));
+
+    _actionsCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 320));
+    _actionsFade = CurvedAnimation(parent: _actionsCtrl, curve: Curves.easeOut);
+
+    // Sequence: header → details → route → actions
+    _headerCtrl.forward()
+        .then((_) => _detailsCtrl.forward())
+        .then((_) => _routeCtrl.forward())
+        .then((_) => _actionsCtrl.forward());
+  }
+
+  @override
+  void dispose() {
+    _headerCtrl.dispose();
+    _detailsCtrl.dispose();
+    _routeCtrl.dispose();
+    _actionsCtrl.dispose();
+    super.dispose();
   }
 
   @override
@@ -796,11 +856,26 @@ class WaybillDetailPage extends StatelessWidget {
             ),
             child: Column(
               children: [
-                shareBody,
+                FadeTransition(
+                  opacity: _headerFade,
+                  child: SlideTransition(
+                    position: _headerSlide,
+                    child: shareBody,
+                  ),
+                ),
                 if (delivery.items.isNotEmpty)
-                  _buildItemsSection(context),
+                  FadeTransition(
+                    opacity: _detailsFade,
+                    child: SlideTransition(
+                      position: _detailsSlide,
+                      child: _buildItemsSection(context),
+                    ),
+                  ),
                 const SizedBox(height: 16),
-                _buildActionButtons(context, appService, wsController),
+                FadeTransition(
+                  opacity: _actionsFade,
+                  child: _buildActionButtons(context, appService, wsController),
+                ),
                 const SizedBox(height: 32),
               ],
             ),
@@ -1101,6 +1176,40 @@ class WaybillDetailPage extends StatelessWidget {
   // ── Route timeline ───────────────────────────────────────────────────────
 
   Widget _buildRouteTimeline() {
+    final allStops = <Widget>[
+      _routeStop(
+        dotColor: AppColors.green,
+        label: 'Pickup Location',
+        location: delivery.pickup ?? 'N/A',
+        meta: delivery.pickupName?.isNotEmpty ?? false
+            ? delivery.pickupName!
+            : null,
+        date: delivery.hasStarted ? delivery.start : null,
+        isLast: false,
+        signature: delivery.pickupSignature,
+      ),
+      ...List.generate(delivery.stops.length, (j) {
+        final isLast = j == delivery.stops.length - 1;
+        final receiverData = delivery.receiver.elementAtOrNull(j);
+        final stopDate = delivery.formattedStopsDate.elementAtOrNull(j);
+        final picture = delivery.picture.elementAtOrNull(j);
+        return _routeStop(
+          dotColor: AppColors.primaryColor,
+          label: 'Delivery Location ${delivery.stops.length > 1 ? j + 1 : ''}',
+          location: delivery.stops[j],
+          meta: receiverData != null && receiverData.isNotEmpty
+              ? receiverData[0]
+              : null,
+          date: stopDate,
+          isLast: isLast,
+          picture: picture,
+          signature: receiverData != null && receiverData.length > 2
+              ? receiverData[2]
+              : null,
+        );
+      }),
+    ];
+
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -1108,37 +1217,27 @@ class WaybillDetailPage extends StatelessWidget {
         children: [
           _sectionLabel('Route'),
           const SizedBox(height: 12),
-          // Pickup
-          _routeStop(
-            dotColor: AppColors.green,
-            label: 'Pickup Location',
-            location: delivery.pickup ?? 'N/A',
-            meta: delivery.pickupName?.isNotEmpty ?? false
-                ? delivery.pickupName!
-                : null,
-            date: delivery.hasStarted ? delivery.start : null,
-            isLast: false,
-            signature: delivery.pickupSignature,
-          ),
-          // Stops
-          ...List.generate(delivery.stops.length, (j) {
-            final isLast = j == delivery.stops.length - 1;
-            final receiverData = delivery.receiver.elementAtOrNull(j);
-            final stopDate = delivery.formattedStopsDate.elementAtOrNull(j);
-            final picture = delivery.picture.elementAtOrNull(j);
-            return _routeStop(
-              dotColor: AppColors.primaryColor,
-              label: 'Delivery Location ${delivery.stops.length > 1 ? j + 1 : ''}',
-              location: delivery.stops[j],
-              meta: receiverData != null && receiverData.isNotEmpty
-                  ? receiverData[0]
-                  : null,
-              date: stopDate,
-              isLast: isLast,
-              picture: picture,
-              signature: receiverData != null && receiverData.length > 2
-                  ? receiverData[2]
-                  : null,
+          ...List.generate(allStops.length, (i) {
+            const int itemMs   = 300;
+            const int staggerMs = 80;
+            final int totalMs  = _routeCtrl.duration!.inMilliseconds;
+            final double start =
+                (i * staggerMs).clamp(0, totalMs - itemMs) / totalMs;
+            final double end =
+                ((i * staggerMs + itemMs).clamp(0, totalMs)) / totalMs;
+            final fade = CurvedAnimation(
+              parent: _routeCtrl,
+              curve: Interval(start, end, curve: Curves.easeOut),
+            );
+            final slide = Tween<Offset>(
+              begin: const Offset(0.04, 0), end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: _routeCtrl,
+              curve: Interval(start, end, curve: Curves.easeOutCubic),
+            ));
+            return FadeTransition(
+              opacity: fade,
+              child: SlideTransition(position: slide, child: allStops[i]),
             );
           }),
         ],
