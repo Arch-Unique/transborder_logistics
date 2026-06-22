@@ -1,12 +1,12 @@
 {
-    "name": "transborder_logistics",
-    "short_name": "transborder_logistics",
+    "name": "Transborder Logistics",
+    "short_name": "TBL",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#ffffff",
-    "theme_color": "#ffffff",
-    "description": "A new Flutter project.",
-    "orientation": "portrait-primary",
+    "theme_color": "#C81428",
+    "description": "Transborder Logistics \u2014 Fleet & Medical Logistics Management",
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {

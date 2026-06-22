@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
@@ -206,7 +207,9 @@ class _TrackingScreenState extends State<TrackingScreen> {
       backgroundColor: AppColors.primaryColorBackground,
       body: Obx(() {
         final deliveries = _filteredDeliveries;
-        final isDesktop = MediaQuery.of(context).size.width > 800;
+        final isDesktop = kIsWeb
+            ? MediaQuery.of(context).size.width >= 960
+            : MediaQuery.of(context).size.width > 800;
         return isDesktop ? _buildDesktop(deliveries) : _buildMobile(deliveries);
       }),
     );

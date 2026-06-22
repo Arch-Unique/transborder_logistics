@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:get/get.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
@@ -38,7 +39,22 @@ abstract class Ui {
   }
 
   static bool isBigScreen(BuildContext context) {
-    return width(context) > 800;
+    // On web, a phone browser can report logical widths between 360–430px,
+    // but device pixel ratio can make the raw pixel count look larger.
+    // We use a higher threshold (960px) combined with a web-specific check
+    // so that phones opening the web app always get the mobile layout,
+    // even if they "request desktop site" — they'll just see the desktop
+    // layout at a smaller scale, which is intentional for that explicit request.
+    final w = width(context);
+    if (kIsWeb) {
+      // On web: use 960px threshold. Mobile browsers (360–430px logical)
+      // and tablets in portrait (768px) get mobile layout.
+      // Only proper desktop screens (960px+) get the desktop sidebar layout.
+      return w >= 960;
+    }
+    // On native (Android/iOS app): 800px is fine since Flutter reports
+    // accurate logical pixels for the device form factor.
+    return w > 800;
   }
 
   static double height(BuildContext context) {
