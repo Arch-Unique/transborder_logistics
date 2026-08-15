@@ -78,6 +78,9 @@ class _AppButtonState extends State<AppButton> {
   bool disabled = false;
   bool isPressed = false;
 
+  /// True while an async [AppButton.onPressed] is still running.
+  bool busy = false;
+
   @override
   void initState() {
     disabled = widget.disabled ?? false;
@@ -86,7 +89,11 @@ class _AppButtonState extends State<AppButton> {
 
   @override
   void didUpdateWidget(covariant AppButton oldWidget) {
-    disabled = widget.disabled ?? false;
+    // A rebuild mid-request must not clear the in-flight guard, or a second
+    // tap re-runs the action and duplicates whatever it created.
+    if (!busy) {
+      disabled = widget.disabled ?? false;
+    }
     super.didUpdateWidget(oldWidget);
   }
 
@@ -103,18 +110,27 @@ class _AppButtonState extends State<AppButton> {
                   ? BorderSide(color: widget.borderColor!)
                   : BorderSide.none,
             ),
-      onPressed: (disabled || widget.onPressed == null)
+      onPressed: (disabled || busy || widget.onPressed == null)
           ? null
           : () async {
               setState(() {
+                busy = true;
                 disabled = true;
                 isPressed = true;
               });
-              await widget.onPressed!();
-              setState(() {
-                disabled = false;
-                isPressed = false;
-              });
+              try {
+                await widget.onPressed!();
+              } finally {
+                // The action often closes the sheet it lives in, so this
+                // widget may already be gone by the time it returns.
+                if (mounted) {
+                  setState(() {
+                    busy = false;
+                    disabled = widget.disabled ?? false;
+                    isPressed = false;
+                  });
+                }
+              }
             },
       child: widget.isCircle
           ? Container(

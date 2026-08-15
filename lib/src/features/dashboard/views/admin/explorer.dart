@@ -24,6 +24,16 @@ class _AdminExplorerState extends State<AdminExplorer> {
   final controller = Get.find<DashboardController>();
   final gkey = GlobalKey<ScaffoldState>();
 
+  /// Record currently loaded into the desktop side drawer form.
+  /// null = "Add" mode, non-null = "Edit" mode. Lives on the State so it
+  /// survives rebuilds — always assign through `.value`, never reassign the
+  /// field, or the drawer's Obx stops tracking it and stays in "Add" mode.
+  final Rxn<dynamic> curObj = Rxn<dynamic>();
+
+  /// Bumped every time the drawer is opened so the form rebuilds from scratch
+  /// even when the same record is edited twice in a row.
+  final RxInt formEpoch = 0.obs;
+
   @override
   void initState() {
     controller.initApp();
@@ -159,16 +169,18 @@ class _AdminExplorerState extends State<AdminExplorer> {
   }
 
   Scaffold desktopVersion() {
-    Rx<dynamic> curObj = null.obs;
     return Scaffold(
       drawer: Container(
         width: 400,
         height: Ui.height(context),
         color: AppColors.white,
         child: Obx(() {
+          final title = controller.curResourceHistory.value.title;
+          final obj = curObj.value;
           return AddResource(
-            controller.curResourceHistory.value.title,
-            obj: curObj.value,
+            title,
+            obj: obj,
+            key: ValueKey("$title-${obj?.hashCode ?? 'new'}-${formEpoch.value}"),
           );
         }),
       ),
@@ -240,15 +252,17 @@ class _AdminExplorerState extends State<AdminExplorer> {
                       onFilter: controller.curResourceHistory.value.onFilter,
                       hasDrawer: false,
                       onAdd: () {
-                        curObj = null.obs;
+                        curObj.value = null;
+                        formEpoch.value++;
                         gkey.currentState?.openDrawer();
                       },
                       onEdit: (v) {
-                        curObj = (v as Slugger).obs;
+                        curObj.value = v as Slugger;
+                        formEpoch.value++;
                         gkey.currentState?.openDrawer();
                       },
                       onDelete: (v) {
-                        curObj = (v as Slugger).obs;
+                        curObj.value = v as Slugger;
                         Get.bottomSheet(
                           AppBottomSheet(
                             "Delete Record",

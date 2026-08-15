@@ -12,6 +12,20 @@ class AppRepo extends GetxController {
 
   final appService = Get.find<AppService>();
 
+  /// Returns true on success, throws the server's error message otherwise.
+  ///
+  /// The error interceptor turns failures into resolved responses, so a write
+  /// that the backend rejected (duplicate email, validation, auth) arrives here
+  /// as an ordinary response. Without this the caller just sees `false` and the
+  /// UI reports success.
+  bool _check(d.Response res) {
+    if (res.statusCode!.isSuccess()) return true;
+    final data = res.data;
+    throw (data is Map && data["error"] != null)
+        ? data["error"].toString()
+        : (res.statusMessage ?? "Request failed");
+  }
+
   Future<void> login(String email, String password) async {
     final res = await apiService.post(
       "${AppUrls.authURL}/login",
@@ -154,7 +168,7 @@ class AppRepo extends GetxController {
         if (image != null || (image?.isEmpty ?? false)) "image": image
       },
     );
-    return res.statusCode!.isSuccess();
+    return _check(res);
   }
 
   Future<bool> editUser(
@@ -181,13 +195,14 @@ class AppRepo extends GetxController {
         if (image != null || (image?.isEmpty ?? false)) "image": image
       },
     );
-    return res.statusCode!.isSuccess();
+    return _check(res);
   }
 
   Future<bool> updateFCM(String fcm) async {
     final uri = "${AppUrls.profileURL}/user/${appService.currentUser.value.id}";
 
     final res = await apiService.patch(uri, data: {"fcmtoken": fcm});
+    // Background token registration — never surface this to the user.
     return res.statusCode!.isSuccess();
   }
 
@@ -195,7 +210,7 @@ class AppRepo extends GetxController {
     final uri = "${AppUrls.profileURL}/user/$id";
 
     final res = await apiService.delete(uri);
-    return res.statusCode!.isSuccess();
+    return _check(res);
   }
 
   Future<List<User>> getUsers({String? id}) async {
@@ -249,7 +264,7 @@ class AppRepo extends GetxController {
       uri,
       data: data
     );
-    return res.statusCode!.isSuccess();
+    return _check(res);
   }
 
   Future<bool> updateLocation(
@@ -263,14 +278,14 @@ class AppRepo extends GetxController {
       uri,
       data: data
     );
-    return res.statusCode!.isSuccess();
+    return _check(res);
   }
 
   Future<bool> deleteLocation(int id) async {
     final uri = "${AppUrls.utilsURL}/location/$id";
 
     final res = await apiService.delete(uri);
-    return res.statusCode!.isSuccess();
+    return _check(res);
   }
 
   Future<List<Location>> getLocations() async {
@@ -295,7 +310,7 @@ class AppRepo extends GetxController {
       uri,
       data: data
     );
-    return res.statusCode!.isSuccess();
+    return _check(res);
   }
 
   Future<bool> updateStateLocation(
@@ -309,14 +324,14 @@ class AppRepo extends GetxController {
       uri,
       data: data
     );
-    return res.statusCode!.isSuccess();
+    return _check(res);
   }
 
   Future<bool> deleteStateLocation(int id) async {
     final uri = "${AppUrls.utilsURL}/statelocation/$id";
 
     final res = await apiService.delete(uri);
-    return res.statusCode!.isSuccess();
+    return _check(res);
   }
 
   Future<List<StateLocation>> getStateLocations() async {
@@ -362,7 +377,7 @@ class AppRepo extends GetxController {
         "receiverphone": receiverPhone,
       },
     );
-    return res.statusCode!.isSuccess();
+    return _check(res);
   }
 
   Future<bool> updateDelivery(
@@ -396,7 +411,7 @@ class AppRepo extends GetxController {
         "receiverphone": receiverPhone,
       },
     );
-    return res.statusCode!.isSuccess();
+    return _check(res);
   }
 
   Future<bool> cancelDelivery(
@@ -414,14 +429,14 @@ class AppRepo extends GetxController {
         "iscanceled": true
       },
     );
-    return res.statusCode!.isSuccess();
+    return _check(res);
   }
 
   Future<bool> deleteDelivery(int id) async {
     final uri = "${AppUrls.deliveryURL}/deliveries/$id";
 
     final res = await apiService.delete(uri);
-    return res.statusCode!.isSuccess();
+    return _check(res);
   }
 
   Future<List<Delivery>> getAllCustomersDelivery() async {
@@ -476,7 +491,7 @@ class AppRepo extends GetxController {
         if (driverid != null) "driverid": driverid,
       },
     );
-    return res.statusCode!.isSuccess();
+    return _check(res);
   }
 
   Future<bool> updateVehicle(
@@ -510,14 +525,14 @@ class AppRepo extends GetxController {
         "driverid": driverid,
       },
     );
-    return res.statusCode!.isSuccess();
+    return _check(res);
   }
 
   Future<bool> deleteVehicle(int id) async {
     final uri = "${AppUrls.utilsURL}/vehicle/$id";
 
     final res = await apiService.delete(uri);
-    return res.statusCode!.isSuccess();
+    return _check(res);
   }
 
   // ── VAR Module Endpoints ───────────────────────────────────────────────────
@@ -525,18 +540,18 @@ class AppRepo extends GetxController {
   Future<bool> createVar(Map<String, dynamic> data) async {
     const uri = "${AppUrls.varURL}/create";
     final res = await apiService.post(uri, data: data);
-    return res.statusCode!.isSuccess();
+    return _check(res);
   }
 
   Future<bool> updateVar(int id, Map<String, dynamic> data) async {
     final uri = "${AppUrls.varURL}/$id";
     final res = await apiService.patch(uri, data: data);
-    return res.statusCode!.isSuccess();
+    return _check(res);
   }
 
   Future<bool> closeVar(int id) async {
     final uri = "${AppUrls.varURL}/$id/close";
     final res = await apiService.patch(uri, data: {});
-    return res.statusCode!.isSuccess();
+    return _check(res);
   }
 }
