@@ -2544,6 +2544,12 @@ class AddResource<T> extends StatelessWidget {
             : [""];
       }
     } else {
+      if (title.toLowerCase() == "users" || title.toLowerCase() == "drivers") {
+        // Category is a MySQL enum with no blank member. Edit prefills it from
+        // the record; a new user needs the same default up front, or the save
+        // is rejected with "Data truncated for column 'category'".
+        tecs[5].text = "TBL";
+      }
       if (title.toLowerCase() == "trips" ||
           title.toLowerCase() == "var records" ||
           title.toLowerCase() == "varrecords") {

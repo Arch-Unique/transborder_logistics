@@ -164,7 +164,10 @@ class AppRepo extends GetxController {
         "role": role,
         "email": email,
         "truckno": truckno,
-        "category": category,
+        // `category` is a MySQL enum; sending "" fails with
+        // "Data truncated for column 'category'". Omit it so the
+        // column default (TBL) applies instead.
+        if (category.isNotEmpty) "category": category,
         if (image != null || (image?.isEmpty ?? false)) "image": image
       },
     );
@@ -191,7 +194,9 @@ class AppRepo extends GetxController {
         "role": role,
         "truckno": truckno,
         "email": email,
-        "category": category,
+        // Same enum guard as addUser — an empty value would be rejected
+        // outright, so leave the existing category untouched instead.
+        if (category.isNotEmpty) "category": category,
         if (image != null || (image?.isEmpty ?? false)) "image": image
       },
     );
