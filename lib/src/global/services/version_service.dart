@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
-import 'package:web/web.dart' as web;
+import 'package:transborder_logistics/src/utils/platform/browser.dart';
 
 /// Detects that a newer build has been deployed while the app is open.
 ///
@@ -70,7 +70,7 @@ class VersionService extends GetxService {
   /// Hard-reloads onto the newly deployed build.
   void reload() {
     if (!kIsWeb) return;
-    web.window.location.reload();
+    reloadPage();
   }
 
   @override
