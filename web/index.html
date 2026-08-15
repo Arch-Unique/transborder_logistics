@@ -112,6 +112,35 @@
       document.body.style.background = "transparent";
     }
   </script>
+
+  <script id="sw-killswitch">
+    // Builds use --pwa-strategy=none, so no service worker ships any more.
+    // Browsers that loaded an older build still have one registered, and it
+    // keeps serving its cached bundle — which is why a normal window shows a
+    // stale app while a private window (no registration) shows the new one.
+    // Unregister it, drop its caches, and reload once so this session picks up
+    // the fresh build. After that first pass there is nothing to control the
+    // page, so the reload never repeats.
+    (function () {
+      if (!('serviceWorker' in navigator)) return;
+      navigator.serviceWorker.getRegistrations().then(function (regs) {
+        if (!regs.length) return;
+        var wasControlled = !!navigator.serviceWorker.controller;
+        Promise.all(regs.map(function (r) { return r.unregister(); }))
+          .then(function () {
+            return window.caches
+              ? caches.keys().then(function (keys) {
+                  return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+                })
+              : null;
+          })
+          .then(function () {
+            if (wasControlled) window.location.reload();
+          })
+          .catch(function () { /* best effort — never block startup */ });
+      });
+    })();
+  </script>
 </head>
 <body>
   <picture id="splash">

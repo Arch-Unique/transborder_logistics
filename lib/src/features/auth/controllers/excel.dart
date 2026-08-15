@@ -1,7 +1,8 @@
 import 'dart:io';
+import 'dart:js_interop';
 import 'dart:typed_data';
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
+// package:web replaces dart:html, which dart2wasm cannot compile.
+import 'package:web/web.dart' as web;
 import 'package:excel/excel.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
@@ -201,16 +202,19 @@ Future<String?> saveFileDesktop(Uint8List body, String fileName) async {
 
     // Web: trigger a browser download via an anchor element
     if (kIsWeb) {
-      final blob = html.Blob([bytes]);
-      final url = html.Url.createObjectUrlFromBlob(blob);
-      final anchor =
-          html.AnchorElement(href: url)
-            ..setAttribute('download', fileName)
-            ..style.display = 'none';
-      html.document.body!.append(anchor);
+      final blob = web.Blob(
+        [bytes.toJS].toJS,
+        web.BlobPropertyBag(type: 'application/octet-stream'),
+      );
+      final url = web.URL.createObjectURL(blob);
+      final anchor = web.document.createElement('a') as web.HTMLAnchorElement
+        ..href = url
+        ..download = fileName
+        ..style.display = 'none';
+      web.document.body!.appendChild(anchor);
       anchor.click();
       anchor.remove();
-      html.Url.revokeObjectUrl(url);
+      web.URL.revokeObjectURL(url);
       return fileName; // No local path on web; return the file name as confirmation
     }
 

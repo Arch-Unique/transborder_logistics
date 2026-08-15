@@ -15,6 +15,7 @@ import 'package:transborder_logistics/src/features/dashboard/controllers/dashboa
 
 import 'src/global/services/app_service.dart';
 import 'src/global/services/dependencies.dart';
+import 'src/global/services/version_service.dart';
 import 'src/global/views/pages.dart';
 import 'src/src_barrel.dart';
 
@@ -60,6 +61,28 @@ void main() async {
     return true;
   };
   runApp(const App());
+  _watchForNewBuild();
+}
+
+/// Offers a reload once a newer build is detected on the server, so an open tab
+/// does not sit on a stale bundle indefinitely.
+void _watchForNewBuild() {
+  if (!kIsWeb) return;
+  final versions = Get.find<VersionService>();
+  ever(versions.hasUpdate, (bool available) {
+    if (!available) return;
+    Get.snackbar(
+      'Update available',
+      'A new version of the app has been deployed.',
+      snackPosition: SnackPosition.BOTTOM,
+      isDismissible: false,
+      duration: const Duration(days: 1),
+      mainButton: TextButton(
+        onPressed: versions.reload,
+        child: const Text('Reload'),
+      ),
+    );
+  });
 }
 
 class App extends StatelessWidget {

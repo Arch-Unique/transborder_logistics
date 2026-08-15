@@ -22,6 +22,12 @@ class AppDependency {
       return appService;
     });
 
+    await Get.putAsync(() async {
+      final versionService = VersionService();
+      await versionService.init();
+      return versionService;
+    });
+
     //repos
     Get.put(AppRepo());
 

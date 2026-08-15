@@ -1,0 +1,28 @@
+# Flutter web cache policy.
+#
+# Flutter does not content-hash its output: every build produces the same
+# index.html, flutter_bootstrap.js, main.dart.js, main.dart.mjs and
+# main.dart.wasm names. So nothing here may be cached without revalidation, or
+# browsers keep running a previous deploy — the stale-app problem.
+#
+# "no-cache" does not mean "never cache". It means "revalidate before reuse":
+# the browser sends If-None-Match with the ETag and the server answers 304 with
+# an empty body when nothing changed. Cheap, and always correct.
+
+<IfModule mod_headers.c>
+  # App shell and engine — must always be revalidated.
+  <FilesMatch "\.(html|json|js|mjs|wasm)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+
+  # Fonts and images keep stable content; a day in cache is safe.
+  <FilesMatch "\.(png|jpg|jpeg|gif|webp|svg|ico|ttf|otf|woff|woff2)$">
+    Header set Cache-Control "public, max-age=86400"
+  </FilesMatch>
+</IfModule>
+
+# Required for streaming WebAssembly instantiation. Without the right MIME type
+# the browser refuses to compile main.dart.wasm and the app silently falls back
+# to the slower JS bundle.
+AddType application/wasm .wasm
+AddType text/javascript .mjs

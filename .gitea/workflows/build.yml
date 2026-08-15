@@ -22,8 +22,12 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Build Web (release)
-        run: flutter build web --release
+      # --wasm compiles with dart2wasm and also emits a dart2js bundle, which
+      # flutter_bootstrap.js falls back to on browsers without WasmGC.
+      # --pwa-strategy=none stops shipping a service worker, so deploys are
+      # picked up on reload instead of being served from its cache.
+      - name: Build Web (wasm, release)
+        run: flutter build web --wasm --release --pwa-strategy=none
 
       - name: Deploy to /root/projects
         run: |
@@ -40,8 +44,22 @@ jobs:
           # Copy web build (overwrite contents)
           rm -rf "${DEST}/web"
           cp -r build/web "${DEST}/web"
-          
+
           rm -rf /home/tbl.ng/public_html/app
           cp -r build/web /home/tbl.ng/public_html/app
 
           echo "Deployed to ${DEST}"
+
+      - name: Verify deploy
+        run: |
+          # flutter_bootstrap.js changes every build, so its ETag is what the
+          # running app polls to notice a new deploy. Fail loudly if the file
+          # the app depends on is missing.
+          for f in index.html flutter_bootstrap.js main.dart.wasm main.dart.js; do
+            if [ ! -f "/home/tbl.ng/public_html/app/$f" ]; then
+              echo "MISSING: $f"
+              exit 1
+            fi
+          done
+          echo "Deployed build:"
+          cat /home/tbl.ng/public_html/app/version.json

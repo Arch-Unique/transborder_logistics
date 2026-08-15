@@ -40,6 +40,8 @@ dependencies:
   latlong2: ^0.9.1
   fl_chart: ^0.69.0
   geolocator: ^13.0.1
+  # Replaces dart:html for the web file-download path (dart2wasm compatible).
+  web: ^1.1.0
 
 dev_dependencies:
   flutter_test:
